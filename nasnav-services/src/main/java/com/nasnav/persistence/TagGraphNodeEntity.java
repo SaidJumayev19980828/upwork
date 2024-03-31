@@ -20,7 +20,6 @@ public class TagGraphNodeEntity {
 	@JoinColumn(name = "tag_id", nullable = false)
 	private TagsEntity tag;
 	
-
 	private Integer priority;
 
 	public TagGraphNodeEntity(TagsEntity tag, Integer priority) {

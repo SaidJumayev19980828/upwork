@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,7 +23,8 @@ public interface FileService {
 
   void deleteFileByUrl(String url);
   String saveFileForUser(MultipartFile file, Long userId);
-
+  String saveFileFor3DModel(MultipartFile file, Long modelId);
+  List<String> getUrlsByModelId(Long modelId);
   void deleteFile(FileEntity file);
 
   void deleteOrganizationFile(String fileName);

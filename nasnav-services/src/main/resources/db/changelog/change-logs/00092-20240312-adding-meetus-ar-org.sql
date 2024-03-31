@@ -1,0 +1,1 @@
+INSERT INTO public.organizations(name, currency_iso) VALUES ( 'MeetusAR', null);

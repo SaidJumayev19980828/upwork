@@ -17,6 +17,7 @@ import com.nasnav.dto.request.product.Product360ShopsDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
 import com.nasnav.dto.response.ItemsPromotionsDTO;
 import com.nasnav.dto.response.PromotionDTO;
+import com.nasnav.dto.response.ThreeDModelResponse;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.enumerations.ExtraAttributeType;
 import com.nasnav.enumerations.ProductFeatureType;
@@ -233,6 +234,8 @@ public class ProductServiceImpl implements ProductService {
 	@Autowired
 	private ObjectMapper mapper;
 	@Autowired
+	private ThreeDModelService threeDModelService;
+	@Autowired
 	public ProductServiceImpl(ProductRepository productRepository, StockRepository stockRepository,
 						  ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 						  ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
@@ -297,7 +300,9 @@ public class ProductServiceImpl implements ProductService {
 		productDTO.setVariantFeatures(getVariantFeatures(productVariants));
 		productDTO.setBundleItems(getBundleItems(product));
 		productDTO.setTags(tagsDTOList);
-
+		Long modelId =product.getModelId();
+		ThreeDModelResponse threeDModelResponse = threeDModelService.getThreeDModel(product.getModelId());
+		productDTO.setThreeDModel(threeDModelResponse);
 		return productDTO;
 	}
 
@@ -2637,6 +2642,8 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 		productRep.setImageUrl(coverImg);
 		productRep.setImages(productsAndVariantsImages);
 		productRep.setHidden(isHidden);
+		ThreeDModelResponse threeDModelResponse = threeDModelService.getThreeDModel(product.getModelId());
+		productRep.setThreeDModel(threeDModelResponse);
 		getDefaultProductStock(product, includeOutOfStock)
 				.ifPresent(stk -> setDefaultStockData(productRep, stk));
 		return productRep;
@@ -3624,8 +3631,8 @@ public VariantUpdateResponse updateVariantV2(
 		productDTO.setBundleItems(getBundleItems(product));
 		productDTO.setTags(tagsDTOList);
 		productDTO.setKeywords(getSeoKeywords(product.getId(), SeoEntityType.PRODUCT, product.getOrganizationId()));
-		
-
+		ThreeDModelResponse threeDModelResponse = threeDModelService.getThreeDModel(product.getModelId());
+		productDTO.setThreeDModel(threeDModelResponse);
 		return productDTO;
 	}
 	

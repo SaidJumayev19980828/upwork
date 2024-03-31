@@ -26,20 +26,18 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @Service
 public abstract class SubscriptionServiceImpl implements SubscriptionService {
 
+    private final SecurityService securityService;
+    private final PackageService packageService;
+    private final PackageRepository packageRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
-    @Autowired
-    private SecurityService securityService;
-
-    @Autowired
-    private PackageService packageService;
-
-    @Autowired
-    private PackageRepository packageRepository;
-
-    @Autowired
-    private SubscriptionRepository subscriptionRepository;
-
-
+    protected SubscriptionServiceImpl(SecurityService securityService, PackageService packageService,
+                                   PackageRepository packageRepository, SubscriptionRepository subscriptionRepository) {
+        this.securityService = securityService;
+        this.packageService = packageService;
+        this.packageRepository = packageRepository;
+        this.subscriptionRepository = subscriptionRepository;
+    }
 
     @Transactional
     public SubscriptionInfoDTO getSubscriptionInfo() throws RuntimeBusinessException{

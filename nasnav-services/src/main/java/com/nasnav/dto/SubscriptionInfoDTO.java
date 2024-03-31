@@ -27,5 +27,4 @@ public class SubscriptionInfoDTO {
     @JsonIgnore
     private Long subscriptionEntityId;
     private Long packageId;
-
 }

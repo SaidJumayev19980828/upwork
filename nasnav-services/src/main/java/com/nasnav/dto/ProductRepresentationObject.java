@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.dto.response.ThreeDModelResponse;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import java.math.BigDecimal;
@@ -45,6 +46,9 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private Integer priority;
     private Long id;
     private List<ProductPromotionDto> promotions;
+    @JsonProperty("3dModel")
+    private ThreeDModelResponse threeDModel;
+
 
     public ProductRepresentationObject() {
         images = new ArrayList<>();

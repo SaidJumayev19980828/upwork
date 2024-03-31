@@ -183,8 +183,31 @@ public class FileServiceImpl implements FileService {
 		return fileUrl;
 	}
 
+	@Override
+	public String saveFileFor3DModel(MultipartFile file, Long modelId) {
 
-	private void validateImageMimetype(MultipartFile image) {
+		if(isBlankOrNull(file.getOriginalFilename()) ) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0008);
+		}
+
+		String originalFileName = file.getOriginalFilename();
+		String uniqueFileName = getUniqueNameFor3dModel(originalFileName, modelId);
+		String fileUrl = getUrlFor3DModel(uniqueFileName, modelId);
+		Path fileRelativeLocation = getRelativeLocationFor3DModel(uniqueFileName, modelId);
+
+		saveFileFor3DModel(file, uniqueFileName, modelId );
+
+		saveToDatabaseFor3Dmodel(originalFileName, fileRelativeLocation , fileUrl, modelId);
+
+		return fileUrl;
+	}
+
+    @Override
+    public List<String> getUrlsByModelId(Long modelId) {
+        return filesRepo.getUrlsByModelId(modelId);
+    }
+
+    private void validateImageMimetype(MultipartFile image) {
 		String mimeType = image.getContentType();
 		if (!mimeType.startsWith("image"))
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0018, mimeType);
@@ -226,6 +249,17 @@ public class FileServiceImpl implements FileService {
 		fileEntity.setMimetype(mimeType);
 		fileEntity.setUser(user);
 
+		fileEntity = filesRepo.save(fileEntity);
+	}
+
+	private void saveToDatabaseFor3Dmodel(String origName, Path location, String url, Long modelId){
+		String mimeType = getMimeType(basePath.resolve(location));
+		FileEntity fileEntity = new FileEntity();
+		fileEntity.setLocation( location.toString().replace("\\", "/") );
+		fileEntity.setOriginalFileName(origName);
+		fileEntity.setUrl(url);
+		fileEntity.setMimetype(mimeType);
+		fileEntity.setModelId(modelId);
 		fileEntity = filesRepo.save(fileEntity);
 	}
 
@@ -272,6 +306,13 @@ public class FileServiceImpl implements FileService {
 				.map(basePath::resolve)
 				.orElse(basePath);
 	}
+	private Path getSaveDirFor3DModel(Long modelId) {
+		return ofNullable(modelId)
+				.map(Object::toString)
+				.map(s -> "models/" + s) // add models/ prefix
+				.map(basePath::resolve)
+				.orElse(basePath);
+	}
 
 
 	private String getUniqueName(String origName, Long orgId) {
@@ -291,6 +332,19 @@ public class FileServiceImpl implements FileService {
 		Optional<String> opt = Optional.of(originalName)
 				.map(this::sanitize)
 				.filter(name -> notUniqueFileNameForUser(name, userId))
+				.map(this::getUniqueRandomName);
+		if (opt.isPresent()) {
+			return opt.get();
+		}
+		return Optional.of(originalName)
+				.map(this::sanitize)
+				.get();
+	}
+
+	private String getUniqueNameFor3dModel(String originalName, Long modelId) {
+		Optional<String> opt = Optional.of(originalName)
+				.map(this::sanitize)
+				.filter(name -> notUniqueFileNameFor3DModel(name, modelId))
 				.map(this::getUniqueRandomName);
 		if (opt.isPresent()) {
 			return opt.get();
@@ -323,7 +377,14 @@ public class FileServiceImpl implements FileService {
 				|| filesRepo.existsByLocation(location.toString())
 				|| Files.exists(location) ;
 	}
+	private boolean notUniqueFileNameFor3DModel(String origName, Long modelId) {
+		String url = getUrlFor3DModel(origName, modelId);
+		Path location = getRelativeLocationFor3DModel(origName, modelId);
 
+		return  filesRepo.existsByUrl(url)
+				|| filesRepo.existsByLocation(location.toString())
+				|| Files.exists(location) ;
+	}
 
 	private Path getRelativeLocation(String origName, Long orgId) {
 		return basePath
@@ -334,6 +395,11 @@ public class FileServiceImpl implements FileService {
 	private Path getRelativeLocationForUser(String originalName, Long userId) {
 		return basePath
 				.relativize( getSaveDirForUser(userId) )
+				.resolve(originalName);
+	}
+	private Path getRelativeLocationFor3DModel(String originalName, Long modelId) {
+		return basePath
+				.relativize( getSaveDirFor3DModel(modelId) )
 				.resolve(originalName);
 	}
 
@@ -347,6 +413,11 @@ public class FileServiceImpl implements FileService {
 		return ofNullable(userId)
 				.map(id -> String.format("customers/%d/%s", id, originalName))
 				.orElse("customers/"+originalName);
+	}
+	private String getUrlFor3DModel(String originalName, Long modelId) {
+		return ofNullable(modelId)
+				.map(id -> String.format("models/%d/%s", id, originalName))
+				.orElse("models/"+originalName);
 	}
 
 	private String getUniqueRandomName(String origName) {
@@ -383,6 +454,21 @@ public class FileServiceImpl implements FileService {
 		} catch (IOException e) {
 			logger.error(e,e);
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0009, saveDir);
+		}
+	}
+	 public void saveFileFor3DModel(MultipartFile file, String uniqeFileName, Long modelId) {
+		if (file == null || file.isEmpty()){
+			throw new IllegalArgumentException("Invalid file");
+		}
+		Path saveDir = getSaveDirFor3DModel(modelId);
+		createDirIfNotExists(saveDir);
+		Path targetLocation = saveDir.resolve(uniqeFileName);
+
+		try {
+			file.transferTo(targetLocation);
+		} catch (IOException e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$3dM$0001, saveDir);
 		}
 	}
 
@@ -908,4 +994,5 @@ class ImageInfo {
 		this.height = height;
 		this.size = size;
 	}
+
 }

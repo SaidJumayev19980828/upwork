@@ -62,15 +62,15 @@ import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 @ExtendWith(MockitoExtension.class)
 @ContextConfiguration(classes = BaseTestConfiguration.class)
 public abstract class AbstractTestWithTempBaseDir {
-	protected static final String TEST_PHOTO = "nasnav--Test_Photo.png";
+    protected static final String TEST_PHOTO = "nasnav--Test_Photo.png";
 
-	protected static final String TEST_IMG_DIR = "src/test/resources/test_imgs_to_upload";
-
-    @Autowired
-	protected OrganizationRepository orgRepo;
+    protected static final String TEST_IMG_DIR = "src/test/resources/test_imgs_to_upload";
 
     @Autowired
-	protected FilesRepository filesRepo;
+    protected OrganizationRepository orgRepo;
+
+    @Autowired
+    protected FilesRepository filesRepo;
 
     @Autowired
     private AdminService adminService;
@@ -81,8 +81,8 @@ public abstract class AbstractTestWithTempBaseDir {
     protected Path basePath;
 
 
-	@Autowired
-	protected  MockMvc mockMvc;
+    @Autowired
+    protected  MockMvc mockMvc;
 
     @After
     @AfterEach
@@ -130,46 +130,46 @@ public abstract class AbstractTestWithTempBaseDir {
             throws Exception, IOException {
         Path expectedPath = Paths.get("" + orgId).resolve(sanitizedFileName);
 
-		Path saveDir = basePath.resolve(orgId.toString());
+        Path saveDir = basePath.resolve(orgId.toString());
 
-		performFileUpload(fileName, orgId, userToken)
-             .andExpect(status().is(200))
-             .andExpect(content().string(expectedUrl));
+        performFileUpload(fileName, orgId, userToken)
+                .andExpect(status().is(200))
+                .andExpect(content().string(expectedUrl));
 
-		 assertTrue("Organization directory was created", Files.exists(saveDir));
+        assertTrue("Organization directory was created", Files.exists(saveDir));
 
-		 try(Stream<Path> files = Files.list(saveDir)){
-			 assertNotEquals("new Files exists in the expected location", 0L, files.count() );
-		 }
+        try(Stream<Path> files = Files.list(saveDir)){
+            assertNotEquals("new Files exists in the expected location", 0L, files.count() );
+        }
 
-		 assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);
-	}
+        assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);
+    }
 
     protected ResultActions performFileUpload(String fileName, Long orgId, String userToken) throws IOException, Exception {
-		String testImgDir = TEST_IMG_DIR;
-		Path img = Paths.get(testImgDir).resolve(fileName).toAbsolutePath();
-		assertTrue(Files.exists(img));
-		byte[] imgData = Files.readAllBytes(img);
+        String testImgDir = TEST_IMG_DIR;
+        Path img = Paths.get(testImgDir).resolve(fileName).toAbsolutePath();
+        assertTrue(Files.exists(img));
+        byte[] imgData = Files.readAllBytes(img);
 
-		String orgIdStr = orgId == null ? null : orgId.toString();
-		 MockMultipartFile file = new MockMultipartFile("file", fileName, "image/png", imgData);
-		return mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
-											 .file(file)
-											 .header(TOKEN_HEADER, userToken)
-											 .param("org_id",  orgIdStr));
-	}
+        String orgIdStr = orgId == null ? null : orgId.toString();
+        MockMultipartFile file = new MockMultipartFile("file", fileName, "image/png", imgData);
+        return mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
+                .file(file)
+                .header(TOKEN_HEADER, userToken)
+                .param("org_id",  orgIdStr));
+    }
 
 
-	protected void assertFileSavedToDb(String fileName, Long orgId, String expectedUrl, Path expectedPath) {
-		FileEntity file = filesRepo.findByUrl(expectedUrl);
-		OrganizationEntity org = orgRepo.findOneById(orgId);
+    protected void assertFileSavedToDb(String fileName, Long orgId, String expectedUrl, Path expectedPath) {
+        FileEntity file = filesRepo.findByUrl(expectedUrl);
+        OrganizationEntity org = orgRepo.findOneById(orgId);
 
-		 assertNotNull("File meta-data was saved to database", file);
-		 assertEquals(expectedPath.toString().replace("\\", "/"), file.getLocation());
-		 assertEquals("image/png", file.getMimetype());
-		 assertEquals(org, file.getOrganization());
-		 assertEquals(fileName, file.getOriginalFileName());
-	}
+        assertNotNull("File meta-data was saved to database", file);
+        assertEquals(expectedPath.toString().replace("\\", "/"), file.getLocation());
+        assertEquals("image/png", file.getMimetype());
+        assertEquals(org, file.getOrganization());
+        assertEquals(fileName, file.getOriginalFileName());
+    }
 
 
     /**

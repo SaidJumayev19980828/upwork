@@ -1,6 +1,7 @@
 package com.nasnav.service.impl.subscription;
 
 import com.nasnav.dao.PackageRepository;
+import com.nasnav.dao.SubscriptionRepository;
 import com.nasnav.dto.SubscriptionDTO;
 import com.nasnav.dto.SubscriptionInfoDTO;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
@@ -28,17 +29,25 @@ import static org.springframework.http.HttpStatus.*;
 @Component("wert")
 public class WertSubscriptionServiceImpl extends SubscriptionServiceImpl implements SubscriptionService {
 
-    @Autowired
-    BankInsideTransactionService bankInsideTransactionService;
-    @Autowired
-    PackageService packageService;
-    @Autowired
-    PackageRepository packageRepository;
+
+    private final BankInsideTransactionService bankInsideTransactionService;
+    private final PackageService packageService;
+    private final PackageRepository packageRepository;
+    private final CurrencyPriceBlockChainService currencyPriceBlockChainService;
+    private final SecurityService securityService;
 
     @Autowired
-    CurrencyPriceBlockChainService currencyPriceBlockChainService;
-    @Autowired
-    private SecurityService securityService;
+    public WertSubscriptionServiceImpl(BankInsideTransactionService bankInsideTransactionService,
+                                       PackageService packageService, PackageRepository packageRepository,
+                                       CurrencyPriceBlockChainService currencyPriceBlockChainService,
+                                       SecurityService securityService, SubscriptionRepository subscriptionRepository) {
+        super(securityService, packageService, packageRepository, subscriptionRepository );
+        this.bankInsideTransactionService = bankInsideTransactionService;
+        this.packageService = packageService;
+        this.packageRepository = packageRepository;
+        this.currencyPriceBlockChainService = currencyPriceBlockChainService;
+        this.securityService = securityService;
+    }
 
 
     @Override
@@ -77,6 +86,4 @@ public class WertSubscriptionServiceImpl extends SubscriptionServiceImpl impleme
         subscriptionDTO.setType(SubscriptionMethod.WERT.getValue());
         return savePackageSuccessfulSubscription(subscriptionDTO);
     }
-
-
 }

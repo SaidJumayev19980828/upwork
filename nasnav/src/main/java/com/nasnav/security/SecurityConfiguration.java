@@ -116,6 +116,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			patternOf( "/user/logout_all"										, getAllRoles() ),
 			patternOf( "/user/suspend"											, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 			patternOf("/user/review"					    , HttpMethod.GET   , setOf(CUSTOMER)),
+			patternOf("/product/add/new3d/model",POST),
+			patternOf("/product/get3d/model",GET),
+			patternOf("/product/assign/model/to/product",POST),
 			patternOf( "/product/review"					,HttpMethod.POST	, setOf(CUSTOMER)),
 			patternOf( "/product/**"						,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
 			patternOf( "/product/**"						,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN)),
@@ -249,8 +252,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			patternOf( "/organization/update/image/type",POST),
 			patternOf( "/organization/images/types",GET),
 			patternOf( "/**")
-
-
 	);
 
    

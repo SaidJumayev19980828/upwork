@@ -28,4 +28,6 @@ public class FileEntity {
 	@ManyToOne
 	@JoinColumn(name= "user_id")
 	private UserEntity user;
+	@Column(name="model_id")
+	private Long modelId;
 }

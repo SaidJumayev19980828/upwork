@@ -128,6 +128,8 @@ public class ProductEntity {
 
     @Column(name="search_360")
     private Boolean search360;
+    @Column(name = "model_id")
+    private Long modelId;
 
     private Integer priority;
 

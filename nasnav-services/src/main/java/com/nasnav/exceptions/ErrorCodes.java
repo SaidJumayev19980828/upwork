@@ -13,7 +13,7 @@ public enum ErrorCodes {
 	, UXACTVX0005("Missing recovery token!")
 	, UXACTVX0006("Invalid token! %s")
 	, UXACTVX0007("Employee with email[%s] doesn't exists")
-	
+
 	, U$LOG$0001("NO USER FOUND FOR A TOKEN!")
 	, U$LOG$0002("Invalid credentials!")
 	, U$LOG$0003("Need activation!")
@@ -91,7 +91,7 @@ public enum ErrorCodes {
 	,P$STO$0001("No stock exists with ID:[%d]!")
 	,P$STO$0002("Stock total value can't be negative!")
 	,P$STO$0003("Stock is linked to %s!")
-	
+
 	,P$BRA$0001("No Brand exists with ID:[%d]!")
 	,P$BRA$0002("Brand with id [%d] doesn't belong to organization with id [%d]")
 	,P$BRA$0003("Brand with id [%d] linked to products [%s]!")
@@ -122,6 +122,8 @@ public enum ErrorCodes {
 	,GEN$0007("Must provide width or height!")
 	,GEN$0008("No file name provided!")
 	,GEN$0009("Failed to save file Organization directory at location : %s")
+	,GEN$3dM$0001("Failed to save file model directory at location : %s")
+	,GEN$3dM$0002("no 3d model exists with model id [%d]")
 	,GEN$0010("Failed to create directory at location : %s")
 	,GEN$0011("No file exists with url: %s")
 	,GEN$0012("Invalid URL : %s")
@@ -243,7 +245,7 @@ public enum ErrorCodes {
 	,ORG$SUB$0006("No Stripe Subscription In Organization")
 	,ORG$SUB$0007("Package Id is Missing")
 	,ORG$SUB$0008("Organization is Already subscribed in Package : [%d]")
-
+    ,ORG$SUB$0009("No Package Registered In Organization or Subscription is expired or canceled")
 
 
 	,STR$CAL$0001("Stripe Failed To Cancel Subscription")
@@ -271,13 +273,15 @@ public enum ErrorCodes {
 	,G$PRAM$0002("Invalid Parameter value[%s]!")
 	,G$ORG$0001("No organization exists with id[%d]!")
 	,G$ORG$0002("No yeshtery organization found")
+	,G$ORG$0003("No organization exists with name [%s]!")
 	,G$STK$0001("Failed to get stock data for stock [%d]!")
 
 	,E$USR$0001("User is an employee!")
 	,E$USR$0002("User not found!")
 	,E$USR$0003("Invalid current password!")
 	,E$USR$0004("Password and Confirm Password do not match!")
-
+    ,E$USR$0005("this user [%d] not assigned to Meetus AR Organization")
+	,E$USR$0006("this user [%d] has a un expected role")
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")
 	,O$CRT$0003("Quantity is greater than available stock!")
@@ -297,7 +301,7 @@ public enum ErrorCodes {
 	,O$CRT$0017("Requested price exceeded maximum allowed price")
 	,O$CRT$0018("Cart optimization resulted in empty cart!")
 	,O$CRT$0019("Cart items has no stocks available!")
-	
+
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
 	,O$SHP$0003("Failed to create a shipment for the order with the given parameters!")
@@ -311,19 +315,19 @@ public enum ErrorCodes {
 	,O$CHK$0004("Failed to finish checkout! Cart optimization for shipping resulted in changes in item%s!")
 
 	,O$NEW$0001("Failed to create order! Please try again!")
-	
+
 	,O$CFRM$0001("No order exists for shop[%d] with id[%d]!")
 	,O$CFRM$0002("Cannot Confirm order with id[%d]! Invalid order Status [%s]!")
 	,O$CFRM$0003("Cannot Confirm order with id[%d]! User didn't provide a phone number!")
 	,O$CFRM$0004("No order exists for Organizations[%d] with id[%d]!")
-	
+
 	,O$RJCT$0001("No sub order Id was provided!")
 	,O$RJCT$0002("Cannot reject order with id[%d]! Invalid order Status [%s]!")
-	
+
 	,O$CNCL$0002("Cannot cancel Meta order with id[%d]! Invalid order Status [%s]!")
 
 	,O$MAIL$0001("Failed to send notification email about order[%d] to email[%s]!")
-	
+
 	,O$ORG$0001("Sub-Order with id[%d] has no Organization!")
 
 	,O$RET$0001("No return request item found with ID[%s]!")
@@ -385,7 +389,7 @@ public enum ErrorCodes {
 
 
 	,SHP$USR$0001("Cannot request shipment! User with id[%d] doesn't exists!")
-	
+
 	,PROMO$ENUM$0001("Saved Promo has invalid status!")
 	,PROMO$JSON$0001("Saved Promo has invalid json string value[%s]!")
 	,PROMO$PARAM$0001("Invalid promo status [%s]!")
@@ -539,6 +543,7 @@ public enum ErrorCodes {
 	,SCRAPPING$003("An error occurred while processing your file because [%s]. Please check the file format and try again")
 
 	,$001$REFERRAL$("No Referral Wallet Found for that User %d.")
+
 	,$003d$MODEL$("missing params you should enter barcode or sku."),
 	$004d$MODEL$("missing params you should enter at lest one file."),
 

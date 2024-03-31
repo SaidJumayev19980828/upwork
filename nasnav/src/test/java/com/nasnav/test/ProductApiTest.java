@@ -17,6 +17,7 @@ import com.nasnav.persistence.*;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.ProductsDeleteResponse;
+import com.nasnav.service.ThreeDModelService;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
@@ -122,6 +123,9 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Autowired
 	private TagsRepository tagsRepo;
+
+	@Autowired
+	private ThreeDModelService threeDModelService;
 
 	@Test
 	public void createProductUserWithNoRightsTest() throws JsonProcessingException {

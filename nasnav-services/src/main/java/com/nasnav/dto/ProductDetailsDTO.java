@@ -2,6 +2,7 @@ package com.nasnav.dto;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.dto.response.ThreeDModelResponse;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -14,7 +15,6 @@ import java.util.List;
 public class ProductDetailsDTO extends ProductRepresentationObject {
 	
 	private String description;
-	private Integer productType;
 	private String sku;
 	private String productCode;
 	private Long organizationId;
@@ -22,6 +22,7 @@ public class ProductDetailsDTO extends ProductRepresentationObject {
 	private List<VariantFeatureDTO> variantFeatures;
 	private List<ProductRepresentationObject> bundleItems;
 	private List<SeoKeywordsDTO> keywords;
+	private ThreeDModelResponse threeDModel;
 
 	public ProductDetailsDTO() {
 		variants = new ArrayList<>();

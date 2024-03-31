@@ -18,6 +18,7 @@ import com.nasnav.service.SecurityService;
 import com.nasnav.service.StripeService;
 import com.nasnav.service.subscription.StripeSubscriptionService;
 import com.nasnav.service.subscription.SubscriptionService;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,26 +29,28 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.*;
 
 @Component("stripe")
+@Slf4j
 public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl implements StripeSubscriptionService , SubscriptionService {
 
-    @Autowired
-    PackageService packageService;
-    @Autowired
-    PackageRepository packageRepository;
-    @Autowired
-    private StripeService stripeService;
-    @Autowired
-    RestTemplate restTemplate;
-    @Autowired
-    private SecurityService securityService;
+    private final PackageService packageService;
+    private final PackageRepository packageRepository;
+    private final StripeService stripeService;
+    private final SecurityService securityService;
+    private final StripeCustomerRepository stripeCustomerRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
-    @Autowired
-    private StripeCustomerRepository stripeCustomerRepository;
-
-    @Autowired
-    private SubscriptionRepository subscriptionRepository;
-
-    private static final Logger logger = LoggerFactory.getLogger(StripeSubscriptionServiceImpl.class);
+    public StripeSubscriptionServiceImpl(PackageService packageService, PackageRepository packageRepository,
+                                         StripeService stripeService,
+                                         SecurityService securityService, StripeCustomerRepository stripeCustomerRepository,
+                                         SubscriptionRepository subscriptionRepository) {
+        super(securityService, packageService, packageRepository, subscriptionRepository);
+        this.packageService = packageService;
+        this.packageRepository = packageRepository;
+        this.stripeService = stripeService;
+        this.securityService = securityService;
+        this.stripeCustomerRepository = stripeCustomerRepository;
+        this.subscriptionRepository = subscriptionRepository;
+    }
 
     @Override
     public boolean checkOrgHasStripeCustomer(){
@@ -65,7 +68,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
      */
     @Transactional
     public String getOrCreateStripeCustomer(){
-        StripeCustomerEntity stripeCustomerEntity = null;
+        StripeCustomerEntity stripeCustomerEntity;
         //Check Stripe Customer Exist for organization
         OrganizationEntity org = securityService.getCurrentUserOrganization();
         if(checkOrgHasStripeCustomer()){
@@ -73,6 +76,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
         }else{
             //call Stripe Service to create customer then save it
             if(org.getOwner() == null){
+                log.error(ORG$SUB$0004.getValue());
                 throw new RuntimeBusinessException(NOT_FOUND, ORG$SUB$0004);
             }
             String customerId = stripeService.createCustomer(org.getOwner().getName() , org.getOwner().getEmail());
@@ -94,7 +98,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
         OrganizationEntity org = securityService.getCurrentUserOrganization();
         Long packageId = packageService.getPackageIdRegisteredInOrg(org);
         if(packageId == null){
-            logger.error("Failed To GetPaymentInfo : Package Id is null");
+            log.error("Failed To GetPaymentInfo : Package Id is null");
             throw new RuntimeBusinessException(NOT_FOUND, ORG$SUB$0001);
         }
         PackageEntity packageEntity = packageRepository.findById(packageId).orElseThrow(
@@ -113,7 +117,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
     }
 
     private StripeConfirmDTO callStripeCreateSubscription() throws RuntimeBusinessException {
-        StripeConfirmDTO stripeConfirmDTO = null;
+        StripeConfirmDTO stripeConfirmDTO ;
         try{
             StripeSubscriptionDTO stripeSubscriptionDTO = (StripeSubscriptionDTO) getPaymentInfo(new StripeSubscriptionDTO());
             //Create Subscription
@@ -121,7 +125,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
         }catch (RuntimeBusinessException e){
             throw e;
         } catch (Exception e) {
-            logger.error("callStripeCreateSubscription : Exception" + e.getMessage());
+            log.error(STR$CAL$0004.getValue(), e);
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$CAL$0004);
         }
         return stripeConfirmDTO;
@@ -136,7 +140,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
 
         SubscriptionInfoDTO subscriptionInfoDTO = getSubscriptionInfo();
         if(!subscriptionInfoDTO.isSubscribed()){
-            logger.error("Setup Intent : " + ORG$SUB$0006);
+            log.error("Setup Intent : {}", ORG$SUB$0006);
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SUB$0006);
         }
         StripeConfirmDTO stripeConfirmDTO = stripeService.setupIntent(getOrCreateStripeCustomer());
@@ -147,12 +151,10 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
     @Override
     public void cancelSubscription() throws RuntimeBusinessException {
         SubscriptionInfoDTO subscriptionInfoDTO = getSubscriptionInfo();
-        if(
-                !subscriptionInfoDTO.isSubscribed() ||
+        if(!subscriptionInfoDTO.isSubscribed() ||
                 !subscriptionInfoDTO.getType().equals(SubscriptionMethod.STRIPE.getValue()) ||
-                subscriptionInfoDTO.getSubscriptionEntityId() == null
-        ){
-            logger.error("Cancel Subscription : " + ORG$SUB$0006);
+                subscriptionInfoDTO.getSubscriptionEntityId() == null){
+            log.error(ORG$SUB$0006.getValue());
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SUB$0006);
         }
         SubscriptionEntity subscriptionEntity = subscriptionRepository.findById(subscriptionInfoDTO.getSubscriptionEntityId()).get();
@@ -162,12 +164,11 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
     @Override
     public void changePlan() throws RuntimeBusinessException {
         SubscriptionInfoDTO subscriptionInfoDTO = getSubscriptionInfo();
-        if(
-                !subscriptionInfoDTO.isSubscribed() ||
+        if(!subscriptionInfoDTO.isSubscribed() ||
                         !subscriptionInfoDTO.getType().equals(SubscriptionMethod.STRIPE.getValue()) ||
                         subscriptionInfoDTO.getSubscriptionEntityId() == null
         ){
-            logger.error("Change Plan : " + ORG$SUB$0006);
+            log.error("Change Plan : %s ".formatted(ORG$SUB$0006.getValue()));
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SUB$0006);
         }
         StripeSubscriptionDTO stripeSubscriptionDTO = (StripeSubscriptionDTO) getPaymentInfo(new StripeSubscriptionDTO());
@@ -181,7 +182,4 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
         SubscriptionEntity subscriptionEntity = subscriptionRepository.findById(subscriptionInfoDTO.getSubscriptionEntityId()).get();
         stripeService.changePlan(subscriptionEntity.getStripeSubscriptionId(),packageEntity.getStripePriceId());
     }
-
-
-
 }
