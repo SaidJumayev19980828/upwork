@@ -2639,6 +2639,7 @@ public class OrderServiceImpl implements OrderService {
 	public void cancelOrder(Long metaOrderId, boolean isYeshteryMetaOrder) {
 		Set<MetaOrderEntity> metaOrders = new HashSet<>();
 		Set<OrdersEntity> subOrders = new HashSet<>();
+		MetaOrderEntity order = null;
 		if (isYeshteryMetaOrder) {
 			MetaOrderEntity yeshteryMetaOrder = metaOrderRepo.findYeshteryMetaorderByMetaOrderId(metaOrderId)
 					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, metaOrderId));
@@ -2651,7 +2652,7 @@ public class OrderServiceImpl implements OrderService {
 					.flatMap(Set::stream)
 					.collect(toSet()));
 		} else {
-			MetaOrderEntity order =
+			 order =
 					metaOrderRepo
 							.findFullDataById(metaOrderId)
 							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, metaOrderId));
@@ -2659,6 +2660,11 @@ public class OrderServiceImpl implements OrderService {
 			subOrders.addAll(order.getSubOrders());
 		}
 		cancelOrders(metaOrders, subOrders);
+
+		if(Objects.nonNull(order)) {
+			referralCodeService.returnWithdrawAmountToUserReferralWallet(order);
+		}
+
 	}
 
 	private void cancelOrders(Set<MetaOrderEntity> metaOrders, Set<OrdersEntity> subOrders) {

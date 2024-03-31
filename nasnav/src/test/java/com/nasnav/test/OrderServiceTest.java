@@ -122,6 +122,9 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 	@Autowired
 	private PromotionsCodesUsedRepository usePromoRepo;
 
+	@Autowired
+	private ReferralWalletRepository referralWalletRepository;
+
 	@Test
 	public void updateOrderNonExistingOrderIdTest() {
 		// try updating with a non-existing order number
@@ -1431,6 +1434,20 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 	}
 
 
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_8.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void referralWalletAmountReturnedWhenUserCancelOrder() throws Exception {
+		Long metaOrderId = 310001L;
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id="+metaOrderId, request, String.class);
+		assertEquals(OK, res.getStatusCode());
+
+		ReferralWallet referralWallet = referralWalletRepository.findByUserId(88L).get();
+		assertEquals(new BigDecimal("70.00"), referralWallet.getBalance());
+
+	}
 
 	@Test(expected = BusinessException.class)
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_8.sql"})

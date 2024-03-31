@@ -54,4 +54,6 @@ public interface ReferralCodeService {
     ReferralStatsDto getStats();
 
     boolean checkIntervalDateForCurrentOrganization(ReferralCodeType referralCodeType);
+
+    void returnWithdrawAmountToUserReferralWallet(MetaOrderEntity metaOrder);
 }

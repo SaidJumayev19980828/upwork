@@ -19,6 +19,8 @@ public interface ReferralWalletService {
 
     ReferralWallet deposit(Long orderId, BigDecimal amount, ReferralCodeEntity parentReferralCode, ReferralCodeEntity referralCode,ReferralTransactionsType type);
 
+    ReferralWallet deposit(Long orderId, BigDecimal amount, UserEntity user, ReferralTransactionsType type);
+
     ReferralWallet withdraw(UserEntity user, Long orderId, BigDecimal amount, ReferralTransactionsType type);
 
     Long addReferralTransaction(UserEntity user, BigDecimal amount, Long orderId, ReferralCodeEntity referralCodeEntity, ReferralTransactionsType transactionType, boolean description);

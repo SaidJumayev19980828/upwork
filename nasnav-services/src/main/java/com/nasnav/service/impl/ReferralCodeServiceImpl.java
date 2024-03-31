@@ -433,6 +433,14 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
         return referralBalanceWithdraw;
     }
 
+    public void returnWithdrawAmountToUserReferralWallet(MetaOrderEntity metaOrder) {
+        if(Objects.nonNull(metaOrder.getReferralWithdrawAmount())
+                && metaOrder.getReferralWithdrawAmount().compareTo(ZERO) > 0) {
+            referralWalletService.deposit(metaOrder.getId(), metaOrder.getReferralWithdrawAmount(),
+                    metaOrder.getUser(), ReferralTransactionsType.ORDER_CANCELLED);
+
+        }
+    }
 
     @Override
     public ReferralStatsDto getStats(){

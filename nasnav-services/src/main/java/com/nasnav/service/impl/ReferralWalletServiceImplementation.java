@@ -59,6 +59,14 @@ public class ReferralWalletServiceImplementation implements ReferralWalletServic
     }
 
     @Override
+    public ReferralWallet deposit(Long orderId, BigDecimal amount, UserEntity user, ReferralTransactionsType type) {
+        ReferralWallet wallet = getWalletByUserId(user.getId());
+        wallet.depositBalance(amount);
+        referralTransactionRepository.save(buildDepositTransaction(user, amount, orderId, null, wallet, type));
+        return wallet;
+    }
+
+    @Override
     public ReferralWallet withdraw(UserEntity user, Long orderId, BigDecimal amount, ReferralTransactionsType type)  {
         ReferralWallet wallet = getWalletByUserId(user.getId());
         validateWithdraw(amount, wallet.getBalance());

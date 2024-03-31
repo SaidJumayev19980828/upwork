@@ -120,7 +120,7 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 
 --inserting orders
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status, referral_withdraw_amount) VALUES(310001 , now(),88, 99001, 8, 50);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status, grand_total) VALUES(310002 , now(),88, 99001, 1, 1000.00);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310003 , now(),88, 99001, 8);
 
@@ -175,11 +175,9 @@ INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330034, 602, 2, 70.0, 1);
 
 
-
-
-
-
-
 -- insert cart
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(602, '99001/img2.jpg', '{"Color":"Blue"}', 2, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(603, '99001/cover_img.jpg', '{"Color":"Yellow"}', 4, 88);
+
+INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (500, 20.00, 1, 88);
+
