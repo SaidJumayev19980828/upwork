@@ -548,8 +548,11 @@ public enum ErrorCodes {
 	$004d$MODEL$("missing params you should enter at lest one file."),
 
 	PE_EVENT_$001("No personal event found with the provided ID [%s] and a start date in the future For that User"),
-	PE_EVENT_$002("No personal event found with the provided ID [%s]")
+	PE_EVENT_$002("No personal event found with the provided ID [%s]"),
 
+	COMPEN$001("No Compensation Action found with the provided ID [%s]"),
+
+	COMPEN$002("No Compensation Rule found with the provided ID [%s] for that Organization")
 
 			;
 

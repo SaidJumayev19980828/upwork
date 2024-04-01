@@ -2,7 +2,7 @@ package com.nasnav.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.WebScrapingLogRepository;
 import com.nasnav.dto.WebScrapingFailure;
@@ -100,7 +100,7 @@ public class WebScrapingServiceImplementation implements WebScrapingService {
 
     @Override
     public PageImpl<WebScrapingLog> getScrapingLogs(int start, int count, Long orgId, ScrapingTypes type) {
-        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
+        Pageable page = new CustomPaginationPageRequest(start, count);
         return scrapingLogRepository.findAllByOrganizationAndLogTypeOrderByCreatedAtDesc(getOrganization(orgId), type, page);
     }
 

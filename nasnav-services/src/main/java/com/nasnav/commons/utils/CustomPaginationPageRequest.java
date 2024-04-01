@@ -13,7 +13,7 @@ import java.io.Serializable;
 
 
 @RequiredArgsConstructor
-public class CustomOffsetAndLimitPageRequest implements Pageable, Serializable {
+public class CustomPaginationPageRequest implements Pageable, Serializable {
 
     private static final long serialVersionUID = -25822477129613575L;
 
@@ -23,7 +23,7 @@ public class CustomOffsetAndLimitPageRequest implements Pageable, Serializable {
 
 
 
-    public CustomOffsetAndLimitPageRequest(int offset, int limit, Sort sort) {
+    public CustomPaginationPageRequest(int offset, int limit, Sort sort) {
 
             if (offset < 0) {
                 throw new IllegalArgumentException("Offset index must not be less than zero!");
@@ -38,11 +38,11 @@ public class CustomOffsetAndLimitPageRequest implements Pageable, Serializable {
         }
 
 
-    public CustomOffsetAndLimitPageRequest(int offset, int limit, Sort.Direction direction, String... properties) {
+    public CustomPaginationPageRequest(int offset, int limit, Sort.Direction direction, String... properties) {
         this(offset, limit, Sort.by(direction, properties));
     }
 
-    public CustomOffsetAndLimitPageRequest(int offset, int limit) {
+    public CustomPaginationPageRequest(int offset, int limit) {
         this(offset, limit, Sort.unsorted());
     }
 
@@ -73,11 +73,11 @@ public class CustomOffsetAndLimitPageRequest implements Pageable, Serializable {
 
     @Override
     public Pageable next() {
-        return new CustomOffsetAndLimitPageRequest(offset + limit, limit, sort);
+        return new CustomPaginationPageRequest(offset + limit, limit, sort);
     }
 
-    public CustomOffsetAndLimitPageRequest previous() {
-        return hasPrevious() ? new CustomOffsetAndLimitPageRequest(offset - limit, limit, sort) : this;
+    public CustomPaginationPageRequest previous() {
+        return hasPrevious() ? new CustomPaginationPageRequest(offset - limit, limit, sort) : this;
     }
 
     @Override
@@ -87,7 +87,7 @@ public class CustomOffsetAndLimitPageRequest implements Pageable, Serializable {
 
     @Override
     public Pageable first() {
-        return new CustomOffsetAndLimitPageRequest(0, limit, sort);
+        return new CustomPaginationPageRequest(0, limit, sort);
     }
 
     @Override
@@ -98,9 +98,9 @@ public class CustomOffsetAndLimitPageRequest implements Pageable, Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof CustomOffsetAndLimitPageRequest)) return false;
+        if (!(o instanceof CustomPaginationPageRequest)) return false;
 
-        CustomOffsetAndLimitPageRequest that = (CustomOffsetAndLimitPageRequest) o;
+        CustomPaginationPageRequest that = (CustomPaginationPageRequest) o;
 
         return new EqualsBuilder()
                 .append(limit, that.limit)

@@ -1,12 +1,11 @@
 package com.nasnav.service.impl;
 
-import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.response.CategoryDto;
-import com.nasnav.enumerations.AddonType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -24,7 +23,6 @@ import org.jgrapht.traverse.BreadthFirstIterator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -36,7 +34,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.EntityUtils.copyNonNullProperties;
@@ -51,7 +48,6 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
-import static org.springframework.util.StringUtils.isEmpty;
 
 @Service
 public class CategoryServiceImpl implements CategoryService {
@@ -236,7 +232,7 @@ public class CategoryServiceImpl implements CategoryService {
 
 	@Override
 	public PageImpl<TagsRepresentationObject> getYeshteryOrganizationsTags(Integer start, Integer count , String categoryName, Long orgId) {
-		Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
+		Pageable page = new CustomPaginationPageRequest(start, count);
 
 		Set<Long> orgIdList = new HashSet<>();
     	if (orgId == null) {

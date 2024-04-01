@@ -1,6 +1,6 @@
 package com.nasnav.service.impl;
 
-import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.dao.ReferralWalletRepository;
 import com.nasnav.dao.ReferralTransactionRepository;
 import com.nasnav.enumerations.ReferralTransactionsType;
@@ -46,7 +46,7 @@ public class ReferralWalletServiceImplementation implements ReferralWalletServic
 
     @Override
     public PageImpl<ReferralWallet> getAll(int start, int count) {
-        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
+        Pageable page = new CustomPaginationPageRequest(start, count);
         return referralWalletRepository.findAll(page);
     }
 

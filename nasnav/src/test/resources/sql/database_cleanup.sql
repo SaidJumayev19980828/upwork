@@ -22,6 +22,9 @@ DELETE FROM public.cart_item_addon_details;
 delete from addon_stocks;
 delete from public.product_addons;
 delete from addons;
+DELETE FROM public.compensation_rule_tier;
+DELETE FROM public.compensation_rules;
+DELETE FROM public.compensation_action;
 
 
 DELETE FROM public.products_extra_attributes WHERE extra_attribute_id IN (SELECT id FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999);

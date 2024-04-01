@@ -123,7 +123,6 @@ public class PersonalEventController {
      * @description The method will call the personalEventService.inviteToPersonalEvent method to invite the
      *              people to the personal event.
      */
-    @Validated
     @PostMapping(value = "invite/{eventId}")
     public void inviteToPersonalEvent(@RequestHeader(TOKEN_HEADER) String userToken,
                                     @PathVariable long eventId,

@@ -6,10 +6,12 @@ import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.ConversionNotSupportedException;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,15 +37,19 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.FileNotFoundException;
-import java.time.DateTimeException;
 import java.time.format.DateTimeParseException;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @RestControllerAdvice
 public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
@@ -179,9 +185,15 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 				.build();
 	}
 	
-	
-	
-	
+
+
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ResponseEntity<ErrorResponseDTO> handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request , WebRequest requestInfo ) {
+		Throwable rootCause = ExceptionUtils.getRootCause(ex);
+		return new ResponseEntity<>(new ErrorResponseDTO(rootCause.getMessage()), HttpStatus.BAD_REQUEST);
+	}
+
+
 	/**
 	 * Log failed request with exception details
 	 *

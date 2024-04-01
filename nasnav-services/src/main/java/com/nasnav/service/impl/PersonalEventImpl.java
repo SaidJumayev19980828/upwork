@@ -1,6 +1,6 @@
 package com.nasnav.service.impl;
 
-import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.PersonalEventEntityRepository;
 import com.nasnav.dao.UserRepository;
@@ -62,7 +62,7 @@ public class PersonalEventImpl implements PersonalEventService {
 
     @Override
     public PageImpl<PersonalEvent> getAllPersonalEvents(int start , int count) {
-        Pageable page = new CustomOffsetAndLimitPageRequest(start, count, Sort.Direction.ASC , "startsAt" );
+        Pageable page = new CustomPaginationPageRequest(start, count, Sort.Direction.ASC , "startsAt" );
         return personalEventRepository.findAllBy(page);
     }
 

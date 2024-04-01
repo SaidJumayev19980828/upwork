@@ -1,6 +1,6 @@
 package com.nasnav.service.impl;
 
-import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.dao.*;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductFetchDTO;
@@ -245,7 +245,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PageImpl<PostResponseDTO> getUserSavedPosts(Integer start, Integer count) {
-        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
+        Pageable page = new CustomPaginationPageRequest(start, count);
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         if (!(loggedInUser instanceof UserEntity)) {
             throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, E$USR$0001);

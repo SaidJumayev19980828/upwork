@@ -1,6 +1,6 @@
 package com.nasnav.service.impl;
 
-import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
@@ -101,7 +101,7 @@ public class BrandServiceImpl implements BrandService {
 
     @Override
     public PageImpl<Organization_BrandRepresentationObject> getOrganizationBrands(List<Long> orgIds, Integer minPriority ,Integer start ,Integer count){
-        Pageable page =new CustomOffsetAndLimitPageRequest(start,count);
+        Pageable page =new CustomPaginationPageRequest(start,count);
         PageImpl<BrandsEntity> brandsPageable=
         brandsRepository.findByOrganizationEntity_IdInAndRemovedAndPriorityGreaterThanEqualOrderByPriorityDesc(orgIds, 0, minPriority,page);
         List<Organization_BrandRepresentationObject> brands = brandsPageable.getContent().stream()

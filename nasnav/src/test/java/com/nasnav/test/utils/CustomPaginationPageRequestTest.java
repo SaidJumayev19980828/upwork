@@ -1,15 +1,15 @@
 package com.nasnav.test.utils;
 
-import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 import org.springframework.data.domain.Sort;
 
-class CustomOffsetAndLimitPageRequestTest {
+class CustomPaginationPageRequestTest {
 
     @Test
     void testConstructorWithValidValues() {
-        CustomOffsetAndLimitPageRequest pageRequest = new CustomOffsetAndLimitPageRequest(0, 10, Sort.unsorted());
+        CustomPaginationPageRequest pageRequest = new CustomPaginationPageRequest(0, 10, Sort.unsorted());
 
         Assertions.assertEquals(0, pageRequest.getOffset());
         Assertions.assertEquals(10, pageRequest.getPageSize());
@@ -19,28 +19,28 @@ class CustomOffsetAndLimitPageRequestTest {
     @Test
     void testConstructorWithInvalidOffset() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            new CustomOffsetAndLimitPageRequest(-1, 10, Sort.unsorted());
+            new CustomPaginationPageRequest(-1, 10, Sort.unsorted());
         });
     }
 
     @Test
     void testConstructorWithInvalidLimit() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            new CustomOffsetAndLimitPageRequest(0, 0, Sort.unsorted());
+            new CustomPaginationPageRequest(0, 0, Sort.unsorted());
         });
     }
 
     @Test
     void testGetPageNumber() {
-        CustomOffsetAndLimitPageRequest pageRequest = new CustomOffsetAndLimitPageRequest(20, 10, Sort.unsorted());
+        CustomPaginationPageRequest pageRequest = new CustomPaginationPageRequest(20, 10, Sort.unsorted());
 
         Assertions.assertEquals(2, pageRequest.getPageNumber());
     }
 
     @Test
     void testNext() {
-        CustomOffsetAndLimitPageRequest pageRequest = new CustomOffsetAndLimitPageRequest(0, 10, Sort.unsorted());
-        CustomOffsetAndLimitPageRequest nextPage = (CustomOffsetAndLimitPageRequest) pageRequest.next();
+        CustomPaginationPageRequest pageRequest = new CustomPaginationPageRequest(0, 10, Sort.unsorted());
+        CustomPaginationPageRequest nextPage = (CustomPaginationPageRequest) pageRequest.next();
 
         Assertions.assertEquals(10, nextPage.getOffset());
         Assertions.assertEquals(10, nextPage.getPageSize());
@@ -49,8 +49,8 @@ class CustomOffsetAndLimitPageRequestTest {
 
     @Test
     void testPrevious() {
-        CustomOffsetAndLimitPageRequest pageRequest = new CustomOffsetAndLimitPageRequest(20, 10, Sort.unsorted());
-        CustomOffsetAndLimitPageRequest previousPage = pageRequest.previous();
+        CustomPaginationPageRequest pageRequest = new CustomPaginationPageRequest(20, 10, Sort.unsorted());
+        CustomPaginationPageRequest previousPage = pageRequest.previous();
 
         Assertions.assertEquals(10, previousPage.getOffset());
         Assertions.assertEquals(10, previousPage.getPageSize());
@@ -59,8 +59,8 @@ class CustomOffsetAndLimitPageRequestTest {
 
     @Test
     void testPreviousOrFirstWithPrevious() {
-        CustomOffsetAndLimitPageRequest pageRequest = new CustomOffsetAndLimitPageRequest(20, 10, Sort.unsorted());
-        CustomOffsetAndLimitPageRequest previousOrFirstPage = (CustomOffsetAndLimitPageRequest) pageRequest.previousOrFirst();
+        CustomPaginationPageRequest pageRequest = new CustomPaginationPageRequest(20, 10, Sort.unsorted());
+        CustomPaginationPageRequest previousOrFirstPage = (CustomPaginationPageRequest) pageRequest.previousOrFirst();
 
         Assertions.assertEquals(10, previousOrFirstPage.getOffset());
         Assertions.assertEquals(10, previousOrFirstPage.getPageSize());
@@ -69,8 +69,8 @@ class CustomOffsetAndLimitPageRequestTest {
 
     @Test
     void testPreviousOrFirstWithoutPrevious() {
-        CustomOffsetAndLimitPageRequest pageRequest = new CustomOffsetAndLimitPageRequest(0, 10, Sort.unsorted());
-        CustomOffsetAndLimitPageRequest previousOrFirstPage = (CustomOffsetAndLimitPageRequest) pageRequest.previousOrFirst();
+        CustomPaginationPageRequest pageRequest = new CustomPaginationPageRequest(0, 10, Sort.unsorted());
+        CustomPaginationPageRequest previousOrFirstPage = (CustomPaginationPageRequest) pageRequest.previousOrFirst();
 
         Assertions.assertEquals(0, previousOrFirstPage.getOffset());
         Assertions.assertEquals(10, previousOrFirstPage.getPageSize());
@@ -79,8 +79,8 @@ class CustomOffsetAndLimitPageRequestTest {
 
     @Test
     void testFirst() {
-        CustomOffsetAndLimitPageRequest pageRequest = new CustomOffsetAndLimitPageRequest(20, 10, Sort.unsorted());
-        CustomOffsetAndLimitPageRequest firstPage = (CustomOffsetAndLimitPageRequest) pageRequest.first();
+        CustomPaginationPageRequest pageRequest = new CustomPaginationPageRequest(20, 10, Sort.unsorted());
+        CustomPaginationPageRequest firstPage = (CustomPaginationPageRequest) pageRequest.first();
 
         Assertions.assertEquals(0, firstPage.getOffset());
         Assertions.assertEquals(10, firstPage.getPageSize());
@@ -89,22 +89,22 @@ class CustomOffsetAndLimitPageRequestTest {
 
     @Test
     void testHasPreviousWithPrevious() {
-        CustomOffsetAndLimitPageRequest pageRequest = new CustomOffsetAndLimitPageRequest(20, 10, Sort.unsorted());
+        CustomPaginationPageRequest pageRequest = new CustomPaginationPageRequest(20, 10, Sort.unsorted());
 
         Assertions.assertTrue(pageRequest.hasPrevious());
     }
 
     @Test
     void testHasPreviousWithoutPrevious() {
-        CustomOffsetAndLimitPageRequest pageRequest = new CustomOffsetAndLimitPageRequest(0, 10, Sort.unsorted());
+        CustomPaginationPageRequest pageRequest = new CustomPaginationPageRequest(0, 10, Sort.unsorted());
 
         Assertions.assertFalse(pageRequest.hasPrevious());
     }
 
     @Test
     void testEqualsAndHashCode() {
-        CustomOffsetAndLimitPageRequest pageRequest1 = new CustomOffsetAndLimitPageRequest(0, 10, Sort.unsorted());
-        CustomOffsetAndLimitPageRequest pageRequest2 = new CustomOffsetAndLimitPageRequest(0, 10, Sort.unsorted());
+        CustomPaginationPageRequest pageRequest1 = new CustomPaginationPageRequest(0, 10, Sort.unsorted());
+        CustomPaginationPageRequest pageRequest2 = new CustomPaginationPageRequest(0, 10, Sort.unsorted());
 
         Assertions.assertEquals(pageRequest1, pageRequest2);
         Assertions.assertEquals(pageRequest1.hashCode(), pageRequest2.hashCode());

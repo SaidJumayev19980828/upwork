@@ -1,7 +1,7 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.AppConfig;
-import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.dao.ContactUsRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.SettingRepository;
@@ -70,7 +70,7 @@ public class ContactUsServiceImpl  implements ContactUsService {
     @Override
     public PageImpl<ContactUsEntity> getContactUsForms(Integer start, Integer count, LocalDateTime fromDate) {
         Long orgId = securityService.getCurrentUserOrganizationId();
-        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
+        Pageable page = new CustomPaginationPageRequest(start, count);
         return contactUsRepository.findAllByOrganizationIdAndCreatedAt(orgId,page,fromDate);
     }
 

@@ -1,6 +1,6 @@
 package com.nasnav.service.impl;
 
-import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.EventForRequestDTO;
@@ -135,7 +135,7 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public PageImpl<EventsNewDTO> getEventsForEmployee(Integer start, Integer count, EventStatus status, LocalDateTime fromDate, LocalDateTime endDate) {
-        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
+        Pageable page = new CustomPaginationPageRequest(start, count);
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         if (loggedInUser instanceof EmployeeUserEntity) {
             EmployeeUserEntity employeeUserEntity = (EmployeeUserEntity) loggedInUser;
@@ -324,7 +324,7 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public PageImpl<EventsNewDTO> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate , Long orgId) {
-        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
+        Pageable page = new CustomPaginationPageRequest(start, count);
         OrganizationEntity organization=null;
         PageImpl<EventInterestsProjection> events;
 
@@ -344,7 +344,7 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public PageImpl<EventsNewDTO> getAllAdvertisedEvents(Integer start, Integer count, Long orgId) {
-        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
+        Pageable page = new CustomPaginationPageRequest(start, count);
         OrganizationEntity organization=null;
         if (orgId !=null){
             organization = organizationRepository.findById(orgId)

@@ -1,17 +1,15 @@
 package com.nasnav.service.impl;
 
-import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.dao.FollowerRepository;
 import com.nasnav.dao.PostRepository;
 import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.UserFollow;
 import com.nasnav.dto.UserListFollowProjection;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.response.FollowerDTO;
 import com.nasnav.dto.response.FollowerInfoDTO;
 import com.nasnav.enumerations.PostStatus;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.FollowerEntity;
 import com.nasnav.persistence.UserEntity;
@@ -109,7 +107,7 @@ public class FollowerServiceImpl implements FollowerServcie{
 
     @Override
     public PageImpl<UserListFollowProjection> getUsersWithFollowerStatus(Integer start,Integer count ) {
-        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
+        Pageable page = new CustomPaginationPageRequest(start, count);
         BaseUserEntity currentUser = securityService.getCurrentUser();
         return  userRepository.findUsersWithFollowerStatus(currentUser.getId(),page);
     }

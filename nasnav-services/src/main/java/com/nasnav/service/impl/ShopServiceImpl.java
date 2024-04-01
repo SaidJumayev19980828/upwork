@@ -1,7 +1,7 @@
 package com.nasnav.service.impl;
 
 
-import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.ShopIdAndPriority;
@@ -87,7 +87,7 @@ public class ShopServiceImpl implements ShopService {
     	//TODO this filtering is better to be done in the where condition of a single jpa query similar to
     	//similar to ProductRepository.find360Collections
     	//but i was in hurry
-        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
+        Pageable page = new CustomPaginationPageRequest(start, count);
 
         PageImpl<ShopsEntity> shopsEntities ;
     	if(showWarehouses) {
