@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    username: nasnav
+    password: nasnav
+    url: jdbc:tc:postgresql:16.2:///test
+#    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    hikari:
+      max-lifetime: 15_000
+  test:
+    database:
+      replace: none
+  main:
+    banner-mode: off
+logging:
+  level:
+    sql: warn
+
+db:
+  driver: org.postgresql.Driver
+  uri: ${spring.datasource.url}
+  user: ${spring.datasource.username}
+  password: ${spring.datasource.password}
+spring.liquibase.enabled: true
+spring.liquibase.user: nasnav
+spring.liquibase.password: nasnav
+spring.liquibase.url: ${spring.datasource.url}
+spring.liquibase.liquibaseSchema: public
+spring.liquibase.default-schema: public
+
+
+hibernate.dialect: org.hibernate.dialect.PostgreSQL82Dialect
+management:
+  endpoints:
+    enabled-by-default: false
+

@@ -1,41 +1,22 @@
 package com.nasnav.service.impl;
 
-import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
-import static com.nasnav.commons.utils.MathUtils.nullableBigDecimal;
-import static com.nasnav.constatnts.EmailConstants.ABANDONED_CART_TEMPLATE;
-import static com.nasnav.enumerations.Settings.ORG_EMAIL;
-
-import static com.nasnav.exceptions.ErrorCodes.*;
-import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_AMOUNT;
-import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_PERCENT;
-import static java.lang.String.format;
-import static java.math.BigDecimal.ZERO;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
-import static org.springframework.http.HttpStatus.*;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.request.mail.AbandonedCartsMail;
+import com.nasnav.dto.response.navbox.Cart;
+import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.*;
+import com.nasnav.persistence.dto.query.result.CartItemStock;
+import com.nasnav.service.*;
+import com.nasnav.service.helpers.CartServiceHelper;
+import com.nasnav.service.model.cart.ShopFulfillingCart;
+import com.nasnav.service.sendpulse.SendPulseService;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,50 +25,24 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.AppConfig;
-import com.nasnav.dto.AppliedPromotionsResponse;
-import com.nasnav.dto.CartItemAddonDetailsDTO;
-import com.nasnav.dto.Pair;
-import com.nasnav.dto.ProductImageDTO;
-import com.nasnav.dto.ShopRepresentationObject;
-import com.nasnav.dto.UserCartInfo;
-import com.nasnav.dto.request.mail.AbandonedCartsMail;
-import com.nasnav.dto.response.navbox.Cart;
-import com.nasnav.dto.response.navbox.CartItem;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AddonEntity;
-import com.nasnav.persistence.AddonStocksEntity;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.CartItemAddonDetailsEntity;
-import com.nasnav.persistence.CartItemEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.PromotionsEntity;
-import com.nasnav.persistence.SettingEntity;
-import com.nasnav.persistence.StockUnitEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.persistence.dto.query.result.CartItemStock;
-import com.nasnav.service.CartService;
-import com.nasnav.service.DomainService;
-import com.nasnav.service.LoyaltyPointsService;
-import com.nasnav.service.MailService;
-import com.nasnav.service.OrderEmailServiceHelper;
-import com.nasnav.service.ProductImageService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.PromotionsService;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.StatisticsService;
-import com.nasnav.service.helpers.CartServiceHelper;
-import com.nasnav.service.model.cart.ShopFulfillingCart;
-import com.nasnav.service.sendpulse.SendPulseService;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import lombok.RequiredArgsConstructor;
+import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
+import static com.nasnav.commons.utils.MathUtils.nullableBigDecimal;
+import static com.nasnav.constatnts.EmailConstants.ABANDONED_CART_TEMPLATE;
+import static com.nasnav.enumerations.Settings.ORG_EMAIL;
+import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_AMOUNT;
+import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_PERCENT;
+import static java.lang.String.format;
+import static java.math.BigDecimal.ZERO;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 @RequiredArgsConstructor
@@ -796,7 +751,7 @@ public class CartServiceImpl implements CartService {
             return getUserCart(user.getId(),user.getOrganizationId() ,promoCode, points, yeshteryCart);
     }
 
-    @Scheduled(fixedRate = 864000000)
+    @Scheduled(fixedRate = 864_000_000)
     @Transactional
     public void moveOutOfStockCartItemsToWishlist() {
         List<CartItemEntity> cartItems = cartItemRepo.findOutOfStockCartItems();

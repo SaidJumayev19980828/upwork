@@ -1,5 +1,10 @@
 = Nasnav Documentation and Development Guide
 :hardbreaks:
+:sectnums:
+:!pagenums:
+
+image:https://gitlab.com/nasnav/nasnav-backend/badges/develop/pipeline.svg["pipeline status", link="https://gitlab.com/nasnav/nasnav-backend/-/commits/develop"] | image:https://gitlab.com/nasnav/nasnav-backend/badges/develop/coverage.svg["coverage report", link="https://gitlab.com/nasnav/nasnav-backend/-/commits/develop"]
+
 
 == Migration to JAVA-17 scope
 
@@ -37,15 +42,13 @@ Swagger:: Start the Application and check swaggers are working as expected
 ** Password: `nasnav`
 ** Initialize with the DB Dum here link:postgres-dev.sql[Postgres Dump for developer localhost] (To be updated on regular basis)
 * IDE (IntelliJ, VS Code, Eclipse,...)
-* Here under an example of compliant Maven and Java setup
+* Here under a partial output of compliant Maven and Java setup
 +
 [source,bash]
 ----
  mvn -v
-Apache Maven 3.9.5 (57804ffe001d7215b5e7bcb531cf83df38f93546)
-Maven home: ~/.sdkman/candidates/maven/current
-Java version: 17.0.4.1, vendor: Eclipse Adoptium, runtime: ~/.sdkman/candidates/java/17.0.4.1-tem
-
+Apache Maven 3.9.5
+Java version: 17.0.4.1, vendor: Eclipse Adoptium
 ----
 * Run the application
 * Go to the local swagger link.

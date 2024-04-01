@@ -13,7 +13,13 @@
     <logger name="org.springframework.test" level="ERROR"/>
     <logger name="org.springframework.boot.test" level="ERROR"/>
     <logger name="com.nasnav.test" level="ERROR"/>
-    <logger name="com.nasnav.yeshtery.test" level="info"/>
+    <logger name="com.nasnav.yeshtery.test" level="ERROR"/>
+    <logger name="com.nasnav" level="off"/>
+    <logger name="com.nasnav.test" level="ERROR"/>
+    <logger name="liquibase" level="ERROR"/>-->
+<!--    <logger name="org.testcontainers.containers" level="info"/>
+    <logger name="org.springframework.security" level="debug"/>
+    <logger name="org.springframework.web" level="info"/>-->
     <root level="OFF">
         <appender-ref ref="console" />
     </root>

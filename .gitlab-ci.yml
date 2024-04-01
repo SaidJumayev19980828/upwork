@@ -40,7 +40,7 @@ test:maven:
     - nasnav-develop
     - review
     - merge_requests
-    - java-17-migration
+    - DEVOPS201-add-jwt
 
 test:coverage:
   stage: visualize-coverage
@@ -67,6 +67,7 @@ test:coverage:
     - nasnav-develop
     - tests
     - merge_requests
+    - DEVOPS201-add-jwt
 
 
 build:compile:

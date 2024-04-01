@@ -5,28 +5,33 @@ import com.nasnav.enumerations.Roles;
 import com.nasnav.security.oauth2.CustomOAuth2UserService;
 import com.nasnav.security.oauth2.OAuth2AuthenticationFailureHandler;
 import com.nasnav.security.oauth2.OAuth2AuthenticationSuccessHandler;
-import org.jboss.logging.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.header.HeaderWriter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
@@ -40,29 +45,17 @@ import static org.springframework.http.HttpMethod.*;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
-public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
-	private static Logger logger = Logger.getLogger(SecurityConfiguration.class);
+@EnableMethodSecurity
+public class SecurityConfiguration {
 
-	private static  RequestMatcher protectedUrlList ;
-	private static  RequestMatcher publicUrlList ;
+    private static RequestMatcher protectedUrlList;
+    private static RequestMatcher publicUrlList;
 
-
-	@Autowired
-	private AuthorizationRequestRepository<OAuth2AuthorizationRequest> oAuth2RequestRepository;
-
-
-	@Autowired
-	private CustomOAuth2UserService oAuth2UserService;
-
-	@Autowired
-	private OidcUserService customOidcUserService;
-
-	@Autowired
-	private OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
-
-	@Autowired
-	private OAuth2AuthenticationFailureHandler oAuth2FailureHandler;
+    private final AuthorizationRequestRepository<OAuth2AuthorizationRequest> oAuth2RequestRepository;
+    private final CustomOAuth2UserService oAuth2UserService;
+    private final OidcUserService customOidcUserService;
+    private final OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2FailureHandler;
 
 	//- Any url is authenticated by default.
 	//- to permit a url to all users without AuthN, add it to PUBLIC_URLS.
@@ -254,8 +247,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			patternOf( "/**")
 	);
 
-   
-   
+
+
     private List<AuthPattern> PUBLIC_URLS =
             	asList(
 						patternOf("/callbacks/**")
@@ -268,6 +261,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/user/recover")
                         , patternOf("/user/recovery/otp-verify")
                         , patternOf("/user/login/**")
+                    , patternOf("/nasnav/token", POST)
                         , patternOf("/user/register")
 						, patternOf("/user/v2/register")
 						, patternOf("/user/v2/register/activate")
@@ -307,210 +301,170 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf("/videochat/credentials",GET)
 
 
-                 );
+            );
+
+    public SecurityConfiguration(AuthorizationRequestRepository<OAuth2AuthorizationRequest> oAuth2RequestRepository, CustomOAuth2UserService oAuth2UserService, OidcUserService customOidcUserService, OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler, OAuth2AuthenticationFailureHandler oAuth2FailureHandler) {
+        this.oAuth2RequestRepository = oAuth2RequestRepository;
+        this.oAuth2UserService = oAuth2UserService;
+        this.customOidcUserService = customOidcUserService;
+        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
+        this.oAuth2FailureHandler = oAuth2FailureHandler;
+
+        //allow created threads to inherit the parent thread security context
+        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
+
+        List<RequestMatcher> protectedrequestMatcherList = permissions.stream().map(this::toAntPathRequestMatcher).collect(toList());
+        protectedUrlList = new OrRequestMatcher(protectedrequestMatcherList);
+
+
+        List<RequestMatcher> publicRequestMatcherList = PUBLIC_URLS.stream().map(this::toAntPathRequestMatcher).collect(toList());
+        publicUrlList = new OrRequestMatcher(publicRequestMatcherList);
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        //we need to ignore the public url's from the whole security
+        //instead of just permitting it for all users using http.antMatchers(url).permitAll().
+        //Because we authenticate using a custom authentication filter, which apparently is
+        //applied in all cases of authentication.
+        //So we need to bypass the request of the public url from the whole security filter chain.
+
+        return web -> web.ignoring().requestMatchers(publicUrlList);
+    }
+
+    private void customizeStaticResourceRequests(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authorize) {
+        IpAddressMatcher hasIpAddress = new IpAddressMatcher("127.0.0.1");
+        authorize
+                .requestMatchers(AntPathRequestMatcher.antMatcher(GET, STATIC_FILES_URL + "/**"))
+                .access((authentication, context) -> new AuthorizationDecision(hasIpAddress.matches(context.getRequest())));
+    }
+
+    private void customizeProtectedResourceRequests(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authorize) {
+        permissions.forEach(authPattern ->
+                authorize.requestMatchers(authPattern.getHttpMethod(), authPattern.getUrlPattern())
+                        .hasAnyAuthority(toArray(authPattern.getRoles())));
+    }
+
+    @Bean
+    AuthenticationManager authenticationManager(AuthenticationProvider authenticationProvider,
+                                                JwtAuthenticationProvider jwtAuthenticationProvider) {
+        return new ProviderManager(authenticationProvider, jwtAuthenticationProvider);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   AuthenticationManager authenticationManager) throws Exception {
+
+        http
+                .headers(headers -> headers.addHeaderWriter(contentTypeHeaderWriter())) //add content-type='application/json' to security responses
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(this::customizeStaticResourceRequests)
+                .authorizeHttpRequests(this::customizeProtectedResourceRequests)
+                //.oauth2ResourceServer(oauth2 -> oauth2.authenticationManagerResolver(managerResolver))
+                .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
+                .addFilterBefore(authenticationFilter(authenticationManager), AnonymousAuthenticationFilter.class)
+                //return a custom response 403 with a body containing {success=false} , don't know why we need it
+                .exceptionHandling(exceptionHandler -> exceptionHandler.accessDeniedHandler(new NasnavAccessDeniedHandler()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable);
+
+        http
+                .oauth2Login()
+                .authorizationEndpoint()
+                .baseUri("/oauth2/authorize")
+                .authorizationRequestRepository(oAuth2RequestRepository)
+                .and()
+                .redirectionEndpoint()
+                .baseUri("/oauth2/callback/*")
+                .and()
+                .userInfoEndpoint()
+                .oidcUserService(customOidcUserService)
+                .and()
+                .userInfoEndpoint()
+                .userService(oAuth2UserService)
+                .and()
+                .successHandler(oAuth2SuccessHandler)
+                .failureHandler(oAuth2FailureHandler);
+
+        http.cors();
+
+        return http.build();
+    }
+
+    AuthenticationFilter authenticationFilter(AuthenticationManager authenticationManager) {
+        final AuthenticationFilter filter = new AuthenticationFilter(protectedUrlList);
+        filter.setAuthenticationManager(authenticationManager);
+
+        //set the handler returns custom response for AuthN failure
+        filter.setAuthenticationFailureHandler(customAuthenticationHandler());
+        return filter;
+    }
 
-	AuthenticationProvider provider;
+    @Bean
+    public AuthenticationFailureHandler customAuthenticationHandler() {
+        return new AuthenticationHandler();
+    }
 
-	public SecurityConfiguration(final AuthenticationProvider authenticationProvider) {
-		super();
+    @Bean
+    AuthenticationEntryPoint unauthorizedEntryPoint() {
+        return new NasnavHttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
+    }
 
-		//allow created threads to inherit the parent thread security context
-		SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
+    public HeaderWriter contentTypeHeaderWriter() {
+        return new ContentTypeHeaderWriter();
+    }
 
-		this.provider = authenticationProvider;
+    private static Set<Roles> getAllRoles() {
+        return new HashSet<>(Arrays.asList(Roles.values()));
+    }
 
-		List<RequestMatcher> protectedrequestMatcherList = permissions.stream().map(this::toAntPathRequestMatcher).collect(toList());
-		protectedUrlList = new OrRequestMatcher( protectedrequestMatcherList );
+    private static Set<Roles> getNonCustomersRoles() {
+        Set<Roles> roles = getAllRoles();
+        roles.remove(Roles.CUSTOMER);
+        return roles;
+    }
 
+    private static Set<Roles> getNonNasnavRoles() {
+        return setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER,
+                ORGANIZATION_EMPLOYEE, STORE_MANAGER, STORE_EMPLOYEE);
+    }
 
-		List<RequestMatcher> publicRequestMatcherList = PUBLIC_URLS.stream().map(this::toAntPathRequestMatcher).collect(toList());
-		publicUrlList = new OrRequestMatcher( publicRequestMatcherList );
-	}
+    private String[] toArray(Set<Roles> set) {
+        return set.stream().map(Roles::getValue).toArray(String[]::new);
+    }
 
 
+    private static HashSet<Roles> setOf(Roles... roles) {
+        return new HashSet<Roles>(Arrays.asList(roles));
+    }
 
 
+    private static AuthPattern patternOf(String urlPattern, Set<Roles> roles) {
+        return patternOf(urlPattern, null, roles);
+    }
 
-	/*~~TODO with JWT : (Migrate manually based on https://spring.io/blog/2022/02/21/spring-security-without-the-websecurityconfigureradapter)~~>*/
-	@Override
-	protected void configure(final AuthenticationManagerBuilder auth) {
-		auth.authenticationProvider(provider);
-	}
+    private static AuthPattern patternOf(String urlPattern, HttpMethod method) {
+        return patternOf(urlPattern, method, getAllRoles());
+    }
 
 
+    private static AuthPattern patternOf(String urlPattern) {
+        return patternOf(urlPattern, null, getAllRoles());
+    }
 
 
-	@Override
-	public void configure(final WebSecurity webSecurity) {
-		//we need to ignore the public url's from the whole security
-		//instead of just permitting it for all users using http.antMatchers(url).permitAll().
-		//Because we authenticate using a custom authentication filter, which apparently is
-		//applied in all cases of authentication.
-		//So we need to bypass the request of the public url from the whole security filter chain.
+    private static AuthPattern patternOf(String urlPattern, HttpMethod method, Set<Roles> roles) {
+        return new AuthPattern(urlPattern, method, roles);
+    }
 
-		webSecurity.ignoring().requestMatchers(publicUrlList);
-	}
 
-	@Override
-	public void configure(HttpSecurity http) throws Exception {
-
-		configureStaticResourcesUrl(http);
-
-		permissions.forEach(pattern -> configureUrlAllowedRoles(http, pattern));
-
-		http
-				.sessionManagement()
-				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-				.and()
-				.authenticationProvider(provider)
-				.addFilterBefore(authenticationFilter(), AnonymousAuthenticationFilter.class)
-				.exceptionHandling()
-				.accessDeniedHandler(new NasnavAccessDeniedHandler()) //return a custom response 403 with a body containing {success=false} , don't know why we need it ..
-				.and()
-				.headers()
-				.addHeaderWriter(contentTypeHeaderWriter()) //add content-type='application/json' to security responses
-				.and()
-				.csrf().disable()
-				.formLogin().disable()
-				.httpBasic().disable()
-				.logout().disable();
-
-
-		http
-				.oauth2Login()
-				.authorizationEndpoint()
-				.baseUri("/oauth2/authorize")
-				.authorizationRequestRepository(oAuth2RequestRepository)
-				.and()
-				.redirectionEndpoint()
-				.baseUri("/oauth2/callback/*")
-				.and()
-				.userInfoEndpoint()
-				.oidcUserService(customOidcUserService)
-				.and()
-				.userInfoEndpoint()
-				.userService(oAuth2UserService)
-				.and()
-				.successHandler(oAuth2SuccessHandler)
-				.failureHandler(oAuth2FailureHandler);
-
-		http.cors();
-	}
-
-
-
-
-	private void configureStaticResourcesUrl(HttpSecurity http) throws Exception {
-		http
-				.authorizeRequests()
-				.antMatchers(HttpMethod.GET, STATIC_FILES_URL+"/**")
-				.hasIpAddress("127.0.0.1"); //only used internally by the server, the server only forwards requests to this API
-	}
-
-
-
-
-	AuthenticationFilter authenticationFilter() throws Exception {
-		final AuthenticationFilter filter = new AuthenticationFilter(protectedUrlList);
-		filter.setAuthenticationManager(authenticationManager());
-
-		//set the handler returns custom response for AuthN failure
-		filter.setAuthenticationFailureHandler(customAuthenticationHandler());
-		return filter;
-	}
-
-
-
-	@Bean
-	public AuthenticationFailureHandler customAuthenticationHandler() {
-		return new AuthenticationHandler();
-	}
-
-
-
-	@Bean
-	AuthenticationEntryPoint unauthorizedEntryPoint() {
-		return new NasnavHttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
-	}
-
-
-
-	public HeaderWriter contentTypeHeaderWriter() {
-		return new ContentTypeHeaderWriter();
-	}
-
-	private static Set<Roles> getAllRoles(){
-		return new HashSet<>(Arrays.asList(Roles.values()));
-	}
-
-	private static Set<Roles> getNonCustomersRoles(){
-		Set<Roles> roles = getAllRoles();
-		roles.remove(Roles.CUSTOMER);
-		return roles;
-	}
-
-	private static Set<Roles> getNonNasnavRoles(){
-		return setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER,
-				ORGANIZATION_EMPLOYEE, STORE_MANAGER, STORE_EMPLOYEE);
-	}
-
-	private String[] toArray(Set<Roles> set) {
-		return set.stream().map(Roles::getValue).toArray(String[]::new);
-	}
-
-
-
-	private void configureUrlAllowedRoles(HttpSecurity http, AuthPattern pattern) {
-		try {
-			http.authorizeRequests()
-					.antMatchers(pattern.getHttpMethod(), pattern.getUrlPattern())
-					.hasAnyAuthority( toArray(pattern.getRoles()) );
-		} catch (Exception e) {
-			logger.error(e,e);
-			throw new IllegalStateException("Security configuration failed! ", e);
-		}
-	}
-
-
-
-	private static HashSet<Roles> setOf(Roles... roles) {
-		return new HashSet<Roles>(Arrays.asList(roles));
-	}
-
-
-
-	private static AuthPattern patternOf(String urlPattern , Set<Roles> roles) {
-		return patternOf(urlPattern, null, roles);
-	}
-
-
-
-
-	private static AuthPattern patternOf(String urlPattern , HttpMethod method) {
-		return patternOf(urlPattern, method , getAllRoles());
-	}
-
-
-
-
-
-	private static AuthPattern patternOf(String urlPattern ) {
-		return patternOf(urlPattern, null , getAllRoles());
-	}
-
-
-	private static AuthPattern patternOf(String urlPattern , HttpMethod method  , Set<Roles> roles) {
-		return new AuthPattern(urlPattern, method, roles);
-	};
-
-
-
-
-
-	private AntPathRequestMatcher toAntPathRequestMatcher(AuthPattern pattern) {
-		String method = Optional.ofNullable(pattern.getHttpMethod())
-				.map(HttpMethod::toString)
-				.orElse(null);
-		return new AntPathRequestMatcher( pattern.getUrlPattern(), method);
-	}
+    private AntPathRequestMatcher toAntPathRequestMatcher(AuthPattern pattern) {
+        String method = Optional.ofNullable(pattern.getHttpMethod())
+                .map(HttpMethod::toString)
+                .orElse(null);
+        return new AntPathRequestMatcher(pattern.getUrlPattern(), method);
+    }
 }

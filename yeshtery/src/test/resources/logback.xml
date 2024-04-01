@@ -1,7 +1,7 @@
 <configuration>
 
-    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ} %p %yellow(%C{1}) %m%n" />
-    <property name="APP_LOG_ROOT" value="nasnav/src/main/resources/logs/"/>
+    <property name="LOG_PATTERN" value="%d{HH:mm:ss.SSSZ} %p %yellow(%C{1}) %m%n" />
+    <property name="APP_LOG_ROOT" value="src/test/resources/logs/"/>
 
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -13,8 +13,14 @@
     <logger name="org.springframework.test" level="ERROR"/>
     <logger name="org.springframework.boot.test" level="ERROR"/>
     <logger name="com.nasnav.test" level="ERROR"/>
-    <logger name="com.nasnav.yeshtery.test" level="info"/>
-    <root level="OFF">
+    <logger name="com.nasnav.yeshtery.test" level="ERROR"/>
+    <logger name="com.nasnav" level="off"/>
+    <logger name="com.nasnav.test" level="error"/>
+    <logger name="liquibase" level="error"/>
+    <logger name="org.testcontainers.containers" level="error"/>
+    <logger name="org.springframework.security" level="error"/>
+    <logger name="org.springframework.web" level="error"/>
+    <root level="off">
         <appender-ref ref="console" />
     </root>
 
