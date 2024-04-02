@@ -1,6 +1,7 @@
 package com.nasnav.yeshtery.test.controllers.yeshtery;
 
 
+import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -11,6 +12,7 @@ import java.util.stream.Collectors;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.persistence.ProductEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,9 +20,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.test.context.jdbc.Sql;
 
 import com.nasnav.dto.ProductsFiltersResponse;
@@ -97,5 +97,14 @@ class ProductFiltersTest extends AbstractTestWithTempBaseDir {
 		assertEquals(7, response.getBody().getTotal());
 		if (start > 0 && count > 0)
 			assertEquals(Math.min(count, 7 - start), response.getBody().getVariants().size());
+	}
+
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = { "/sql/Products_Test_Data_Insert.sql" })
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
+	public void getYeshteryProduct() {
+		HttpEntity<?> json = getHttpEntity("131415");
+		ResponseEntity<ProductDetailsDTO> response = template.exchange("/v1/product?product_id=1001", HttpMethod.GET, json, ProductDetailsDTO.class);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
 	}
 }

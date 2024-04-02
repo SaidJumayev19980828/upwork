@@ -107,12 +107,12 @@ public class NavboxController {
 		return productService.getProductAvailableFilters(productSearchParam);
 	}
 
-	@GetMapping(value="/product",produces=APPLICATION_JSON_VALUE)
-	public ProductDetailsDTO getProduct(@RequestParam(name = "product_id") Long productId,
-										@RequestParam(name = "shop_id",required=false) Long shopId,
-										@RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") boolean includeOutOfStock)
+	@GetMapping(value = "/product", produces = APPLICATION_JSON_VALUE)
+	public ProductDetailsDTO getProduct(@RequestParam(name = "product_id") Long productId, @RequestParam(name = "org_id") Long orgId,
+			@RequestParam(name = "shop_id", required = false) Long shopId,
+			@RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") boolean includeOutOfStock)
 			throws BusinessException {
-		return productService.getProduct(productId, shopId, includeOutOfStock, true, false);
+		return productService.getProduct(productId, orgId, shopId, includeOutOfStock, true, false);
 	}
 
 	@GetMapping(value = "collection", produces = APPLICATION_JSON_VALUE)

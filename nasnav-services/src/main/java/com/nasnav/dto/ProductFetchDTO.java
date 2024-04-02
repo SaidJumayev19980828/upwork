@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ProductFetchDTO {
     private Long productId;
+    private Long orgId;
     private Long shopId;
     private boolean checkVariants;
     private boolean includeOutOfStock;

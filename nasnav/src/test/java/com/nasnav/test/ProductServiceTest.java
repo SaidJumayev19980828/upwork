@@ -144,7 +144,7 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 		ProductTestData testData = createProductTestDataWithoutStocks();
 		//-----------------------------------------
 		ResponseEntity<String> response =
-				template.getForEntity("/navbox/product?product_id=" + testData.productEntity.getId()+"&include_out_of_stock=true",
+				template.getForEntity("/navbox/product?product_id=" + testData.productEntity.getId()+"&org_id="+testData.productEntity.getOrganizationId()+"&include_out_of_stock=true",
 				String.class);
 		//-----------------------------------------
 		log.debug("product without stocks >>> {}", response.getBody());
@@ -165,7 +165,7 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 
 		//-----------------------------------------
 		ResponseEntity<String> response = template.getForEntity(
-				String.format("/navbox/product?product_id=%d&shop_id=%d", testData.productEntity.getId(), testData.shopEntities.get(0).getId()),
+				String.format("/navbox/product?product_id=%d&org_id=%d&shop_id=%d", testData.productEntity.getId(),testData.productEntity.getOrganizationId(), testData.shopEntities.get(0).getId()),
 				String.class);
 		//-----------------------------------------
 		log.debug("product with stocks >>> {}", response.getBody());
@@ -186,7 +186,7 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 
 		//-----------------------------------------
 		ResponseEntity<String> response = template.getForEntity(
-				String.format("/navbox/product?product_id=%d", testData.productEntity.getId()),
+				String.format("/navbox/product?product_id=%d&org_id=%d", testData.productEntity.getId(),testData.productEntity.getOrganizationId()),
 				String.class);
 		//-----------------------------------------
 		log.debug("product with stocks for all shops >>> {}", response.getBody());
@@ -207,7 +207,7 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 
 		//-----------------------------------------
 		ResponseEntity<String> response = template.getForEntity(
-				String.format("/navbox/product?product_id=%d", testData.productEntity.getId()),
+				String.format("/navbox/product?product_id=%d&org_id=%d", testData.productEntity.getId(),testData.productEntity.getOrganizationId()),
 				String.class);
 		//-----------------------------------------
 		log.debug("product with stocks for all shops >>> {}", response.getBody());
@@ -228,7 +228,7 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 		Long shopId = testData.shopEntities.get(0).getId();
 		//-----------------------------------------
 		ResponseEntity<String> response = template.getForEntity(
-				String.format("/navbox/product?product_id=%d&shop_id=%d", testData.productEntity.getId(), shopId),
+				String.format("/navbox/product?product_id=%d&org_id=%d&shop_id=%d", testData.productEntity.getId(),testData.productEntity.getOrganizationId(), shopId),
 				String.class);
 		//-----------------------------------------
 		log.debug("product with stocks for all shops >>> {}", response.getBody());
@@ -248,7 +248,7 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 	public void testProductWithZeroStocksExcluded() {
 		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
 		ResponseEntity<ProductDetailsDTO> response =
-				template.getForEntity("/navbox/product?product_id=1001&include_out_of_stock=false",	ProductDetailsDTO.class);
+				template.getForEntity("/navbox/product?product_id=1001&org_id=99001&include_out_of_stock=false",	ProductDetailsDTO.class);
 
 		assertEquals(OK, response.getStatusCode());
 		ProductDetailsDTO body = response.getBody();
@@ -267,7 +267,7 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 	public void testProductWithZeroStocksIncluded() {
 		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
 		ResponseEntity<ProductDetailsDTO> response =
-				template.getForEntity("/navbox/product?product_id=1001&include_out_of_stock=true",	ProductDetailsDTO.class);
+				template.getForEntity("/navbox/product?product_id=1001&org_id=99001&include_out_of_stock=true",	ProductDetailsDTO.class);
 
 		assertEquals(OK, response.getStatusCode());
 		ProductDetailsDTO body = response.getBody();
@@ -896,7 +896,7 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 	public void getSingleProductBundle() {
 		ResponseEntity<String> response =
 				template.getForEntity(
-						"/navbox/product?product_id=" + TEST_BUNDLE_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
+						"/navbox/product?product_id=" + TEST_BUNDLE_ID +"&org_id=99001"+ "&shop_id=" + TEST_BUNDLE_SHOP_ID,
 						String.class);
 		log.debug(response.getBody());
 		JSONObject json = (JSONObject) JSONParser.parseJSON(response.getBody());
@@ -1042,7 +1042,7 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 		assertJsonFieldExists(response);
 		getProductFromStringResponse(response, 1005L);
 
-		response = template.getForEntity("/navbox/product?product_id=1001", String.class);
+		response = template.getForEntity("/navbox/product?product_id=1001&org_id=99001", String.class);
 		log.debug("response JSON >>>  {}", response.getBody());
 		assertTrue(response.getBody().toString().contains("brand_id"));
 		//// finish test
@@ -1060,12 +1060,12 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 
 	public void productBarcodeTest() {
 		// product 1001 doesn't have barcode
-		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001", String.class);
+		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001&org_id=99001", String.class);
 		log.debug(response.getBody());
 		Assert.assertTrue(response.getBody().contains("barcode\":null"));
 
 		// product 1002 has barcode = 123456789
-		response = template.getForEntity("/navbox/product?product_id=1002", String.class);
+		response = template.getForEntity("/navbox/product?product_id=1002&org_id=99002", String.class);
 		log.debug(response.getBody());
 		Assert.assertTrue(response.getBody().contains("barcode\":\"123456789"));
 	}
@@ -1075,7 +1075,7 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
 	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void getProductWithMultipleVariantsTest() {
-		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001", String.class);
+		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001&org_id=99001", String.class);
 
 		JSONArray expectedVariantFeatures = createExpectedFeaturesJson();
 		JSONObject product = new JSONObject(response.getBody());
@@ -1174,7 +1174,7 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_4.sql"})
 	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void getProductWithMultipleIndenticalImagesTest() {
-		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001", String.class);
+		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001&org_id=99001", String.class);
 
 		JSONObject product = new JSONObject(response.getBody());
 		JSONArray images = product.getJSONArray("images");
@@ -1193,8 +1193,8 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 
 		//-----------------------------------------
 		ResponseEntity<String> response = template.getForEntity(
-				format("/navbox/product?product_id=%d&shop_id=%d"
-						, testData.productEntity.getId(), testData.shopEntities.get(0).getId()),
+				format("/navbox/product?product_id=%d&org_id=%d&shop_id=%d"
+						, testData.productEntity.getId(),testData.productEntity.getOrganizationId(), testData.shopEntities.get(0).getId()),
 				String.class);
 		//-----------------------------------------
 		log.debug("product with extra attributes >>> {}", response.getBody());
@@ -1213,8 +1213,8 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 
 		//-----------------------------------------
 		ResponseEntity<String> response = template.getForEntity(
-				format("/navbox/product?product_id=%d&shop_id=%d"
-						, testData.productEntity.getId(), testData.shopEntities.get(0).getId()),
+				format("/navbox/product?product_id=%d&org_id=%d&shop_id=%d"
+						, testData.productEntity.getId(),testData.productEntity.getOrganizationId(), testData.shopEntities.get(0).getId()),
 				String.class);
 		//-----------------------------------------
 		log.debug("product with extra attributes >>> {}", response.getBody());

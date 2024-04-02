@@ -33,9 +33,8 @@ import com.nasnav.response.VariantUpdateResponse;
 import com.nasnav.service.model.ProductTagPair;
 
 public interface ProductService {
-
-  ProductDetailsDTO getProduct(Long productId, Long shopId, boolean includeOutOfStock, boolean checkVariants,
-      boolean getOnlyYeshteryProducts) throws BusinessException;
+  ProductDetailsDTO getProduct(Long productId, Long orgId, Long shopId, boolean includeOutOfStock, boolean checkVariants,
+          boolean getOnlyYeshteryProducts) throws BusinessException;
 
   ProductDetailsDTO getProduct(ProductFetchDTO productFetchDTO) throws BusinessException;
 

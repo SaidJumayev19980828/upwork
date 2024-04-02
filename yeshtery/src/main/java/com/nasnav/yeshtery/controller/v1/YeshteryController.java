@@ -187,7 +187,7 @@ public class YeshteryController {
                                         @RequestParam(name = "shop_id",required=false) Long shopId,
                                         @RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") Boolean includeOutOfStock)
             throws BusinessException {
-        return productService.getProduct(productId, shopId, includeOutOfStock, true, true);
+        return productService.getProduct(productId, null, shopId, includeOutOfStock, true, true);
     }
 
     @GetMapping("products")

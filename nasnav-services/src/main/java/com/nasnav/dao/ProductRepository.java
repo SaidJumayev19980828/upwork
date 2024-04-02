@@ -49,6 +49,14 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
             " and ( (org.yeshteryState in (1)) OR :allowAll = true )")
     Optional<ProductEntity> findByProductId(@Param("id") Long id, @Param("allowAll") Boolean allowAll);
 
+	@Query(value = """
+			          select p from ProductEntity p
+			          LEFT JOIN OrganizationEntity org on p.organizationId = org.id
+			          where p.id = :id and org.id = :orgId and p.productType in (0,1)
+			          and ( (org.yeshteryState in (1)) OR :allowAll = true )
+			""")
+	Optional<ProductEntity> findByProductIdAndOrganizationId(@Param("id") Long id, @Param("orgId") Long orgId, @Param("allowAll") Boolean allowAll);
+
     @Query("select distinct p.id from ProductEntity p " +
             " LEFT JOIN OrganizationEntity org on p.organizationId = org.id " +
             " where p.brand.id = :id and p.removed = 0")

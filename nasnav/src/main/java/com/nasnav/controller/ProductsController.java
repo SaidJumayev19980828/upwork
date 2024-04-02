@@ -245,7 +245,7 @@ public class ProductsController {
     public ProductDetailsDTO getProduct(@RequestHeader(name = "User-Token", required = false) String token,
             @RequestParam(name = "product_id") Long productId,
             @RequestParam(name = "shop_id", required = false) Long shopId) throws BusinessException {
-        return productService.getProduct(productId, shopId, true, false, false);
+        return productService.getProduct(productId,null, shopId, true, false, false);
     }
 
     @PostMapping(value = "related_products", consumes = APPLICATION_JSON_VALUE)

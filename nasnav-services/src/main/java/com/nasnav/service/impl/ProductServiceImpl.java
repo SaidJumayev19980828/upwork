@@ -253,9 +253,10 @@ public class ProductServiceImpl implements ProductService {
 
 	@Override
 	@Transactional
-	public ProductDetailsDTO getProduct(Long productId, Long shopId, boolean includeOutOfStock, boolean checkVariants,
+	public ProductDetailsDTO getProduct(Long productId, Long orgId, Long shopId, boolean includeOutOfStock, boolean checkVariants,
 			boolean getOnlyYeshteryProducts) throws BusinessException {
 		var params = new ProductFetchDTO(productId);
+		params.setOrgId(orgId);
 		params.setShopId(shopId);
 		params.setCheckVariants(checkVariants);
 		params.setIncludeOutOfStock(includeOutOfStock);
@@ -270,11 +271,15 @@ public class ProductServiceImpl implements ProductService {
 	public ProductDetailsDTO getProduct(ProductFetchDTO productFetchDTO) throws BusinessException{
 		var id = ofNullable(productFetchDTO.getProductId()).orElse(-1L);
 		var allowAll = !ofNullable(productFetchDTO.getOnlyYeshteryProducts()).orElse(false);
-		ProductEntity product =
-				productRepository
-						.findByProductId(id , allowAll)
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0002, productFetchDTO.getProductId()));
-
+		ProductEntity product;
+		if (productFetchDTO.getOrgId() != null) {
+			product = productRepository.findByProductIdAndOrganizationId(id, productFetchDTO.getOrgId(), allowAll)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0002, productFetchDTO.getProductId()));
+		}
+		else {
+			product = productRepository.findByProductId(id, allowAll)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0002, productFetchDTO.getProductId()));
+		}
 		List<ProductVariantsEntity> productVariants = getProductVariants(product, productFetchDTO.isCheckVariants());
 
 		return createProductDetailsDTO(product, productFetchDTO.getShopId(), productVariants, productFetchDTO.isIncludeOutOfStock());
