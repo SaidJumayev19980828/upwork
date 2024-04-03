@@ -29,8 +29,8 @@ public class ThreeModelController {
 
     @GetMapping(value = "/get3d/model")
     public ThreeDModelResponse getThreeDModel(
-                                              @RequestParam("barcode") String barcode,
-                                              @RequestParam("sku") String sku){
+                                              @RequestParam(value = "barcode",required = false) String barcode,
+                                              @RequestParam(value = "sku",required = false) String sku){
         return threeModelService.getThreeDModelByBarcodeOrSKU(barcode,sku);
     }
 
