@@ -297,6 +297,7 @@ public class SecurityConfiguration {
                     , patternOf("/v1/user/recovery/otp-verify")
                     , patternOf("/v1/user/login/**")
                     , patternOf("/yeshtery/token", POST)
+                    , patternOf("/yeshtery/token/jwks.json", GET)
                     , patternOf("/v1/user/register")
                     , patternOf("/v1/user/register/activate")
                     , patternOf("/v1/user/register/otp/activate")

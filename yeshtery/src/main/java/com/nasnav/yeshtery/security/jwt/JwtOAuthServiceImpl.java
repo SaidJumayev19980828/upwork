@@ -4,14 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
-import java.time.Clock;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 @Service
 @Slf4j
@@ -37,17 +38,16 @@ public class JwtOAuthServiceImpl implements JwtOAuthService {
     }
 
     JwtLoginData.JwtWrapper tokenize(JwtUserDetailsImpl userDetails) {
-        LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
-        var issuedAt = now.toInstant(ZoneOffset.UTC);
-        var expiry = now.plusHours(12).toInstant(ZoneOffset.UTC);
+        Instant issuedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+        Instant expiry = issuedAt.plus(1, ChronoUnit.HOURS);
 
         var scopes = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .toList();
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("com.nasnav")
+                .issuer("com.yeshtery")
                 .issuedAt(issuedAt)
-                .notBefore(now.toInstant(ZoneOffset.UTC))
+                .notBefore(issuedAt)
                 .expiresAt(expiry)
                 .subject(userDetails.getUsername())
                 .claim(JwtOAuthService.ORGANIZATION_ID_CLAIM, userDetails.orgId())
@@ -56,7 +56,11 @@ public class JwtOAuthServiceImpl implements JwtOAuthService {
                 .claim("roles", scopes)
                 .build();
         // @formatter:on
-        String tokenValue = this.encoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+        JwsHeader jwsHeader = JwsHeader.with(SignatureAlgorithm.RS256)
+                .keyId(JwtConfig.JWT_KID)
+                .build();
+        JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(jwsHeader, claims);
+        String tokenValue = this.encoder.encode(jwtEncoderParameters).getTokenValue();
         log.info("The token for user {} and organization {} is: {}", userDetails.getUsername(), userDetails.orgId(), tokenValue);
 
         return new JwtLoginData.JwtWrapper(tokenValue);

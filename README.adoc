@@ -124,3 +124,9 @@ Relying upon circular references is discouraged and they are prohibited by defau
 
 == AsciiDoc Syntax Quick Reference
 Here is the https://docs.asciidoctor.org/asciidoc/latest/document/header/[AsciiDoc Syntax Quick Reference]. You can use it to update the current file and write outstanding technical and functional documentation.
+
+== JWT Blockchain integration
+
+Documentation::
+* https://web3auth.io/docs/auth-provider-setup/byo-jwt-provider
+* https://web3auth.io/docs/auth-provider-setup/byo-jwt-provider#what-are-jwks

@@ -1,8 +1,9 @@
 
 package com.nasnav.yeshtery.security.jwt;
 
-import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
@@ -28,6 +29,8 @@ import java.time.Duration;
 @Configuration
 @EnableWebSecurity
 public class JwtConfig {
+
+    public static final String JWT_KID = "meetusvr-jwt-key";
 
     @Value("classpath:jwt/app.pub")
     RSAPublicKey key;
@@ -69,11 +72,20 @@ public class JwtConfig {
     }
 
     @Bean
-    JwtEncoder jwtEncoder() {
-        JWK jwk = new RSAKey.Builder(this.key)
-                .privateKey(this.priv)
-                .build();
-        JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
+    JwtEncoder jwtEncoder(JWKSet jwkSet) {
+        JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(jwkSet);
         return new NimbusJwtEncoder(jwks);
+    }
+
+    @Bean
+    public JWKSet jwkSet() {
+        RSAKey.Builder builder = new RSAKey
+                .Builder(this.key)
+                .keyUse(KeyUse.SIGNATURE)
+                .algorithm(JWSAlgorithm.RS256)
+                .privateKey(this.priv)
+                .keyID(JWT_KID);
+
+        return new JWKSet(builder.build());
     }
 }
