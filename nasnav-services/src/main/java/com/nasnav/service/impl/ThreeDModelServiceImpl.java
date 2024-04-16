@@ -128,7 +128,10 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
     }
 
     void validateUserWithOrganization(String organizationName) {
-        OrganizationEntity org = organizationRepository.findOneByName(organizationName);
+        OrganizationEntity org = null;
+        List<OrganizationEntity> organizations = organizationRepository.findByName(organizationName);
+        if (organizations != null && !organizations.isEmpty())
+            org = organizations.get(0);
         if (org == null) {
             OrganizationEntity organization = new OrganizationEntity();
             organization.setName(organizationName);
