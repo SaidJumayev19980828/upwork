@@ -154,7 +154,8 @@ public class PostServiceImpl implements PostService {
         PageImpl<PostEntity> source = null;
         List<PostResponseDTO> dtos = new ArrayList<>();
         if ("explore".equals(type) || type == null) {
-            source = postRepository.getAllByUser_IdAndStatus(userId, PostStatus.APPROVED.getValue(), page);
+            source = postRepository.getAllByUserInAndStatus(followerServcie.getAllFollowingAsUserEntity(userId), PostStatus.APPROVED.getValue(),
+                    page);
         }
         else if ("reviews".equals(type)) {
             source = postRepository.getAllByUser_IdAndType(userId, PostType.REVIEW.getValue(), page);
