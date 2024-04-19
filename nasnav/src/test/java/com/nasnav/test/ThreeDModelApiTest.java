@@ -3,7 +3,8 @@ package com.nasnav.test;
 
 import com.nasnav.dao.FilesRepository;
 
-
+import com.nasnav.dto.PaginatedResponse;
+import com.nasnav.dto.response.PostResponseDTO;
 import com.nasnav.dto.response.ThreeDModelResponse;
 import com.nasnav.service.ThreeDModelService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
@@ -14,6 +15,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -129,6 +131,16 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
         HttpEntity<Object> request = getHttpEntity("hijkllm");
         ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/get3d/model", GET, request, ThreeDModelResponse.class);
         assertEquals(response.getStatusCode(), BAD_REQUEST);
+    }
+
+    @Test
+    void getAllThreeDModel() {
+        HttpEntity<Object> request = getHttpEntity("testNonAuth");
+        ResponseEntity<PaginatedResponse<ThreeDModelResponse>> response = template.exchange("/product/get3d/all", GET, request,
+                new ParameterizedTypeReference<>()
+                {
+                });
+        assertEquals(200, response.getStatusCode().value());
     }
 
 }

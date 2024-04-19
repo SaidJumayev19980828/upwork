@@ -277,6 +277,7 @@ public class SecurityConfiguration {
                         , patternOf("/package"					    , HttpMethod.GET)
                         , patternOf("/product/info"					, HttpMethod.GET)
                         , patternOf("/product/image"					, HttpMethod.GET)
+                        , patternOf("/product/get3d/all"				, HttpMethod.GET)
                         , patternOf("/product/variant"					, HttpMethod.GET)
 		                , patternOf("/organization/payments"			, HttpMethod.GET)
 						,patternOf( "/organization/register"		    ,HttpMethod.POST)

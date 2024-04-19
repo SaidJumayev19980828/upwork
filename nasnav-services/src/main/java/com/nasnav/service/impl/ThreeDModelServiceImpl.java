@@ -24,6 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,7 +33,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.dto.response.ThreeDModelResponse.get3dModelResponse;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.ProductThreeDModel.getProductThreeDModel;
@@ -94,6 +98,14 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
 
     private ThreeDModelResponse getThreeDModelResponse(ProductThreeDModel threeDModel, List<String> filesUrls) {
         return get3dModelResponse(threeDModel, filesUrls);
+    }
+
+    @Override
+    public PageImpl<ThreeDModelResponse> getThreeDModelAll(Integer start, Integer count) {
+        Page<ProductThreeDModel> response = threeDModelRepository.findAll(getQueryPage(start, count));
+        List<ThreeDModelResponse> dtos = response.getContent().stream().map(l -> getThreeDModelResponse(l, fileService.getUrlsByModelId(l.getId())))
+                .collect(Collectors.toList());
+        return new PageImpl<>(dtos, response.getPageable(), response.getTotalElements());
     }
 
     @Override

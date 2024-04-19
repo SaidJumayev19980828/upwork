@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nasnav.dto.response.ThreeDModelResponse;
 import com.nasnav.service.ThreeDModelService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -32,6 +33,12 @@ public class ThreeModelController {
                                               @RequestParam(value = "barcode",required = false) String barcode,
                                               @RequestParam(value = "sku",required = false) String sku){
         return threeModelService.getThreeDModelByBarcodeOrSKU(barcode,sku);
+    }
+
+    @GetMapping(value = "/get3d/all")
+    public PageImpl<ThreeDModelResponse> getThreeDModelAll(@RequestParam(required = false, defaultValue = "0") Integer start,
+            @RequestParam(required = false, defaultValue = "10") Integer count) {
+        return threeModelService.getThreeDModelAll(start, count);
     }
 
     @PostMapping(value="/assign/model/to/product")
