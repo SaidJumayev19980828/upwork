@@ -6,7 +6,9 @@ public enum OrderSortOptions {
     ID("id"),
     CREATION_DATE("creationDate"),
     TOTAL("total"),
-    QUANTITY("quantity");
+    QUANTITY("quantity"),
+
+    DISCOUNT("discounts");
 
     @Getter
     private String value;
