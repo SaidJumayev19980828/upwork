@@ -7,8 +7,6 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -49,11 +47,7 @@ public class JwtUserDetailsServiceImpl implements JwtUserDetailsService {
 
         validateLoginUser(userEntity);
         List<SimpleGrantedAuthority> authorities = getUserAuthorities(userEntity);
-        Long shopId = 0L;
-        if (userEntity instanceof EmployeeUserEntity employeeUser) {
-            shopId = ObjectUtils.firstNonNull(employeeUser.getShopId(), 0L);
-        }
-        return JwtUserDetailsImpl.buildJwtUserDetails(userEntity, shopId, authorities);
+        return new JwtUserDetailsImpl(userEntity, authorities);
     }
 
     List<SimpleGrantedAuthority> getUserAuthorities(BaseUserEntity userEntity) {

@@ -59,7 +59,7 @@ class TokenControllerTest extends DockerPostgresDb {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .retrieve()
-                .bodyToMono(JwtLoginData.JwtWrapper.class)
+                .bodyToMono(JwtResponse.class)
                 .block()
                 .token();
 

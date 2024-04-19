@@ -15,7 +15,7 @@ class JwtOAuthServiceImplTest extends DockerPostgresDb {
                 .execInContainer("psql", "-U", "nasnav", "-d", "nasnav", "-c", "SET session_replication_role = 'replica';", "-f", "/tmp/db-dump-data/" + currentDump);
 
         JwtLoginData loginData = getLoginData();
-        JwtLoginData.JwtWrapper tokenized = authService.tokenize(loginData);
+        JwtResponse tokenized = authService.tokenize(loginData);
 
         assertThat(tokenized)
                 .isNotNull();

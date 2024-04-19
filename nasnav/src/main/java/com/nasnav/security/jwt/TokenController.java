@@ -25,12 +25,12 @@ public class TokenController {
     }
 
     @PostMapping("/nasnav/token")
-    public JwtLoginData.JwtWrapper token(@RequestBody JwtLoginData loginData) {
+    public JwtResponse token(@RequestBody JwtLoginData loginData) {
         return authService.tokenize(loginData);
     }
 
     @GetMapping("/nasnav/token/jwks.json")
     public Map<String, Object> keys() {
-        return jwkSet.toJSONObject();
+        return this.jwkSet.toJSONObject();
     }
 }

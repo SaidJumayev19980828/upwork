@@ -3,8 +3,6 @@ package com.nasnav.security.jwt;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
-import javax.annotation.Nonnull;
-
 @Builder
 public record JwtLoginData(
         @Schema(defaultValue = "mohamedghazi.pvt@gmail.com")
@@ -16,6 +14,5 @@ public record JwtLoginData(
         @Schema(defaultValue = "6")
         Long orgId) {
 
-    public record JwtWrapper(@Nonnull String token) { }
 }
 

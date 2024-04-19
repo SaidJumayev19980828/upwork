@@ -1,15 +1,10 @@
 package com.nasnav.persistence;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.Gender;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
-
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Formula;
 
 import javax.persistence.Column;
 import javax.persistence.EnumType;
@@ -21,22 +16,22 @@ import java.time.LocalDateTime;
 @Data
 @EqualsAndHashCode(callSuper=false)
 public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{
-	
+
 	@Column(name = "email")
 	private String email;
-	
+
 	@Column(name = "encrypted_password")
 	private String encryptedPassword;
-	
+
 	@Column(name = "reset_password_token")
 	private String resetPasswordToken;
-	
+
 	@Column(name = "reset_password_sent_at")
 	private LocalDateTime resetPasswordSentAt;
-	
+
 	@Column(name = "avatar")
 	private String image;
-	
+
 	@Column(name = "organization_id")
 	private Long organizationId;
 
@@ -74,5 +69,18 @@ public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{
 	public abstract void setName(String name);
 
 	public abstract UserRepresentationObject getRepresentation();
-	
+
+	/**
+	 * Retrieves the shop ID of the user. The default value is zero (OL)
+	 *
+	 * @return The shop ID of the user.
+	 */
+	public Long getShopId() {
+		return 0L;
+	}
+
+	public boolean isEmployee() {
+		return false;
+	}
+
 }

@@ -6,6 +6,6 @@ public interface JwtOAuthService {
     String USER_ID_CLAIM = "userId";
     String EMPLYEE_CLAIM = "employee";
 
-    JwtLoginData.JwtWrapper tokenize(JwtLoginData loginData);
+    JwtResponse tokenize(JwtLoginData loginData);
 
 }

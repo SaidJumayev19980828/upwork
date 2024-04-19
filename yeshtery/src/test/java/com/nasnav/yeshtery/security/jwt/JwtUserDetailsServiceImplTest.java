@@ -21,9 +21,9 @@ class JwtUserDetailsServiceImplTest extends DockerPostgresDb {
 
         JwtUserDetailsImpl userDetailsImpl = (JwtUserDetailsImpl) userDetailsService.loadUser(jwtLoginData);
 
-        assertThat(userDetailsImpl.id()).isEqualTo(97);
-        assertThat(userDetailsImpl.orgId()).isEqualTo(6);
-        assertThat(userDetailsImpl.shoId()).isZero();
+        assertThat(userDetailsImpl.userEntity().getId()).isEqualTo(97);
+        assertThat(userDetailsImpl.userEntity().getOrganizationId()).isEqualTo(6);
+        assertThat(userDetailsImpl.userEntity().getShopId()).isZero();
         assertThat(userDetailsImpl.getAuthorities()).isNotEmpty();
         assertThat(userDetailsImpl.getUsername()).isEqualTo("mohamedghazi.pvt@gmail.com");
         assertThat(passwordEncoder.matches("password", userDetailsImpl.getPassword())).isTrue();

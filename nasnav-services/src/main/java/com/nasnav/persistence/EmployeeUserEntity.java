@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
@@ -71,5 +72,20 @@ public class EmployeeUserEntity extends BaseUserEntity {
             obj.setIsInfluencer(this.influencer.getApproved());
         }
         return obj;
+    }
+
+    /**
+     * Retrieves the shop ID associated with the employee user. If the shop ID is null, it returns 0L.
+     *
+     * @return the shop ID of the employee user, or 0L if the shop ID is null
+     */
+    @Override
+    public Long getShopId() {
+        return  ObjectUtils.firstNonNull(this.shopId, 0L);
+    }
+
+    @Override
+    public boolean isEmployee() {
+        return true;
     }
 }

@@ -1,5 +1,6 @@
 package com.nasnav.yeshtery.security.jwt;
 
+import com.nasnav.persistence.UserEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,15 +35,16 @@ class JwtDaoAuthenticationProviderTest extends DockerPostgresDb {
 
         JwtUserDetailsImpl jwtUserDetails = (JwtUserDetailsImpl) authenticatedUser.getPrincipal();
 
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(97L);
+        userEntity.setYeshteryUserId(33L);
+        userEntity.setName("Mohamed Ghazi");
+
         JwtUserDetailsImpl expectedUserDetails = JwtUserDetailsImpl.builder()
-                .id(97L)
-                .userName("Mohamed Ghazi")
-                .password("$2a$10$2B5lnGTNBwCzD6epEqwkhujPCwF9aK4nQ6yDA.zcB.ez27kNO6MCS")
-                .email("mohamedghazi.pvt@gmail.com")
-                .orgId(6L)
-                .shoId(0L)
+                .userEntity(userEntity)
                 .authorities(List.of(new SimpleGrantedAuthority("CUSTOMER")))
                 .build();
+
         assertThat(jwtUserDetails)
                 .as("The current principal must be equals to expectedUser")
                 .isEqualTo(expectedUserDetails);

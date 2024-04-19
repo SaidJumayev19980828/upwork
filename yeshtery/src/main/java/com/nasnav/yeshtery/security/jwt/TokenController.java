@@ -24,12 +24,12 @@ public class TokenController {
         this.jwkSet = jwkSet;
     }
 
-    @PostMapping("/yeshtery/token")
-    public JwtLoginData.JwtWrapper token(@RequestBody JwtLoginData loginData) {
+    @PostMapping("/v1/yeshtery/token")
+    public JwtResponse token(@RequestBody JwtLoginData loginData) {
         return authService.tokenize(loginData);
     }
 
-    @GetMapping("/yeshtery/token/jwks.json")
+    @GetMapping("/v1/yeshtery/token/jwks.json")
     public Map<String, Object> keys() {
         return this.jwkSet.toJSONObject();
     }
