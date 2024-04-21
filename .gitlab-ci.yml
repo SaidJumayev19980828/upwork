@@ -13,6 +13,30 @@ stages:
   - build
   - deploy
 
+sonarqube-check:
+  stage: test
+  services:
+    - postgres:15.2-alpine
+  image: maven:3.8.5-openjdk-17
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0" # Tells git to fetch all the branches of the project, required by the analysis task
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - mvn --version
+    - cp ./deploy/properties-test/* ./nasnav/src/main/resources/
+    - cp ./deploy/properties-test/* ./yeshtery/src/main/resources/
+    - mvn verify sonar:sonar -Dsonar.projectKey=meetusvr_nasnav-backend_AY8DFqHraX-5tQIjwRi4
+  allow_failure: true
+  tags:
+    - meetusvr
+    - docker
+  only:
+    - develop
+
 test:maven:
   stage: test
   services:
@@ -48,11 +72,11 @@ test:coverage:
   image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.9
   script:
     # convert report from jacoco to cobertura, using relative project path
-    - 'python /opt/cover2cover.py $CI_PROJECT_DIR/report-aggregate/target/site/jacoco-aggregate/jacoco.xml
-        $CI_PROJECT_DIR/nasnav-services/src/main/java/
-        $CI_PROJECT_DIR/nasnav/src/main/java/
-        $CI_PROJECT_DIR/yeshtery/src/main/java/
-        > $CI_PROJECT_DIR/report-aggregate/target/site/cobertura.xml'
+    - "python /opt/cover2cover.py $CI_PROJECT_DIR/report-aggregate/target/site/jacoco-aggregate/jacoco.xml
+      $CI_PROJECT_DIR/nasnav-services/src/main/java/
+      $CI_PROJECT_DIR/nasnav/src/main/java/
+      $CI_PROJECT_DIR/yeshtery/src/main/java/
+      > $CI_PROJECT_DIR/report-aggregate/target/site/cobertura.xml"
   needs: ["test:maven"]
   artifacts:
     reports:
@@ -68,7 +92,6 @@ test:coverage:
     - tests
     - merge_requests
     - DEVOPS201-add-jwt
-
 
 build:compile:
   stage: compile

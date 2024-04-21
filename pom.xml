@@ -26,6 +26,8 @@
         <snakeyaml.version>2.2</snakeyaml.version>
 
         <spring-security.version>5.8.11</spring-security.version>
+
+        <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
     </properties>
     <modules>
         <module>nasnav</module>
