@@ -1,12 +1,5 @@
 package com.nasnav.service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import com.nasnav.persistence.ProductEntity;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.nasnav.dto.BundleElementUpdateDTO;
@@ -22,6 +15,7 @@ import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.request.BundleSearchParam;
@@ -31,12 +25,17 @@ import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.ProductsDeleteResponse;
 import com.nasnav.response.VariantUpdateResponse;
 import com.nasnav.service.model.ProductTagPair;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface ProductService {
   ProductDetailsDTO getProduct(Long productId, Long orgId, Long shopId, boolean includeOutOfStock, boolean checkVariants,
-          boolean getOnlyYeshteryProducts) throws BusinessException;
+                               boolean getOnlyYeshteryProducts) throws BusinessException;
 
-  ProductDetailsDTO getProduct(ProductFetchDTO productFetchDTO) throws BusinessException;
+  ProductDetailsDTO getProduct(ProductFetchDTO productFetchDTO);
 
   Map<String, String> parseVariantFeatures(ProductVariantsEntity variant, Integer returnedName);
 
@@ -108,9 +107,9 @@ public interface ProductService {
           List<Map<String, Long>> updatedImages,
           Long[] deletedImages
   ) throws BusinessException, JsonProcessingException;
-ProductDetailsDTO getProductData(ProductFetchDTO params) throws BusinessException;
+  ProductDetailsDTO getProductData(ProductFetchDTO params) throws BusinessException;
 
-   ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams) throws BusinessException;
+  ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams) throws BusinessException;
 
   public ProductUpdateResponse updateProductVersion2(
           NewProductFlowDTO productJson,

@@ -8,12 +8,14 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.yeshtery.test.commons.TestCommons.json;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
@@ -22,6 +24,17 @@ import static org.junit.Assert.assertEquals;
 public class PostTest extends AbstractTestWithTempBaseDir {
 	@Autowired
 	private TestRestTemplate template;
+
+
+
+	@Test
+	public void likeorDislikePostTest(){
+		String requestBody =
+				json().toString();
+		HttpEntity<?> json = getHttpEntity(requestBody, "123");
+		ResponseEntity<Void> response = template.postForEntity("/v1/post/like?postId=1&likeAction=true", json, Void.class);
+		assertEquals(200, response.getStatusCode().value());
+	}
 
 	@Test
 	public void getForYouUserWithException()

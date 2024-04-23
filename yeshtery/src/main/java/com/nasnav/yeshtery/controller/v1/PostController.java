@@ -78,7 +78,7 @@ public class PostController {
     }
 
     @PostMapping("/like")
-    public Long likeOrDisLikePost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId, @RequestParam boolean likeAction){
+    public long likeOrDisLikePost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId, @RequestParam boolean likeAction){
         return postService.likeOrDisLikePost(postId, likeAction);
     }
 

@@ -7,7 +7,6 @@ import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.PostStatus;
 import com.nasnav.enumerations.PostType;
 import com.nasnav.persistence.PostAttachmentsEntity;
-import com.nasnav.persistence.SubPostEntity;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -36,5 +35,5 @@ public class PostResponseDTO {
     private Boolean isLiked;
     private LocalDateTime createdAt;
     private Boolean isSaved;
-    private Set<SubPostEntity> subPosts;
+    private Set<SubPostResponseDTO> subPosts;
 }

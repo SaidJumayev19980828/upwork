@@ -10,8 +10,55 @@ import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
+import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.BundleRepository;
+import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.Product360ShopsRepository;
+import com.nasnav.dao.ProductCollectionItemRepository;
+import com.nasnav.dao.ProductCollectionRepository;
+import com.nasnav.dao.ProductExtraAttributesEntityRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.dao.ProductImgsCustomRepository;
+import com.nasnav.dao.ProductRatingRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.ProductsCustomRepository;
+import com.nasnav.dao.PromotionRepository;
+import com.nasnav.dao.RelatedProductsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.TagsRepository;
+import com.nasnav.dao.VariantFeatureValuesRepository;
+import com.nasnav.dto.BundleDTO;
+import com.nasnav.dto.BundleElementUpdateDTO;
+import com.nasnav.dto.ExtraAttributeDTO;
+import com.nasnav.dto.NewProductFlowDTO;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.Pair;
+import com.nasnav.dto.Prices;
+import com.nasnav.dto.ProductBaseInfo;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductFetchDTO;
+import com.nasnav.dto.ProductImageDTO;
+import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductSortOptions;
+import com.nasnav.dto.ProductTagDTO;
+import com.nasnav.dto.ProductUpdateDTO;
+import com.nasnav.dto.ProductsFiltersResponse;
+import com.nasnav.dto.ProductsResponse;
+import com.nasnav.dto.PromosConstraints;
+import com.nasnav.dto.SeoKeywordsDTO;
+import com.nasnav.dto.StockDTO;
+import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.dto.VariantDTO;
+import com.nasnav.dto.VariantFeatureDTO;
+import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.Product360ShopsDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
@@ -21,27 +68,63 @@ import com.nasnav.dto.response.ThreeDModelResponse;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.enumerations.ExtraAttributeType;
 import com.nasnav.enumerations.ProductFeatureType;
+import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.mappers.PromotionMapper;
 import com.nasnav.mappers.impl.promotionToDTO;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.BundleEntity;
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ProductCollectionEntity;
+import com.nasnav.persistence.ProductCollectionItemEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductExtraAttributesEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ProductImagesEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.PromotionsEntity;
+import com.nasnav.persistence.RelatedProductsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.TagsEntity;
+import com.nasnav.persistence.VariantFeatureValueEntity;
 import com.nasnav.persistence.dto.query.result.ProductRatingData;
-import com.nasnav.querydsl.sql.*;
-import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
-import com.nasnav.request.BundleSearchParam;
+import com.nasnav.querydsl.sql.QBrands;
+import com.nasnav.querydsl.sql.QOrganizations;
+import com.nasnav.querydsl.sql.QProductFeatures;
+import com.nasnav.querydsl.sql.QProductTags;
+import com.nasnav.querydsl.sql.QProductVariants;
+import com.nasnav.querydsl.sql.QProducts;
+import com.nasnav.querydsl.sql.QShops;
+import com.nasnav.querydsl.sql.QStocks;
+import com.nasnav.querydsl.sql.QTags;
+import com.nasnav.querydsl.sql.QVariantFeatureValues;
 import com.nasnav.request.AllowedPromotionConstraints;
+import com.nasnav.request.BundleSearchParam;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.request.VariantSearchParam;
-import com.nasnav.response.*;
-import com.nasnav.service.*;
+import com.nasnav.response.BundleResponse;
+import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.response.ProductsDeleteResponse;
+import com.nasnav.response.VariantUpdateResponse;
+import com.nasnav.service.FileService;
+import com.nasnav.service.OrganizationService;
+import com.nasnav.service.ProductImageService;
+import com.nasnav.service.ProductService;
+import com.nasnav.service.ProductServiceTransactions;
+import com.nasnav.service.PromotionsService;
+import com.nasnav.service.SecurityService;
+import com.nasnav.service.SeoService;
+import com.nasnav.service.StockService;
+import com.nasnav.service.ThreeDModelService;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.ProductTagPair;
 import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
-import com.nasnav.shipping.services.mylerz.webclient.dto.Shop;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
@@ -74,48 +157,117 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.criteria.*;
-
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Order;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import com.nasnav.enumerations.SeoEntityType;
+
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.nasnav.commons.utils.CollectionUtils.*;
-import static com.nasnav.commons.utils.EntityUtils.*;
+import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
+import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
+import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.commons.utils.EntityUtils.areEqual;
+import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
-import static com.nasnav.commons.utils.StringUtils.*;
-import static com.nasnav.constatnts.EntityConstants.Operation.*;
+import static com.nasnav.commons.utils.StringUtils.encodeUrl;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.constatnts.EntityConstants.Operation.ADD;
+import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
+import static com.nasnav.constatnts.EntityConstants.Operation.DELETE;
+import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.enumerations.ExtraAttributeType.getExtraAttributeType;
 import static com.nasnav.enumerations.ProductFeatureType.STRING;
-import static com.nasnav.enumerations.PromotionType.*;
+import static com.nasnav.enumerations.PromotionType.BUY_X_GET_Y_FROM_BRAND;
+import static com.nasnav.enumerations.PromotionType.BUY_X_GET_Y_FROM_PRODUCT;
+import static com.nasnav.enumerations.PromotionType.BUY_X_GET_Y_FROM_TAG;
+import static com.nasnav.enumerations.PromotionType.PROMO_CODE_FROM_BRAND;
 import static com.nasnav.enumerations.PromotionType.PROMO_CODE_FROM_PRODUCT;
+import static com.nasnav.enumerations.PromotionType.PROMO_CODE_FROM_TAG;
 import static com.nasnav.enumerations.Settings.HIDE_EMPTY_STOCKS;
 import static com.nasnav.enumerations.Settings.SHOW_FREE_PRODUCTS;
-import static com.nasnav.exceptions.ErrorCodes.*;
-import static com.nasnav.persistence.ProductTypes.*;
+import static com.nasnav.exceptions.ErrorCodes.GEN$0002;
+import static com.nasnav.exceptions.ErrorCodes.ORG$EXTRATTR$0001;
+import static com.nasnav.exceptions.ErrorCodes.P$BRA$0001;
+import static com.nasnav.exceptions.ErrorCodes.P$BRA$0002;
+import static com.nasnav.exceptions.ErrorCodes.P$BRA$0004;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0001;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0002;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0003;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0004;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0005;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0006;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0008;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0009;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0010;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0011;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0012;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0013;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0014;
+import static com.nasnav.exceptions.ErrorCodes.P$VAR$0001;
+import static com.nasnav.exceptions.ErrorCodes.P$VAR$0002;
+import static com.nasnav.exceptions.ErrorCodes.P$VAR$003;
+import static com.nasnav.exceptions.ErrorCodes.P$VAR$008;
+import static com.nasnav.exceptions.ErrorCodes.P$VAR$009;
+import static com.nasnav.exceptions.ErrorCodes.P$VAR$010;
+import static com.nasnav.exceptions.ErrorCodes.P$VAR$011;
+import static com.nasnav.exceptions.ErrorCodes.PROMO$JSON$0001;
+import static com.nasnav.exceptions.ErrorCodes.S$0006;
+import static com.nasnav.persistence.ProductTypes.BUNDLE;
+import static com.nasnav.persistence.ProductTypes.COLLECTION;
+import static com.nasnav.persistence.ProductTypes.STOCK_ITEM;
 import static com.querydsl.core.types.dsl.Expressions.cases;
 import static com.querydsl.core.types.dsl.Expressions.constant;
 import static java.lang.String.format;
-import static java.math.BigDecimal.ZERO;
 import static java.math.BigDecimal.ONE;
+import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
-import static java.util.Collections.*;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.beans.BeanUtils.copyProperties;
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -237,9 +389,9 @@ public class ProductServiceImpl implements ProductService {
 	private ThreeDModelService threeDModelService;
 	@Autowired
 	public ProductServiceImpl(ProductRepository productRepository, StockRepository stockRepository,
-						  ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
-						  ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
-						  StockService stockService, PromotionRepository promotionRepository, PromotionsService promotionsService ) {
+							  ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
+							  ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
+							  StockService stockService, PromotionRepository promotionRepository, PromotionsService promotionsService ) {
 		this.productRepository = productRepository;
 		this.stockRepository = stockRepository;
 		this.productImagesRepository = productImagesRepository;
@@ -254,7 +406,7 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	@Transactional
 	public ProductDetailsDTO getProduct(Long productId, Long orgId, Long shopId, boolean includeOutOfStock, boolean checkVariants,
-			boolean getOnlyYeshteryProducts) throws BusinessException {
+										boolean getOnlyYeshteryProducts) throws BusinessException {
 		var params = new ProductFetchDTO(productId);
 		params.setOrgId(orgId);
 		params.setShopId(shopId);
@@ -268,7 +420,7 @@ public class ProductServiceImpl implements ProductService {
 
 	@Override
 	@Transactional
-	public ProductDetailsDTO getProduct(ProductFetchDTO productFetchDTO) throws BusinessException{
+	public ProductDetailsDTO getProduct(ProductFetchDTO productFetchDTO){
 		var id = ofNullable(productFetchDTO.getProductId()).orElse(-1L);
 		var allowAll = !ofNullable(productFetchDTO.getOnlyYeshteryProducts()).orElse(false);
 		ProductEntity product;
@@ -345,9 +497,9 @@ public class ProductServiceImpl implements ProductService {
 
 	private List<TagsRepresentationObject> getProductTagsDTOList(Long productId) {
 		return orgTagRepo.findByIdIn(productRepository.getTagsByProductId(productId)
-				.stream()
-				.mapToLong(BigInteger::longValue).boxed()
-				.collect(toList()))
+						.stream()
+						.mapToLong(BigInteger::longValue).boxed()
+						.collect(toList()))
 				.stream()
 				.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
 				.collect(toList());
@@ -409,10 +561,10 @@ public class ProductServiceImpl implements ProductService {
 
 
 
-	private List<ProductVariantsEntity> getProductVariants(ProductEntity product, boolean checkVariants) throws BusinessException {
+	private List<ProductVariantsEntity> getProductVariants(ProductEntity product, boolean checkVariants){
 		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(product.getId());
 		if ((productVariants == null || productVariants.isEmpty()) && checkVariants) {
-			throw new BusinessException(
+			throw new RuntimeBusinessException(
 					String.format(ERR_PRODUCT_HAS_NO_VARIANTS, product.getId())
 					, "INVALID DATA"
 					, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -524,20 +676,20 @@ public class ProductServiceImpl implements ProductService {
 				.getFeatureValues()
 				.stream()
 				.collect(toMap(f -> returnedName.equals(0) ? f.getFeature().getName() : f.getFeature().getPname(),
-								VariantFeatureValueEntity::getValue));
+						VariantFeatureValueEntity::getValue));
 	}
 
 
 
 	private List<VariantFeatureDTO> getVariantFeatures(List<ProductVariantsEntity> productVariants) {
 		return	ofNullable(productVariants)
-						.orElse(emptyList())
-						.stream()
-						.filter(this::hasFeatures)
-						.map(this::extractVariantFeatures)
-						.flatMap(List::stream)
-						.distinct()
-						.collect(toList());
+				.orElse(emptyList())
+				.stream()
+				.filter(this::hasFeatures)
+				.map(this::extractVariantFeatures)
+				.flatMap(List::stream)
+				.distinct()
+				.collect(toList());
 	}
 
 
@@ -558,8 +710,8 @@ public class ProductServiceImpl implements ProductService {
 	private VariantFeatureDTO createVariantFeatureDTO(ProductFeaturesEntity entity) {
 		ProductFeatureType type =
 				ofNullable(entity.getType())
-				.flatMap(ProductFeatureType::getProductFeatureType)
-				.orElse(STRING);
+						.flatMap(ProductFeatureType::getProductFeatureType)
+						.orElse(STRING);
 		Map<String,?> extraData = emptyMap();
 		try{
 			extraData = ofNullable(entity.getExtraData())
@@ -621,7 +773,7 @@ public class ProductServiceImpl implements ProductService {
 		String countQuery = countStocks.select(SQLExpressions.countAll).getSQL().getSQL();
 		Long productsCount;
 		try{
-			 productsCount = template.queryForObject(countQuery, Long.class);
+			productsCount = template.queryForObject(countQuery, Long.class);
 		}catch (Exception e){
 			return new ProductsResponse();
 		}
@@ -1055,20 +1207,20 @@ public class ProductServiceImpl implements ProductService {
 
 
 		return promotionsListSupplier.get()
-					.stream()
-					.map(PromotionsEntity::getConstrainsJson).collect(Collectors.toList())
-					.stream().map(this::readJsonStr).collect(Collectors.toList());
+				.stream()
+				.map(PromotionsEntity::getConstrainsJson).collect(Collectors.toList())
+				.stream().map(this::readJsonStr).collect(Collectors.toList());
 
 	}
 
-private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam params) {
+	private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam params) {
 		Supplier<List<PromotionsEntity>> supplier;
-	List<Integer> types = asList(BUY_X_GET_Y_FROM_BRAND.getValue(),
-			BUY_X_GET_Y_FROM_TAG.getValue(),
-			BUY_X_GET_Y_FROM_PRODUCT.getValue(),
-			PROMO_CODE_FROM_BRAND.getValue(),
-			PROMO_CODE_FROM_TAG.getValue(),
-			PROMO_CODE_FROM_PRODUCT.getValue());
+		List<Integer> types = asList(BUY_X_GET_Y_FROM_BRAND.getValue(),
+				BUY_X_GET_Y_FROM_TAG.getValue(),
+				BUY_X_GET_Y_FROM_PRODUCT.getValue(),
+				PROMO_CODE_FROM_BRAND.getValue(),
+				PROMO_CODE_FROM_TAG.getValue(),
+				PROMO_CODE_FROM_PRODUCT.getValue());
 
 		if(params.yeshtery_products && params.has_promotions && params.org_id == null)
 			return supplier = () -> promotionRepository.findActivePromosByTypeIdIn(types);
@@ -1077,10 +1229,10 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 			return supplier = () -> promotionRepository.findActivePromosByIds(params.promo_id, types);
 
 		if(params.has_promotions && params.org_id != null)
-		    return supplier = () -> promotionRepository.findActivePromosByOrgIdInAndTypeIdIn(List.of(params.org_id),types);
+			return supplier = () -> promotionRepository.findActivePromosByOrgIdInAndTypeIdIn(List.of(params.org_id),types);
 
 		if(params.promo_id != null && params.org_id != null )
-		    return supplier = () -> promotionRepository.findByIdsAndOrgId(params.promo_id,params.org_id, types);
+			return supplier = () -> promotionRepository.findByIdsAndOrgId(params.promo_id,params.org_id, types);
 
 		return null;
 
@@ -2116,17 +2268,17 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 	private void createAndAddNewExtraAttributes(List<? extends VariantUpdateDTO> variants,
 												Map<String, ExtraAttributesEntity> orgExtraAttributes) {
 		variants
-			.stream()
-			.map(VariantUpdateDTO::getExtraAttr)
-			.filter(Objects::nonNull)
-			.map(JSONObject::new)
-			.map(JSONObject::keySet)
-			.flatMap(Set::stream)
-			.distinct()
-			.filter(extraAttrName -> !orgExtraAttributes.containsKey(extraAttrName))
-			.map(this::createNewExtraAttribute)
-			.collect(collectingAndThen(toList(), extraAttrRepo::saveAll))
-			.forEach(entity -> orgExtraAttributes.put(entity.getName(), entity));
+				.stream()
+				.map(VariantUpdateDTO::getExtraAttr)
+				.filter(Objects::nonNull)
+				.map(JSONObject::new)
+				.map(JSONObject::keySet)
+				.flatMap(Set::stream)
+				.distinct()
+				.filter(extraAttrName -> !orgExtraAttributes.containsKey(extraAttrName))
+				.map(this::createNewExtraAttribute)
+				.collect(collectingAndThen(toList(), extraAttrRepo::saveAll))
+				.forEach(entity -> orgExtraAttributes.put(entity.getName(), entity));
 	}
 
 
@@ -2203,9 +2355,9 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 	private List<ProductVariantsEntity> saveVariantsToDb(List<? extends VariantUpdateDTO> variants, VariantUpdateCache cache) {
 		List<ProductVariantsEntity> entities =
 				variants
-					.stream()
-					.map(variant -> createVariantEntity(variant, cache))
-					.collect(toList());
+						.stream()
+						.map(variant -> createVariantEntity(variant, cache))
+						.collect(toList());
 		return productVariantsRepository.saveAll(entities);
 	}
 
@@ -2242,13 +2394,13 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 
 
 	private void validateProductNewFlow(NewProductFlowDTO dto ) throws BusinessException {
-		
+
 		validateOperation(dto.getOperation());
 		validatProductDTO(dto);
 	}
-	
+
 	private void validatProductDTO(NewProductFlowDTO dto) throws BusinessException {
-		
+
 		if (dto.getOperation().equals(UPDATE) && dto.getProductId() == null) {
 			throw new BusinessException(
 					"Missing required parameters !"
@@ -2446,10 +2598,10 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 
 			VariantFeatureValueEntity featureValue =
 					existingFeaturesValues
-						.stream()
-						.filter(f -> Objects.equals(f.getFeature(), matchedOrgFeature))
-						.findFirst()
-						.orElseGet(() -> new VariantFeatureValueEntity());
+							.stream()
+							.filter(f -> Objects.equals(f.getFeature(), matchedOrgFeature))
+							.findFirst()
+							.orElseGet(() -> new VariantFeatureValueEntity());
 
 			featureValue.setFeature(matchedOrgFeature);
 			featureValue.setVariant(entity);
@@ -2497,12 +2649,12 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 
 	private ExtraAttributesEntity matchWithOrgExtraAttribute(VariantUpdateCache cache, Map.Entry<String, String> newExtraAttr){
 		return cache.getOrgExtraAttributes()
-					.keySet()
-					.stream()
-					.filter(orgExtraAttr -> orgExtraAttr.equalsIgnoreCase(newExtraAttr.getKey()))
-					.map(s -> cache.getOrgExtraAttributes().get(s))
-					.findFirst()
-					.get();
+				.keySet()
+				.stream()
+				.filter(orgExtraAttr -> orgExtraAttr.equalsIgnoreCase(newExtraAttr.getKey()))
+				.map(s -> cache.getOrgExtraAttributes().get(s))
+				.findFirst()
+				.get();
 	}
 
 	private ProductExtraAttributesEntity createVariantExtraAttributeEntity(String name, String value, VariantUpdateCache cache) {
@@ -3054,11 +3206,11 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 
 
 	private void appendCollectionItems(ProductCollectionEntity collection, List<ProductVariantsEntity> variants
-						,Map<Long,Integer> itemsOrder) {
+			,Map<Long,Integer> itemsOrder) {
 		Integer currentMaxPriority = getCollectionItemsCurrentMaxPriority(collection);
 		List<ProductVariantsEntity> newItems = getOnlyNewCollectionItems(variants, collection);
 		createCollectionItemsWithPriority(collection, newItems, itemsOrder, currentMaxPriority)
-			.forEach(collection::addItem);
+				.forEach(collection::addItem);
 	}
 
 
@@ -3067,7 +3219,7 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 			, List<ProductVariantsEntity> variants, Map<Long,Integer> itemsOrder) {
 		clearCollectionItems(collection);
 		createCollectionItemsWithPriority(collection, variants, itemsOrder, -1)
-			.forEach(collection::addItem);
+				.forEach(collection::addItem);
 	}
 
 
@@ -3080,7 +3232,7 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 
 
 	private void removeCollectionItems(Set<Long> variantIds, ProductCollectionEntity collection) {
-				collection
+		collection
 				.getItems()
 				.stream()
 				.filter(item -> variantIds.contains(item.getItem().getId()))
@@ -3088,9 +3240,9 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 						collectingAndThen(
 								toSet()
 								, toDelete -> {
-										collectionItemRepo.deleteItems(toDelete);
-										collection.getItems().removeAll(toDelete);
-										return toDelete;
+									collectionItemRepo.deleteItems(toDelete);
+									collection.getItems().removeAll(toDelete);
+									return toDelete;
 								}));
 	}
 
@@ -3157,9 +3309,9 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 	private void validateVariantsExistence(List<ProductVariantsEntity> variantsEntities, List<Long> variantsIds) {
 		Set<Long> fetchedVariantsIds =
 				variantsEntities
-				.stream()
-				.map(ProductVariantsEntity::getId)
-				.collect(toSet());
+						.stream()
+						.map(ProductVariantsEntity::getId)
+						.collect(toSet());
 		Set<Long> givenVariantIds = new HashSet<>(variantsIds);
 		if (!Objects.equals(fetchedVariantsIds, givenVariantIds)) {
 			givenVariantIds.removeAll(fetchedVariantsIds);
@@ -3426,10 +3578,10 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 
 
 
-    @Override
-		public List<Long> getVariantsWithFeature(ProductFeaturesEntity feature) {
+	@Override
+	public List<Long> getVariantsWithFeature(ProductFeaturesEntity feature) {
 		return variantFeatureValuesRepo.findByFeature(feature.getId(), feature.getOrganization().getId());
-    }
+	}
 
 	@Override
 
@@ -3502,17 +3654,17 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 		return new ProductUpdateResponse(id);
 	}
 
-@Override
-public VariantUpdateResponse updateVariantV2(
+	@Override
+	public VariantUpdateResponse updateVariantV2(
 			String variantString,
 			MultipartFile[] imgs,
 			Integer[] uploadedImagePriorities,
 			List<Map<String, Long>> updatedImages,
 			Long[] deletedImages
 	) throws BusinessException, JsonProcessingException {
-	VariantUpdateDTO variant = mapper.readValue(variantString, VariantUpdateDTO.class);
+		VariantUpdateDTO variant = mapper.readValue(variantString, VariantUpdateDTO.class);
 
-	Long id = updateVariantBatch(asList(variant)).stream().findFirst().orElse(-1L);
+		Long id = updateVariantBatch(asList(variant)).stream().findFirst().orElse(-1L);
 		if (id != null) {
 
 			Operation operation = variant.getOperation();
@@ -3621,7 +3773,7 @@ public VariantUpdateResponse updateVariantV2(
 
 
 	private ProductDetailsDTO createNEWProductDetailsDTO(ProductEntity product, Long shopId,
-			List<ProductVariantsEntity> productVariants, boolean includeOutOfStock) {
+														 List<ProductVariantsEntity> productVariants, boolean includeOutOfStock) {
 		List<ProductImageDTO> productsAndVariantsImages = getProductImageDTOS(product, productVariants);
 		List<VariantDTO> variantsDTOList = createNEWVariantDTOS(shopId, productVariants, productsAndVariantsImages);
 		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(product.getId());
@@ -3640,24 +3792,24 @@ public VariantUpdateResponse updateVariantV2(
 		productDTO.setThreeDModel(threeDModelResponse);
 		return productDTO;
 	}
-	
+
 	private List<VariantDTO> createNEWVariantDTOS(Long shopId, List<ProductVariantsEntity> productVariants,
-			List<ProductImageDTO> productsAndVariantsImages) {
+												  List<ProductImageDTO> productsAndVariantsImages) {
 		List<VariantDTO> variantsDTOList = new ArrayList<>();
 		if (!isNullOrEmpty(productVariants)) {
 			variantsDTOList = getNewVariantsList(productVariants, shopId, productsAndVariantsImages);
 		}
 		return variantsDTOList;
 	}
-	
+
 	private List<VariantDTO> getNewVariantsList(List<ProductVariantsEntity> productVariants, Long shopId,
-			List<ProductImageDTO> variantsImages) {
+												List<ProductImageDTO> variantsImages) {
 
 		return productVariants.stream().map(variant -> createVariantDto(shopId, variant, variantsImages))
 
 				.collect(toList());
 	}
-	
+
 	List<SeoKeywordsDTO> getSeoKeywords(Long entityId, SeoEntityType type, Long orgId) {
 		return seoService.getSeoKeywords(orgId, entityId, type);
 	}
@@ -3695,4 +3847,3 @@ class ProductAndBrandPair{
 	private Long productId;
 	private Long brandId;
 }
-

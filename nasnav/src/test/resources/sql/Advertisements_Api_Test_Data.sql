@@ -148,24 +148,24 @@ INSERT INTO public.posts(id, user_id, org_id, type, status, advertisement_id)
 values (1006, 93, 99001, 0, 1, 1004) on CONFLICT do nothing;
 
 
+--
+--INSERT INTO public.post_likes(id, user_id, post_id, created_at)
+--values (1001, 94, 1001, now()) on CONFLICT do nothing;
+--
+--INSERT INTO public.post_likes(id, user_id, post_id, created_at)
+--values (1002, 94, 1001, now()) on CONFLICT do nothing;
+--
+--INSERT INTO public.post_likes(id, user_id, post_id, created_at)
+--values (1003, 94, 1001, now()) on CONFLICT do nothing;
+--INSERT INTO public.post_likes(id, user_id, post_id, created_at)
+--values (1004, 94, 1001, now()) on CONFLICT do nothing;
+--
+--INSERT INTO public.post_likes(id, user_id, post_id, created_at)
+--values (1005, 94, 1001, now()) on CONFLICT do nothing;
 
-INSERT INTO public.post_likes(id, user_id, post_id, created_at)
-values (1001, 94, 1001, now()) on CONFLICT do nothing;
-
-INSERT INTO public.post_likes(id, user_id, post_id, created_at)
-values (1002, 94, 1001, now()) on CONFLICT do nothing;
-
-INSERT INTO public.post_likes(id, user_id, post_id, created_at)
-values (1003, 94, 1001, now()) on CONFLICT do nothing;
-INSERT INTO public.post_likes(id, user_id, post_id, created_at)
-values (1004, 94, 1001, now()) on CONFLICT do nothing;
-
-INSERT INTO public.post_likes(id, user_id, post_id, created_at)
-values (1005, 94, 1001, now()) on CONFLICT do nothing;
-
-
-INSERT INTO public.post_likes(id, user_id, post_id, created_at)
-values (1006, 94, 1001, now()) on CONFLICT do nothing;
-
+--
+--INSERT INTO public.post_likes(id, user_id, post_id, created_at)
+--values (1006, 94, 1001, now()) on CONFLICT do nothing;
+--
 
 

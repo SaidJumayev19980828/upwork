@@ -8,12 +8,11 @@ import com.nasnav.persistence.PostEntity;
 import org.springframework.data.domain.PageImpl;
 
 import java.io.IOException;
-import java.util.List;
 
 public interface PostService {
     public PostResponseDTO getPostById(long id) throws BusinessException;
      PostResponseDTO createPost(PostCreationDTO dto) throws BusinessException, IOException;
-    public Long likeOrDisLikePost(long postId, boolean likeAction);
+     long likeOrDisLikePost(long postId, boolean likeAction);
     public void clickOnPost(long postId);
     public void approveOrRejectReview(long postId, PostStatus postStatus);
     public PageImpl<PostResponseDTO> getHomeTimeLine(Integer start, Integer count);
@@ -25,11 +24,9 @@ public interface PostService {
 
     PageImpl<PostEntity>  getAllPostsWithinAdvertisement(Integer start, Integer count);
 
-    public void saveForLater(Long postId);
-    public void unSavePost(Long postId);
+     void saveForLater(Long postId);
+     void unSavePost(Long postId);
 
-
-
-    public PageImpl<PostResponseDTO> getUserSavedPosts(Integer start, Integer count);
+     PageImpl<PostResponseDTO> getUserSavedPosts(Integer start, Integer count);
 
     }

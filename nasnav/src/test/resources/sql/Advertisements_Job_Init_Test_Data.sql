@@ -205,6 +205,6 @@ on CONFLICT do nothing;
 
 
 
-INSERT INTO public.post_likes(id, user_id, post_id, created_at)
-SELECT num, 94, 1001, now()
+INSERT INTO public.post_likes(id, user_id, created_at)
+SELECT num, 94, now()
 FROM generate_series(1001, 1190) num

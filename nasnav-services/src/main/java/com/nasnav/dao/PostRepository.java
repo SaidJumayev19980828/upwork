@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface PostRepository extends JpaRepository<PostEntity, Long> {
-    PageImpl<PostEntity> getAllByUser_IdAndStatus(long userId, int status, Pageable page);
+    PageImpl<PostEntity> getAllByUserAndStatus(UserEntity userId, int status, Pageable page);
     PageImpl<PostEntity> getAllByUser_IdAndType(long userId, int type, Pageable page);
     PageImpl<PostEntity> getAllByOrganization_IdAndStatusAndType(long orgId, int status, int type, Pageable page);
     PageImpl<PostEntity> getAllByOrganization_IdAndType(long orgId, int type, Pageable page);

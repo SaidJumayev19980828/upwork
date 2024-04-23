@@ -68,6 +68,7 @@ DELETE FROM public.return_shipment where id in (
 DELETE FROM saved_posts;
 DELETE FROM public.post_attachments;
 DELETE FROM public.post_likes;
+DELETE From sub_posts;
 DELETE FROM public.post_clicks;
 DELETE FROM public.post_products;
 DELETE FROM public.post_transactions;

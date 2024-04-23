@@ -37,7 +37,9 @@ public class AdvertisementJob {
         PageImpl<PostEntity> page = postService.getAllPostsWithinAdvertisement(0, batchSize);
         for (PostEntity post : page.getContent()) {
             if (post.getProducts() != null && !post.getProducts().isEmpty()) {
-                Long postLikes = postLikesRepository.countAllByPost_Id(post.getId());
+                //TODO:: TO be changed for the new approach
+                // the calculation here was done based on old approach which is configure the count of likes and rewarded coins and add them at the advertisement table along with the other advertisement configuration . that approach changed now for compensation so the next PR i will work for rewording operation which will replace that code here
+                long postLikes = 0L;
                 if (postLikes > 0) {
                     Set<Long> productsInPost = post.getProducts().stream().map(ProductEntity::getId).collect(Collectors.toSet());
                     if (!productsInPost.isEmpty()) {

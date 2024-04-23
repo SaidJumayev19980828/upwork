@@ -18,8 +18,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "sub_posts")
@@ -45,6 +45,13 @@ public class SubPostEntity {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @JsonManagedReference
-    private List<PostLikesEntity> likes = new ArrayList<>();
+    private Set<PostLikesEntity> likes = new HashSet<>();
 
+
+    public void addLike(PostLikesEntity like) {
+        if (like != null) {
+            like.setSubPost(this);
+            getLikes().add(like);
+        }
+    }
 }

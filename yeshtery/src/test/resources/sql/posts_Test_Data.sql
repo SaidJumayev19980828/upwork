@@ -58,7 +58,9 @@ INSERT INTO public.product_features(id, name, p_name, description, organization_
 INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
 
 -- insert products
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at)
+VALUES (1001, 'product_1',101, 201, 99001, now(), now()),
+       (1002, 'product_2',101, 201, 99001, now(), now());
 
 --inserting posts
 INSERT INTO public.posts(id,user_id,org_id,type,status) values (1,88,99001,0,1);
@@ -66,3 +68,8 @@ INSERT INTO public.posts(id,user_id,org_id,type,status) values (2,88,99001,1,0);
 INSERT INTO public.saved_posts(
 	id, post_id, user_id)
 	VALUES (1, 1, 88);
+
+INSERT INTO public.sub_posts(
+	id, post_id, product_id)
+	VALUES (1, 1, 1001),
+	       (2,1,1002)

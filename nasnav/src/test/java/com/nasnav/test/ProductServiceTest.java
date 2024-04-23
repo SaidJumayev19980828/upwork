@@ -4,13 +4,44 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.FilesRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ProductCollectionItemRepository;
+import com.nasnav.dao.ProductCollectionRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.VariantFeatureValuesRepository;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductFetchDTO;
+import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductsFiltersResponse;
+import com.nasnav.dto.ProductsResponse;
+import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.enumerations.ProductFeatureType;
-import com.nasnav.persistence.*;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.FileEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ProductCollectionEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductExtraAttributesEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ProductImagesEntity;
+import com.nasnav.persistence.ProductTypes;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.VariantFeatureValueEntity;
 import com.nasnav.request.ProductSearchParam;
+import com.nasnav.service.ProductService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
-
 import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
@@ -29,7 +60,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
@@ -48,7 +83,10 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.json.JSONObject.NULL;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -117,6 +155,8 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 	@Autowired
 	private ObjectMapper objectMapper;
 
+	@Autowired
+	private  ProductService productService;
 
 	private final String PRODUCT_NAME = "LIPSTICK";
 	private final String PRODUCT_P_NAME = "LIPSTICK PRODUCT";
@@ -1348,6 +1388,26 @@ public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 		assertTrue(collection.getVariants().isEmpty());
 	}
 
+	private ProductDetailsDTO buildProductFetchDtoForException() {
+		ProductFetchDTO dto = new ProductFetchDTO();
+		dto.setCheckVariants(true);
+		dto.setIncludeOutOfStock(true);
+		dto.setOnlyYeshteryProducts(false);
+		dto.setProductId(1001L);
+		return productService.getProduct(dto);
+	}
+
+
+	@Test
+	public void getProductVariants_ProductHasNoVariants_CheckVariantsTrue_ThrowsException() {
+		ProductFetchDTO dto = new ProductFetchDTO();
+		dto.setCheckVariants(true);
+		dto.setIncludeOutOfStock(true);
+		dto.setOnlyYeshteryProducts(false);
+		dto.setProductId(1001L);
+		assertThrows(RuntimeBusinessException.class, () -> productService.getProduct(dto));
+
+	}
 
 	private boolean isProductsWithStockHavePrices(List<ProductRepresentationObject> products) {
 		return products

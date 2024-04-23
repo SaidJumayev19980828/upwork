@@ -1,14 +1,31 @@
 package com.nasnav.service.impl;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
+import com.nasnav.dao.CategoriesRepository;
+import com.nasnav.dao.EventLogsRepository;
+import com.nasnav.dao.EventRepository;
+import com.nasnav.dao.EventRequestsRepository;
+import com.nasnav.dao.InfluencerRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dto.CategoryDTO;
+import com.nasnav.dto.EventRequestsDTO;
+import com.nasnav.dto.InfluencerDTO;
+import com.nasnav.dto.InfluencerStatsDTO;
+import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductFetchDTO;
 import com.nasnav.dto.request.EventOrganiseRequestDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.enumerations.EventRequestStatus;
 import com.nasnav.enumerations.EventStatus;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.*;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.CategoriesEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.EventEntity;
+import com.nasnav.persistence.EventRequestsEntity;
+import com.nasnav.persistence.InfluencerEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.InfluencerService;
 import com.nasnav.service.OrganizationService;
 import com.nasnav.service.ProductService;
@@ -22,12 +39,26 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
-import static com.nasnav.exceptions.ErrorCodes.*;
-import static org.springframework.http.HttpStatus.*;
+import static com.nasnav.exceptions.ErrorCodes.E$USR$0002;
+import static com.nasnav.exceptions.ErrorCodes.EVENT$MODIFICATION$0003;
+import static com.nasnav.exceptions.ErrorCodes.EVENT$REQUEST$0004;
+import static com.nasnav.exceptions.ErrorCodes.EVENT$REQUEST$0005;
+import static com.nasnav.exceptions.ErrorCodes.G$EVENT$0001;
+import static com.nasnav.exceptions.ErrorCodes.G$INFLU$0001;
+import static com.nasnav.exceptions.ErrorCodes.G$INFLU$0002;
+import static com.nasnav.exceptions.ErrorCodes.G$INFLU$0003;
+import static com.nasnav.exceptions.ErrorCodes.G$ORG$0001;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.NOT_MODIFIED;
 
 @Service
 public class InfluencerServiceImpl implements InfluencerService {
@@ -344,12 +375,8 @@ public class InfluencerServiceImpl implements InfluencerService {
         productFetchDTO.setOnlyYeshteryProducts(false);
         Set<ProductDetailsDTO> productDetailsDTOS = new HashSet<>();
         entity.getProducts().forEach(o -> {
-            try {
                 productFetchDTO.setProductId(o.getId());
                 productDetailsDTOS.add(productService.getProduct(productFetchDTO));
-            } catch (BusinessException e) {
-                e.printStackTrace();
-            }
         });
         EventResponseDto dto = new EventResponseDto();
         dto.setId(entity.getId());

@@ -7,11 +7,24 @@ import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.enumerations.EventStatus;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.mappers.EventRoomMapper;
-import com.nasnav.persistence.*;
-import com.nasnav.service.*;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.EventEntity;
+import com.nasnav.persistence.EventLogsEntity;
+import com.nasnav.persistence.EventRoomTemplateEntity;
+import com.nasnav.persistence.InfluencerEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductTypes;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.service.EventService;
+import com.nasnav.service.InfluencerService;
+import com.nasnav.service.MailService;
+import com.nasnav.service.OrganizationService;
+import com.nasnav.service.ProductService;
+import com.nasnav.service.SecurityService;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -26,12 +39,27 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.constatnts.EmailConstants.INTEREST_MAIL;
-import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.exceptions.ErrorCodes.EVENT$HAS$INTEREST$0006;
+import static com.nasnav.exceptions.ErrorCodes.EVENT$NOT$EDITABLE$0002;
+import static com.nasnav.exceptions.ErrorCodes.G$EVENT$0001;
+import static com.nasnav.exceptions.ErrorCodes.G$INFLU$0001;
+import static com.nasnav.exceptions.ErrorCodes.G$ORG$0001;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0002;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0016;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -291,13 +319,9 @@ public class EventServiceImpl implements EventService{
         productFetchDTO.setOnlyYeshteryProducts(false);
         Set<ProductDetailsDTO> productDetailsDTOS = new HashSet<>();
         entity.getProducts().forEach(o -> {
-            try {
-                productFetchDTO.setProductId(o.getId());
-                productDetailsDTOS.add(productService.getProduct(productFetchDTO));
-            } catch (BusinessException e) {
-                e.printStackTrace();
-            }
-        });
+                    productFetchDTO.setProductId(o.getId());
+                    productDetailsDTOS.add(productService.getProduct(productFetchDTO));
+                });
         EventResponseDto dto = new EventResponseDto();
         dto.setId(entity.getId());
         dto.setStartsAt(entity.getStartsAt());

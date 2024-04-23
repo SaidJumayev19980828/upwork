@@ -62,10 +62,6 @@ public class PostEntity {
     @EqualsAndHashCode.Exclude
     private List<PostAttachmentsEntity> attachments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<PostLikesEntity> likes;
 
     @ManyToOne
     @JoinColumn(name = "advertisement_id")

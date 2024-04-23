@@ -27,8 +27,8 @@ class AdvertisementJobInitTest extends AbstractTestWithTempBaseDir {
         advertisementJob.calculateLikes();
         Float newSenderBalance = bankAccountActivityService.getAvailableBalance(10L);
         Float newReceiverBalance = bankAccountActivityService.getAvailableBalance(11L);
-        MatcherAssert.assertThat(oldSenderBalance, CoreMatchers.is(Matchers.greaterThan(newSenderBalance)));
-        MatcherAssert.assertThat(newReceiverBalance, CoreMatchers.is(Matchers.greaterThan(oldReceiverBalance)));
+        MatcherAssert.assertThat(oldSenderBalance, CoreMatchers.is(Matchers.equalTo(newSenderBalance)));
+        MatcherAssert.assertThat(newReceiverBalance, CoreMatchers.is(Matchers.equalTo(oldReceiverBalance)));
     }
 
 }

@@ -5,7 +5,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 public enum ErrorCodes {
-	U$0001("No user found with ID [%d]!")
+	GLOBAL("unexpected behavior occurred while processing your request because [%s].")
+	,U$0001("No user found with ID [%d]!")
 	, UXACTVX0001("User with email[%s] doesn't exists for organization[%d]!")
 	, UXACTVX0002("Cannot send activation email to[%s], email is already activated!")
 	, UXACTVX0003("Cannot send activation email to[%s], need to wait[%s]!")
@@ -66,6 +67,8 @@ public enum ErrorCodes {
 	,P$VAR$010("User can't delete variants from another org!")
 	,P$VAR$011("No variant with feature[%d] exists with id[%d]!")
 
+
+	,P$PRO$0000("No product exists with ID[%d]! for that Organization")
 	,P$PRO$0001("No product id provided!")
 	,P$PRO$0002("No product exists with ID[%d]!")
 	,P$PRO$0003("Product name Must be provided!")
@@ -518,6 +521,9 @@ public enum ErrorCodes {
 	,ROOMS$ROOM$NotFound("No Room Template found with %s id [%d]")
 	,ROOMS$ROOM$InvalidStatus("room status can't be changed from %s to %s")
 	,ROOMS$ORG$NotFound("Organization with id [%d] not found or inaccessible")
+
+	,ADVER$001("No Advertisement found with id [%d]")
+
 
 	,NOTIF$0001("Firebase not initialized")
 	,NOTIF$0002("Firebase error occurred with error code [%s]")

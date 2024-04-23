@@ -69,10 +69,10 @@ DELETE FROM public.return_shipment where id in (
     on req.meta_order_id = meta.id
     and meta.organization_id between 99000 and 99999
 );
+DELETE FROM public.post_likes;
 DELETE From sub_posts;
 DELETE FROM saved_posts;
 DELETE FROM public.post_attachments;
-DELETE FROM public.post_likes;
 DELETE FROM public.post_clicks;
 DELETE FROM public.post_products;
 DELETE FROM public.post_transactions;

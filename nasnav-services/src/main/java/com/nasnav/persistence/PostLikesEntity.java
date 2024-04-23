@@ -1,16 +1,28 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "post_likes")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostLikesEntity {
@@ -28,14 +40,6 @@ public class PostLikesEntity {
     @ToString.Exclude
     private UserEntity user;
 
-    @ManyToOne(cascade = CascadeType.DETACH)
-    @JoinColumn(name = "post_id", nullable = false,referencedColumnName = "id")
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    private PostEntity post;
-
-
     @ManyToOne
     @JoinColumn(name = "sub_post_id")
     @EqualsAndHashCode.Exclude
@@ -43,10 +47,4 @@ public class PostLikesEntity {
     @JsonBackReference
     private SubPostEntity subPost;
 
-    public PostLikesEntity(Long id, LocalDateTime createdAt, UserEntity user, PostEntity post) {
-        this.id = id;
-        this.createdAt = createdAt;
-        this.user = user;
-        this.post = post;
-    }
 }
