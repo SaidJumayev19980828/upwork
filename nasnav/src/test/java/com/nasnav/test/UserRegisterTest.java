@@ -12,6 +12,7 @@ import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
 import com.nasnav.dto.request.organization.CreateInfluencerAccountForAiRequest;
 import com.nasnav.enumerations.LoyaltyPointType;
+import com.nasnav.exceptions.ErrorResponseDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.response.CreateAiAccountResponse;
 import com.nasnav.response.RecoveryUserResponse;
@@ -1186,6 +1187,34 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		assertTrue(res.getBody().getId().equals(159L));
 	}
 
+
+	@Test
+	public void exceptionThrownWhenGettingUserDateFromDifferentOrganization() {
+		//get user info by auth token 101112
+		Long userId = 89L;
+		HttpEntity<?> entity = getHttpEntity("101112");
+		ResponseEntity<ErrorResponseDTO> res = template.exchange("/user/info?id="+userId+"&is_employee=true",
+				HttpMethod.GET,
+				entity,
+				ErrorResponseDTO.class);
+
+		assertEquals(406, res.getStatusCodeValue());
+		assertEquals("No user found with ID [" + userId + "]!", res.getBody().getMessage());
+	}
+
+	@Test
+	public void exceptionThrownWhenGettingUserDateFromDifferentOrganizationWithIsEmployeeFalse() {
+		//get user info by auth token 101112
+		Long userId = 89L;
+		HttpEntity<?> entity = getHttpEntity("101112");
+		ResponseEntity<ErrorResponseDTO> res = template.exchange("/user/info?id="+userId+"&is_employee=false",
+				HttpMethod.GET,
+				entity,
+				ErrorResponseDTO.class);
+
+		assertEquals(406, res.getStatusCodeValue());
+		assertEquals("No user found with ID [" + userId + "]!", res.getBody().getMessage());
+	}
 
 	@Test
 	public void testFilterUserByAnonymous() {

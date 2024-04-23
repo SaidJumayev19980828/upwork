@@ -11,6 +11,7 @@ public interface CommonUserRepository{
 	BaseUserEntity saveAndFlush(BaseUserEntity userEntity) ;
 	BaseUserEntity getByEmailAndOrganizationId(String email, Long org_id);
 	BaseUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId, Boolean isEmployee);
+	Optional<BaseUserEntity> findByIdAndOrganizationId(Long id, Long organizationId, Boolean isEmp);
+
 	Optional<BaseUserEntity> findById(Long id, Boolean isEmp);
-	Optional<BaseUserEntity> getByIdAndOrganizationIdAndRoles(Long id, Long orgId, Boolean isEmployee, Set<String> roles);
 }

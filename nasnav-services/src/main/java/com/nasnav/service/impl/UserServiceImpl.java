@@ -603,7 +603,7 @@ public class UserServiceImpl implements UserService {
 			Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
 
 			if (userHighestRole.equals(NASNAV_ADMIN)) {
-				user = commonUserRepo.findById(userId, isEmployee)
+				user = commonUserRepo.findByIdAndOrganizationId(userId, currentUser.getOrganizationId(), isEmployee)
 						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 			} else {
 				Set<String> roles = Roles.getAllPrivileges().get(userHighestRole.name());
@@ -611,7 +611,8 @@ public class UserServiceImpl implements UserService {
 					if (!List.of(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER).contains(userHighestRole))
 						throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
 				}
-				user=commonUserRepo.findById(userId,isEmployee).orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+				user = commonUserRepo.findByIdAndOrganizationId(userId, currentUser.getOrganizationId(), isEmployee)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 			}
 		}
 		return getUserRepresentationWithUserRoles(user);

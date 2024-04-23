@@ -1,7 +1,6 @@
 package com.nasnav.dao;
 
 import com.nasnav.enumerations.Roles;
-import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Repository;
 import java.util.*;
 
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
-import static com.nasnav.enumerations.YeshteryState.ACTIVE;
 import static com.nasnav.exceptions.ErrorCodes.GEN$0004;
 import static com.nasnav.exceptions.ErrorCodes.U$LOG$0002;
 import static java.util.stream.Collectors.toList;
@@ -107,20 +105,16 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 		}
 	}
 
-	public Optional<BaseUserEntity> getByIdAndOrganizationIdAndRoles(Long id, Long orgId, Boolean isEmployee, Set<String> roles) {
-		if(isEmployee != null && isEmployee) {
-			return empRepo.findByIdAndOrgIdAndRoles(id, orgId, roles)
+	@Override
+	public Optional<BaseUserEntity> findByIdAndOrganizationId(Long id, Long organizationId, Boolean isEmp) {
+		if(isEmp) {
+			return empRepo.findByIdAndOrganizationId(id, organizationId)
 					.map(BaseUserEntity.class::cast);
 		}else {
-			if (isBlankOrNull(orgId)) {
-				throw new RuntimeBusinessException(UNAUTHORIZED, U$LOG$0002);
-
-			}
-			return userRepo.findByIdAndOrganizationId(id, orgId)
+			return userRepo.findByIdAndOrganizationId(id, organizationId)
 					.map(BaseUserEntity.class::cast);
 		}
 	}
-
 
 	@Override
 	public Optional<BaseUserEntity> findById(Long id, Boolean isEmp) {
