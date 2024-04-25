@@ -3,12 +3,7 @@ package com.nasnav.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dao.CartItemAddonDetailsRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.OrganizationCartOptimizationRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.UserAddressRepository;
-import com.nasnav.dao.UserRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.response.CartOptimizationStrategyDTO;
@@ -38,8 +33,7 @@ import java.util.*;
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
-import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.DEFAULT_OPTIMIZER;
-import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
+import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.*;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
 import static java.util.Arrays.stream;
 import static java.util.Collections.*;
@@ -93,17 +87,30 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	@Autowired
 	private ReferralCodeService referralCodeService;
 
+	@Autowired
+	private ShopsRepository shopsRepository;
+
 	@Override
 	public CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
 		validateAndAssignUserAddress(dto);
+		checkCartItemsFromCheckoutStore(dto);
 		checkIfCartHasEmptyStock(dto.getCustomerId());
 		return optimizeCart(dto, yeshteryCart);
+	}
+
+	private void checkCartItemsFromCheckoutStore(CartCheckoutDTO dto) {
+		if(!dto.isTwoStepVerified()) {
+			return;
+		}
+
+		if(cartItemRepo.countByUser_IdAndStock_ShopsEntity_IdNot(dto.getCustomerId(), securityService.getCurrentUserShopId()) > 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0020);
+		}
 	}
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
-
 		var optimizedCart = createOptimizedCart(dto);
 		boolean itemsRemoved = isItemsRemoved(optimizedCart, dto.getPromoCode(),dto);
 		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart) || itemsRemoved;
@@ -195,10 +202,15 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		var strategy = optimizerData.getStrategy();
 
 		CartOptimizer<T, Config> optimizer = getCartOptimizer(strategy.getValue());
+		Config config = null;
 
-		var config = helper.getOptimizerConfig(optimizerData.getConfigurationJson(), optimizer);
 		var parameters = optimizer.createCartOptimizationParameters(dto);
 		var cart = cartService.getCart(dto,dto.getPromoCode(), BigDecimal.ZERO, false);
+
+		if(dto.isTwoStepVerified()) {
+			cart.setCustomerId(dto.getCustomerId());
+		}
+		config = helper.getOptimizerConfig(optimizerData.getConfigurationJson(), optimizer);
 
 		return optimizer.createOptimizedCart(parameters, config, cart);
 	}
@@ -287,6 +299,9 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				getCartOptimizationStrategyForShippingService(shippingServiceId,orgId);
 		var organizationCartOptimizer =
 				getCartOptimizationStrategyForOrganization(orgId);
+		if(dto.isTwoStepVerified()) {
+			organizationCartOptimizer = Optional.of(new Optimizer(SHOP_PICKUP, "{}"));
+		}
 		var defaultOptimizer = Optional.of(new Optimizer(DEFAULT_OPTIMIZER, "{}"));
 		
 		return firstExistingValueOf(

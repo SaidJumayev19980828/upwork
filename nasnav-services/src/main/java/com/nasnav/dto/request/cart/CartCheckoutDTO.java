@@ -30,4 +30,7 @@ public class CartCheckoutDTO {
 
     @JsonIgnore
     private Long createdByEmployeeId;
+    @JsonIgnore
+    private boolean isTwoStepVerified;
+
 }

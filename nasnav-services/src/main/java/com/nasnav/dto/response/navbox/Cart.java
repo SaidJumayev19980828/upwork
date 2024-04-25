@@ -24,6 +24,7 @@ public class Cart {
 	private BigDecimal subtotal;
 	private AppliedPromotionsResponse promos;
 	private AppliedPointsResponse points;
+	private Long customerId;
 
 	public Cart(List<CartItem> items) {
 		this.items = items;

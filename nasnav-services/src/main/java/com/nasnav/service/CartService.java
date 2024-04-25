@@ -33,7 +33,11 @@ public interface CartService {
     Cart deleteYeshteryCartItem(Long itemId, String promoCode, Set<Long>points, boolean yeshteryCart , Long userId );
     BigDecimal calculateCartTotal(Cart cart);
     List<ShopFulfillingCart> getSelectedShopsThatCanProvideCartItems(List<Long> shops);
+
+    List<ShopFulfillingCart> getSelectedShopsThatCanProvideCartItems(Long userId, List<Long> shops);
+
     List<ShopFulfillingCart> getShopsThatCanProvideCartItems();
+
     List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
     List<CartItem> toCartItemsDto(List<CartItemEntity> cartItems);
     void sendAbandonedCartEmails(AbandonedCartsMail dto);

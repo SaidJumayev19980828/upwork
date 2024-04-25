@@ -53,8 +53,6 @@ public class CartOptimizationHelper {
         return config;
     }
 
-
-
     public Map<Long, StocksEntity> getCartItemsStockInShop(Cart cart, Long shopId) {
         List<Long> variantIds =
                 cart
@@ -132,17 +130,12 @@ public class CartOptimizationHelper {
                 || stock.getQuantity().compareTo(item.getQuantity()) < 0;
     }
 
-
-
     private <T, P> void validateConfig(CartOptimizer<T, P> optimizer, P config) {
         if(!optimizer.isConfigValid(config)) {
-            Long orgId = securityService.getCurrentUserOrganizationId();
             throw new RuntimeBusinessException(
-                    INTERNAL_SERVER_ERROR, O$CRT$0013, orgId, optimizer.getOptimizerName());
+                    INTERNAL_SERVER_ERROR, O$CRT$0013, securityService.getCurrentUserOrganizationId(), optimizer.getOptimizerName());
         };
     }
-
-
 
     private <T> T parseConfigJson(String configJson, Class<? extends T> configClass) {
         try{

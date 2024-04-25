@@ -72,6 +72,8 @@ public class CartServiceImpl implements CartService {
     private final  AddonStockRepository addonStockRepository;
   
     private final  AddonsRepository addonsRepository;
+
+    private final StoreCheckoutsRepository storeCheckoutsRepository;
     @Autowired
     private UserRepository userRepo;
     @Override
@@ -96,9 +98,6 @@ public class CartServiceImpl implements CartService {
     @Override
     public Cart getCart(String promoCode, BigDecimal points, boolean yeshteryCart) {
         BaseUserEntity user = securityService.getCurrentUser();
-        if(user instanceof EmployeeUserEntity) {
-            throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
-        }
         return getUserCart(user.getId(), promoCode, points, yeshteryCart);
     }
 
@@ -147,7 +146,14 @@ public class CartServiceImpl implements CartService {
     }
     @Override
     public Cart getUserCart(Long userId, String promoCode, BigDecimal points, boolean yeshteryCart) {
-        return  getUserCart(userId, promoCode, securityService.getCurrentUserOrganizationId(), points, yeshteryCart);
+        BaseUserEntity loggedInUser = securityService.getCurrentUser();
+        Long organizationId = securityService.getCurrentUserOrganizationId();
+        if(loggedInUser instanceof  EmployeeUserEntity) {
+            StoreCheckoutsEntity storeCheckoutsEntity = storeCheckoutsRepository.findByEmployeeId(loggedInUser.getId())
+                    .orElseThrow(() ->  new RuntimeBusinessException(FORBIDDEN, O$CRT$0001));
+            userId = storeCheckoutsEntity.getUserId();
+        }
+        return getUserCart(userId, promoCode,organizationId , points, yeshteryCart);
     }
 
     public Cart getUserCart(Long userId,Long orgId ,String promoCode, Set<Long> points, boolean yeshteryCart) {
@@ -380,7 +386,13 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public List<ShopFulfillingCart> getShopsThatCanProvideCartItems(){
-        Long userId = securityService.getCurrentUser().getId();
+        BaseUserEntity loggedInUser = securityService.getCurrentUser();
+        Long userId = loggedInUser.getId();
+        if(loggedInUser instanceof  EmployeeUserEntity) {
+            userId = storeCheckoutsRepository.findByEmployeeId(loggedInUser.getId())
+                    .orElseThrow(() ->  new RuntimeBusinessException(FORBIDDEN, O$CRT$0001))
+                    .getUserId();
+        }
         return cartItemRepo
                 .getAllCartStocks(userId)
                 .stream()
@@ -392,9 +404,15 @@ public class CartServiceImpl implements CartService {
     }
 
 
+    @Deprecated
     @Override
     public List<ShopFulfillingCart> getSelectedShopsThatCanProvideCartItems(List<Long> shops){
         Long userId = securityService.getCurrentUser().getId();
+        return getSelectedShopsThatCanProvideCartItems(userId, shops);
+    }
+
+    @Override
+    public List<ShopFulfillingCart> getSelectedShopsThatCanProvideCartItems(Long userId, List<Long> shops){
         return cartItemRepo
                 .getAllCartStocks(userId, shops)
                 .stream()

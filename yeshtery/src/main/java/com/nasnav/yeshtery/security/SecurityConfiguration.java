@@ -177,6 +177,9 @@ public class SecurityConfiguration {
             , patternOf("/v1/user/logout", getAllRoles())
             , patternOf("/v1/user/logout_all", getAllRoles())
             , patternOf("/v1/user/suspend", setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN))
+            , patternOf("/v1/cart/store-checkout/**", POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_EMPLOYEE, STORE_MANAGER))
+            , patternOf("/v1/cart/store-checkout", POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_EMPLOYEE, STORE_MANAGER))
+
             , patternOf("/v1/cart/checkout", POST, getAllRoles())
             , patternOf("/v1/cart/{userId:\\d+}", GET, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER))
             , patternOf("/v1/cart/item", DELETE, getAllRoles())

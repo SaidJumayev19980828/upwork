@@ -1,7 +1,9 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.request.cart.StoreCheckoutDto;
 import com.nasnav.dto.response.navbox.*;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.CartCheckoutService;
 import com.nasnav.service.CartOptimizationService;
 import com.nasnav.service.CartService;
@@ -17,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -91,5 +94,20 @@ public class YeshteryCartController {
     public CartOptimizeResponseDTO optimizeCart(@RequestHeader(name = "User-Token", required = false) String userToken,
                                                 @RequestBody CartCheckoutDTO dto) {
         return cartOptimizationService.validateAndOptimizeCart(dto, true);
+    }
+
+    @PostMapping(value = "/store-checkout/{userId}", produces= APPLICATION_JSON_VALUE)
+    public StoreCheckoutDto storeCheckout(@PathVariable Long userId) throws BusinessException {
+        return cartCheckoutService.storeCheckout(userId);
+    }
+
+    @PostMapping(value = "/store-checkout/initiate/{userId}", produces= APPLICATION_JSON_VALUE)
+    public void initiateCheckout(@PathVariable Long userId) {
+        cartCheckoutService.initiateCheckout(userId);
+    }
+
+    @PostMapping(value = "/store-checkout/complete", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
+    public Order checkoutComplete(@RequestBody CartCheckoutDTO dto) throws BusinessException {
+        return cartCheckoutService.completeYeshteryCheckout(dto);
     }
 }

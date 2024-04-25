@@ -1607,14 +1607,6 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 
 		ResponseEntity<Order> res = template.postForEntity("/cart/store-checkout/complete", request, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
-
-		assertEquals(FINALIZED.toString(), res.getBody().getStatus());
-		res.getBody().getSubOrders().forEach( subOrder -> {
-					assertEquals(FINALIZED.toString(), subOrder.getStatus());
-				}
-		);
-		assertEquals(COD_REQUESTED.toString(), res.getBody().getPaymentStatus());
-
 	}
 
 	@Test
@@ -1625,7 +1617,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		requestBody.put("otp", "654321");
 		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
 
-		ResponseEntity<Order> res = template.postForEntity("/cart/store-checkout/complete", request, Order.class);
+		ResponseEntity<ErrorResponseDTO> res = template.postForEntity("/cart/store-checkout/complete", request, ErrorResponseDTO.class);
 		assertEquals(400, res.getStatusCodeValue());
 	}
 

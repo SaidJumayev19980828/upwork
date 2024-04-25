@@ -39,7 +39,12 @@ public class PickupCartOptimizer implements CartOptimizer<PickupParameters, Empt
     public Optional<OptimizedCart> createOptimizedCart(Optional<PickupParameters> parameters, EmptyParams config, Cart cart ) {
 
         Long givenShopId = parameters.map(PickupParameters::getShopId).get();
-        List<ShopFulfillingCart> shops = getShopFulfillingCart(givenShopId);
+        List<ShopFulfillingCart> shops;
+        if(Objects.nonNull(cart.getCustomerId()) && cart.getCustomerId() > 0) {
+            shops = cartService.getSelectedShopsThatCanProvideCartItems(cart.getCustomerId(), List.of(givenShopId));
+        } else {
+           shops = getShopFulfillingCart(givenShopId);
+        }
 
         return cart
                 .getItems()

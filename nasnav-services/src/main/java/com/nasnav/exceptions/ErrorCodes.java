@@ -304,7 +304,7 @@ public enum ErrorCodes {
 	,O$CRT$0017("Requested price exceeded maximum allowed price")
 	,O$CRT$0018("Cart optimization resulted in empty cart!")
 	,O$CRT$0019("Cart items has no stocks available!")
-
+	,O$CRT$0020("Cart Must only has the items of same store you pickup from!")
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
 	,O$SHP$0003("Failed to create a shipment for the order with the given parameters!")
@@ -354,6 +354,7 @@ public enum ErrorCodes {
 	,O$RET$0020("Store managers cannot update received items! Please contact the organization manager to do it!")
 	,O$RET$0021("Cannot return order with status[%s]!")
 	,O$RET$0022("Items are not returnable or are overdue!")
+	,O$RET$0023("No store found with this id!")
 
 	,O$0001("No order exists with ID[%d]!")
 
@@ -558,8 +559,9 @@ public enum ErrorCodes {
 
 	COMPEN$001("No Compensation Action found with the provided ID [%s]"),
 
-	COMPEN$002("No Compensation Rule found with the provided ID [%s] for that Organization")
+	COMPEN$002("No Compensation Rule found with the provided ID [%s] for that Organization"),
 
+	STORE_CHECKOUT$001("There is no user for this employee to do checkout");
 			;
 
 	@Getter

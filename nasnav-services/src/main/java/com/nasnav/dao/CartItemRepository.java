@@ -281,4 +281,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	@Modifying
 	@Query(value = "update cart_items set is_wishlist = 1, quantity = null where id in :ids", nativeQuery = true)
 	void moveCartItemsToWishlistItems(@Param("ids") Set<Long> ids);
+
+
+	long countByUser_IdAndStock_ShopsEntity_IdNot(Long userId, Long storeId);
 }

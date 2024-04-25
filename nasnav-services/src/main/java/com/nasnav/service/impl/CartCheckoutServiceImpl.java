@@ -1,18 +1,25 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.dao.StoreCheckoutsRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.request.cart.StoreCheckoutDto;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.payments.cash.PaymentService;
 import com.nasnav.payments.misc.Commons;
 import com.nasnav.persistence.*;
 import com.nasnav.service.*;
 import com.nasnav.service.otp.OtpService;
 import com.nasnav.service.otp.OtpType;
+import com.nasnav.service.yeshtery.YeshteryOtpService;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.checkerframework.checker.units.qual.A;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -38,9 +45,14 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 	private final OrganizationService organizationService;
 	private final Commons paymentCommons;
 
+
+	@Autowired
+	@Qualifier("storeCashPaymentService")
+	private PaymentService storeCashPaymentService;
+
 	public static final String OTP_TEMPLATE = "mail_templates/otp_template.html";
 	public static final String OTP_PARAMETER = "#OTP#";
-
+	private final StoreCheckoutsRepository storeCheckoutsRepository;
 
 
 	@Override
@@ -83,8 +95,29 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 	@Override
 	public Order completeCheckout(CartCheckoutDTO dto) throws BusinessException {
 		Order checkoutedOutOrder = checkoutCart(dto);
-		PaymentEntity payment = orderService.validateOrderForPaymentCoD(checkoutedOutOrder.getOrderId());
-		paymentCommons.finalizePayment(payment, false);
+		return orderService.getMetaOrder(checkoutedOutOrder.getOrderId(), false);
+	}
+
+	public StoreCheckoutDto storeCheckout(Long userId) {
+		StoreCheckoutsEntity storeCheckoutsEntity = new StoreCheckoutsEntity();
+		storeCheckoutsEntity.setEmployeeId(securityService.getCurrentUser().getId());
+		storeCheckoutsEntity.setUserId(userId);
+		storeCheckoutsEntity.setShopId(securityService.getCurrentUserShopId());
+		storeCheckoutsEntity.setOrganizationId(securityService.getCurrentUserOrganizationId());
+		storeCheckoutsRepository.save(storeCheckoutsEntity);
+
+		return StoreCheckoutDto.builder()
+				.userId(userId)
+				.build();
+	}
+
+	@Override
+	public Order completeYeshteryCheckout(CartCheckoutDTO dto) throws BusinessException {
+		Order checkoutedOutOrder = checkoutYeshteryCart(dto);
+		storeCashPaymentService.finalize(
+				storeCashPaymentService.createPaymentForOrder(checkoutedOutOrder.getOrderId(),
+				orderService.getMetaOrderTotalValue(checkoutedOutOrder.getOrderId()),
+				checkoutedOutOrder.getUserId()), true);
 		return orderService.getMetaOrder(checkoutedOutOrder.getOrderId(), false);
 	}
 

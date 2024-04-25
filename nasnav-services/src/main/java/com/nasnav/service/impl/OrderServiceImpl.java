@@ -5,6 +5,7 @@ import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
 import com.nasnav.commons.criteria.data.CrieteriaQueryResults;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
+import com.nasnav.dao.yeshtery.YeshteryUserRepository;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
@@ -30,6 +31,8 @@ import com.nasnav.response.OrdersListResponse;
 import com.nasnav.service.*;
 import com.nasnav.service.helpers.OrdersFiltersHelper;
 import com.nasnav.service.helpers.UserServicesHelper;
+import com.nasnav.service.otp.OtpService;
+import com.nasnav.service.otp.OtpType;
 import com.nasnav.shipping.model.ShipmentTracker;
 import com.nasnav.shipping.model.ShippingServiceInfo;
 import lombok.AllArgsConstructor;
@@ -200,6 +203,12 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private MetaOrderRepository metaOrdersRepository;
+
+	@Autowired
+	private OtpService otpService;
+
+	@Autowired
+	private StoreCheckoutsRepository storeCheckoutsRepository;
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
@@ -1651,8 +1660,15 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public MetaOrderEntity createYeshteryMetaOrder(com.nasnav.dto.request.cart.CartCheckoutDTO dto) {
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
-		UserEntity user = (UserEntity)securityService.getCurrentUser();
-
+		BaseUserEntity userLoggedIn = securityService.getCurrentUser();
+		UserEntity user;
+		if(userLoggedIn instanceof EmployeeUserEntity) {
+			user = userRepository.findById(dto.getCustomerId()).orElseThrow(() ->
+					new RuntimeBusinessException(NOT_FOUND, U$0001, dto.getCustomerId())
+			);
+		} else {
+				 user = (UserEntity) userLoggedIn;
+		}
 		Optional<PromotionsEntity> promotion=
 				ofNullable(dto.getPromoCode())
 						.flatMap(promoCode ->
@@ -1710,9 +1726,20 @@ public class OrderServiceImpl implements OrderService {
 				.flatMap(Set::stream)
 				.collect(toSet());
 
-		UserEntity userEntity = (UserEntity)securityService.getCurrentUser();
-		Long userId = userEntity.getId();
+		BaseUserEntity loggedInUser = securityService.getCurrentUser();
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		UserEntity userEntity;
+		if(loggedInUser instanceof EmployeeUserEntity) {
+			StoreCheckoutsEntity storeCheckoutsEntity = storeCheckoutsRepository.findByEmployeeId(loggedInUser.getId())
+					.orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, STORE_CHECKOUT$001));
+			userEntity = userRepository.findById(storeCheckoutsEntity.getUserId()).orElseThrow(
+					() -> new RuntimeBusinessException(NOT_FOUND, U$0001, storeCheckoutsEntity.getUserId())
+			);
+		} else {
+			userEntity = (UserEntity) loggedInUser;
+		}
+
+		Long userId = userEntity.getId();
 		addPointsDiscount(userId, dto, suborders, org);
 		suborders.forEach(subOrder-> {
 			subOrder.setTotal(calculateTotal(subOrder));
@@ -1766,8 +1793,14 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private Set<MetaOrderEntity> createMetaOrders(CartItemsGroupedByOrgId checkOutData, com.nasnav.dto.request.cart.CartCheckoutDTO dto) {
-		UserEntity user = (UserEntity)securityService.getCurrentUser();
-		AddressesEntity address = getAddressById(dto.getAddressId(), user.getId());
+		BaseUserEntity user =  securityService.getCurrentUser();
+		Long userId;
+		if(user instanceof EmployeeUserEntity) {
+			userId = dto.getCustomerId();
+		} else {
+			userId = user.getId();
+		}
+		AddressesEntity address = getAddressById(dto.getAddressId(), userId);
 		Set<MetaOrderEntity> yeshteryOrders = checkOutData
 				.entrySet()
 				.stream()
@@ -1781,13 +1814,17 @@ public class OrderServiceImpl implements OrderService {
 	public Order createYeshteryOrder(com.nasnav.dto.request.cart.CartCheckoutDTO dto) {
 		BaseUserEntity user = securityService.getCurrentUser();
 		if(user instanceof EmployeeUserEntity) {
-			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+			UserEntity userEntity = userRepository.findById(dto.getCustomerId())
+					.orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001, dto.getCustomerId()));
+			otpService.validateOtp(dto.getOtp(), userEntity, OtpType.CHECKOUT);
+			dto.setTwoStepVerified(true);
 		}
-
 		cancelAbandonedOrders();
 		validateCartCheckoutDTO(dto);
 		MetaOrderEntity order = createYeshteryMetaOrder(dto);
-
+		if(user instanceof EmployeeUserEntity) {
+			storeCheckoutsRepository.deleteByEmployeeId(user.getId());
+		}
 		return getOrderResponse(order, true);
 	}
 
@@ -1810,7 +1847,15 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private MetaOrderEntity createYeshteryOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, com.nasnav.dto.request.cart.CartCheckoutDTO dto, OrganizationEntity org) {
-		UserEntity user = (UserEntity)securityService.getCurrentUser();
+		BaseUserEntity loggedInuUser = securityService.getCurrentUser();
+		UserEntity user ;
+		if(loggedInuUser instanceof EmployeeUserEntity) {
+			user = userRepository.findById(dto.getCustomerId()).orElseThrow(() ->
+					new RuntimeBusinessException(NOT_FOUND, U$0001, dto.getCustomerId())
+			);
+		} else {
+			user = (UserEntity) loggedInuUser;
+		}
 		Optional<PromotionsEntity> promotion=
 				ofNullable(dto.getPromoCode())
 						.flatMap(promoCode ->
@@ -2227,7 +2272,9 @@ public class OrderServiceImpl implements OrderService {
 		for(OrdersEntity subOrder : subOrders) {
 			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
 			subOrder.setTotal(calculateTotal(subOrder));
-			subOrder.setCreatedByEmployeeId(dto.getCreatedByEmployeeId());
+			if(securityService.getCurrentUser() instanceof EmployeeUserEntity) {
+				subOrder.setCreatedByEmployeeId(securityService.getCurrentUser().getId());
+			}
 			ordersRepository.save(subOrder);
 		}
 		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(), spentPointsInfo, dto.isPayFromReferralBalance());
@@ -2240,7 +2287,12 @@ public class OrderServiceImpl implements OrderService {
 						.stream()
 						.map(cartItems -> createSubOrder(cartItems, address, dto, org, true))
 						.collect(toSet());
-		Long yeshteryOrgId = getYeshteryOrgId();
+		Long yeshteryOrgId;
+		if(dto.isTwoStepVerified()) {
+			yeshteryOrgId = org.getId();
+		} else {
+			yeshteryOrgId = getYeshteryOrgId();
+		}
 		List<ShippingOfferDTO> shippingOffers =	getShippingOffersForCheckout(dto, subOrders, yeshteryOrgId);
 
 		var promoDiscountData = addPromoDiscounts(dto, subOrders, org.getId());
