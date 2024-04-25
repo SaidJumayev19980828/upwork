@@ -34,31 +34,7 @@ import com.nasnav.dao.RelatedProductsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dao.VariantFeatureValuesRepository;
-import com.nasnav.dto.BundleDTO;
-import com.nasnav.dto.BundleElementUpdateDTO;
-import com.nasnav.dto.ExtraAttributeDTO;
-import com.nasnav.dto.NewProductFlowDTO;
-import com.nasnav.dto.Organization_BrandRepresentationObject;
-import com.nasnav.dto.Pair;
-import com.nasnav.dto.Prices;
-import com.nasnav.dto.ProductBaseInfo;
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductFetchDTO;
-import com.nasnav.dto.ProductImageDTO;
-import com.nasnav.dto.ProductImageUpdateDTO;
-import com.nasnav.dto.ProductRepresentationObject;
-import com.nasnav.dto.ProductSortOptions;
-import com.nasnav.dto.ProductTagDTO;
-import com.nasnav.dto.ProductUpdateDTO;
-import com.nasnav.dto.ProductsFiltersResponse;
-import com.nasnav.dto.ProductsResponse;
-import com.nasnav.dto.PromosConstraints;
-import com.nasnav.dto.SeoKeywordsDTO;
-import com.nasnav.dto.StockDTO;
-import com.nasnav.dto.TagsRepresentationObject;
-import com.nasnav.dto.VariantDTO;
-import com.nasnav.dto.VariantFeatureDTO;
-import com.nasnav.dto.VariantUpdateDTO;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.Product360ShopsDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
@@ -437,9 +413,21 @@ public class ProductServiceImpl implements ProductService {
 		return createProductDetailsDTO(product, productFetchDTO.getShopId(), productVariants, productFetchDTO.isIncludeOutOfStock());
 	}
 
-
-
-
+	@Override
+	public List<ProductDataDTO> getProducts(List<Long> ids) throws BusinessException {
+		List<ProductDataDTO> result = new ArrayList<>();
+		if (ids == null || ids.isEmpty())
+			return result;
+		for (Long id : ids) {
+			Optional<ProductEntity> product = productRepository.findByProductId(id, true);
+			if (product.isEmpty()){
+				continue;
+			}
+			List<ProductVariantsEntity> productVariants = getProductVariants(product.get(), false);
+			result.add(new ProductDataDTO(id, createProductDetailsDTO(product.get(), null, productVariants, true)));
+		}
+		return result;
+	}
 
 	private ProductDetailsDTO createProductDetailsDTO(ProductEntity product, Long shopId,
 													  List<ProductVariantsEntity> productVariants,

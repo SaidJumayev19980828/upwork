@@ -265,6 +265,12 @@ public class ProductsController {
         return reviewService.getProductsRatings();
     }
 
+	@GetMapping(value = "/products", produces = MediaType.APPLICATION_JSON_VALUE)
+	public List<ProductDataDTO> getProductsByIds(@RequestParam List<Long> ids)
+			throws BusinessException {
+		return productService.getProducts(ids);
+	}
+
     @PostMapping(value = "review/approve")
     public void rateProduct(@RequestHeader(name = "User-Token", required = false) String token,
                             @RequestParam Long id) {

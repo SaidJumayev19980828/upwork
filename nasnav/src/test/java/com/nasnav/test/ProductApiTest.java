@@ -6,13 +6,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
-import com.nasnav.dto.NewProductFlowDTO;
-import com.nasnav.dto.ProductRepresentationObject;
-import com.nasnav.dto.ProductSortOptions;
-import com.nasnav.dto.ProductStocksDTO;
-import com.nasnav.dto.ProductsFiltersResponse;
-import com.nasnav.dto.ProductsResponse;
-import com.nasnav.dto.StockUpdateDTO;
+import com.nasnav.dto.*;
 import com.nasnav.persistence.*;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.ProductUpdateResponse;
@@ -340,6 +334,39 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 		HttpEntity<ProductStocksDTO> request = new HttpEntity<>(stockDto,headers);
 		ResponseEntity<Void> response = template.exchange("/product/v2/stock?product_id=1001" , HttpMethod.POST, request , Void.class);
 		assertEquals(200, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void getProductsAuthError() {
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("User-Token", "131415efsejkls");
+		HttpEntity<ProductStocksDTO> request = new HttpEntity<>(headers);
+		ResponseEntity<String> response = template.exchange("/product/products?ids=1001", HttpMethod.GET, request, String.class);
+		assertEquals(401, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void getProducts() {
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("User-Token", "131415");
+		HttpEntity<ProductStocksDTO> request = new HttpEntity<>(headers);
+		ResponseEntity<List> response = template.exchange("/product/products?ids=1001,1003,1004", HttpMethod.GET, request, List.class);
+		assertEquals(200, response.getStatusCodeValue());
+		List resBody=response.getBody();
+		assertNotNull(resBody);
+		assertEquals(resBody.size(), 3);
+	}
+
+	@Test
+	public void getProductsMissedIds() {
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("User-Token", "131415");
+		HttpEntity<ProductStocksDTO> request = new HttpEntity<>(headers);
+		ResponseEntity<List> response = template.exchange("/product/products?ids=1001,1003,11004", HttpMethod.GET, request, List.class);
+		assertEquals(200, response.getStatusCodeValue());
+		List resBody=response.getBody();
+		assertNotNull(resBody);
+		assertEquals(resBody.size(), 2);
 	}
 
 

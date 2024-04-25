@@ -2,15 +2,7 @@ package com.nasnav.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.nasnav.dto.BundleElementUpdateDTO;
-import com.nasnav.dto.NewProductFlowDTO;
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductFetchDTO;
-import com.nasnav.dto.ProductRepresentationObject;
-import com.nasnav.dto.ProductTagDTO;
-import com.nasnav.dto.ProductsFiltersResponse;
-import com.nasnav.dto.ProductsResponse;
-import com.nasnav.dto.VariantUpdateDTO;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
 import com.nasnav.dto.response.navbox.VariantsResponse;
@@ -36,6 +28,8 @@ public interface ProductService {
                                boolean getOnlyYeshteryProducts) throws BusinessException;
 
   ProductDetailsDTO getProduct(ProductFetchDTO productFetchDTO);
+
+  List<ProductDataDTO> getProducts(List<Long> ids) throws BusinessException;
 
   Map<String, String> parseVariantFeatures(ProductVariantsEntity variant, Integer returnedName);
 
