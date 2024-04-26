@@ -110,8 +110,6 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
 
     @Override
     public ThreeDModelResponse getThreeDModelByBarcodeOrSKU(String barcode, String sku) {
-        SubscriptionInfoDTO subscriptionInfoDTO = subscriptionService.getSubscriptionInfo();
-        validateOrganizationSubscription(subscriptionInfoDTO);
         validateBarcodeAndSKU(barcode, sku);
         ProductThreeDModel threeDModel = threeDModelRepository.findByBarcodeOrSku(barcode, sku);
         List<String> fileUrls = fileService.getUrlsByModelId(threeDModel.getId());

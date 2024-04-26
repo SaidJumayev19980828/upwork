@@ -316,6 +316,8 @@ public class SecurityConfiguration {
                     , patternOf("/v1/user/subscribe/activate")
                     , patternOf("/v1/employee-user-heart-beats-logs/list-active-employee", GET)
                     , patternOf("/v1/organization/register", HttpMethod.POST)
+                    , patternOf("/v1/product/get3d/all", HttpMethod.GET)
+                    , patternOf("/v1/product/get3d/model", HttpMethod.GET)
 
                     , patternOf("/v1/frontend/setting", GET)
                     , patternOf("/v1/package", GET)

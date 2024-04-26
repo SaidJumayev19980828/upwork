@@ -110,7 +110,6 @@ public class SecurityConfiguration {
 			patternOf( "/user/suspend"											, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 			patternOf("/user/review"					    , HttpMethod.GET   , setOf(CUSTOMER)),
 			patternOf("/product/add/new3d/model",POST),
-			patternOf("/product/get3d/model",GET),
 			patternOf("/product/assign/model/to/product",POST),
 			patternOf( "/product/review"					,HttpMethod.POST	, setOf(CUSTOMER)),
 			patternOf( "/product/**"						,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
@@ -281,6 +280,7 @@ public class SecurityConfiguration {
                         , patternOf("/product/info"					, HttpMethod.GET)
                         , patternOf("/product/image"					, HttpMethod.GET)
                         , patternOf("/product/get3d/all"				, HttpMethod.GET)
+						, patternOf("/product/get3d/model"				, HttpMethod.GET)
                         , patternOf("/product/variant"					, HttpMethod.GET)
 		                , patternOf("/organization/payments"			, HttpMethod.GET)
 						,patternOf( "/organization/register"		    ,HttpMethod.POST)
