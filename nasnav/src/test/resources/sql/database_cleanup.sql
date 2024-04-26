@@ -1,3 +1,4 @@
+DELETE FROM public.oauth2_users;
 DELETE FROM public.integration_mapping where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.integration_param where  organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.integration_event_failure where organization_id BETWEEN 99000 AND 99999;

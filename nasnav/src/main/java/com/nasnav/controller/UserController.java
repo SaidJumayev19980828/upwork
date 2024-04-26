@@ -192,6 +192,11 @@ public class UserController {
         return this.userService.registerUserReferral(userJson, referrer);
     }
 
+    @PostMapping(value = "google_register", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    public UserApiResponse googleRegister(@RequestBody @Valid UserDTOs.GoogleUserRegistrationObject userJson) throws BusinessException {
+        return this.userService.googleRegisterUser(userJson);
+    }
+
     @GetMapping(value = "v2/register/activate", produces = APPLICATION_JSON_VALUE)
     public RedirectView sendEmailRecovery(@RequestParam(value = "token") String token,
                                           @RequestParam(value = "redirect") String redirect) throws BusinessException {

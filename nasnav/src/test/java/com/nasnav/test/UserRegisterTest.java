@@ -1801,4 +1801,53 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		Assert.assertEquals(404, response.getStatusCodeValue());
 	}
 
+
+	@Test
+	public void newGoogleRegisterWrongDataTest() {
+		UserDTOs.GoogleUserRegistrationObject requestBody = new UserDTOs.GoogleUserRegistrationObject();
+		requestBody.setIdToken("outhToken");
+		UserDTOs.UserRegistrationObjectV2 data = new UserDTOs.UserRegistrationObjectV2();
+		data.orgId = Long.parseLong("99001111");
+		data.email = "test@nasnav.com";
+		data.password = "password";
+		requestBody.setUser(data);
+		HttpEntity<Object> json = getHttpEntity(requestBody);
+		ResponseEntity<CreateAiAccountResponse> response = template.postForEntity("/user/google_register", json,
+				CreateAiAccountResponse.class);
+		Assert.assertEquals(406, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void newGoogleRegisterErrorEmailFormateTest() {
+		UserDTOs.GoogleUserRegistrationObject requestBody = new UserDTOs.GoogleUserRegistrationObject();
+		requestBody.setIdToken("outhToken");
+		UserDTOs.UserRegistrationObjectV2 data = new UserDTOs.UserRegistrationObjectV2();
+		data.orgId = Long.parseLong("99001");
+		data.email = "test.com";
+		data.password = "password";
+		requestBody.setUser(data);
+		HttpEntity<Object> json = getHttpEntity(requestBody);
+		ResponseEntity<CreateAiAccountResponse> response = template.postForEntity("/user/google_register", json,
+				CreateAiAccountResponse.class);
+		Assert.assertEquals(400, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void newUserGoogleRegisterRegisterTest() {
+		UserDTOs.GoogleUserRegistrationObject requestBody = new UserDTOs.GoogleUserRegistrationObject();
+		requestBody.setIdToken("outhToken");
+		requestBody.setServerAuthCode("outh2Token");
+		UserDTOs.UserRegistrationObjectV2 data = new UserDTOs.UserRegistrationObjectV2();
+		data.orgId = Long.parseLong("99001");
+		data.email = "test@nasnav.com";
+		data.password = "password";
+		data.setName("name");
+		data.setConfirmationFlag(true);
+		requestBody.setUser(data);
+		HttpEntity<Object> json = getHttpEntity(requestBody);
+		ResponseEntity<CreateAiAccountResponse> response = template.postForEntity("/user/google_register", json,
+				CreateAiAccountResponse.class);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+	}
+
 }

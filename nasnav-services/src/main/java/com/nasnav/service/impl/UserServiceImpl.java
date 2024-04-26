@@ -4,51 +4,20 @@ import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.PagingUtils;
 import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.dao.AreaRepository;
-import com.nasnav.dao.CommonUserRepository;
-import com.nasnav.dao.MetaOrderRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.SubAreaRepository;
-import com.nasnav.dao.UserAddressRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.dao.UserSubscriptionRepository;
-import com.nasnav.dao.UserTokenRepository;
-import com.nasnav.dto.ActivationMethod;
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.UserDTOs;
-import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AddressesEntity;
-import com.nasnav.persistence.AreasEntity;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.LoyaltyTierEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.SubAreasEntity;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.persistence.UserOtpEntity;
-import com.nasnav.persistence.UserSubscriptionEntity;
-import com.nasnav.persistence.UserTokensEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.request.ImageBase64;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
-import com.nasnav.service.DomainService;
-import com.nasnav.service.FileService;
-import com.nasnav.service.LoyaltyPointsService;
-import com.nasnav.service.LoyaltyTierService;
-import com.nasnav.service.MailService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.PackageService;
-import com.nasnav.service.RoleService;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.UserService;
+import com.nasnav.service.*;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.service.otp.OtpService;
 import com.nasnav.service.otp.OtpType;
@@ -72,32 +41,13 @@ import org.springframework.web.servlet.view.RedirectView;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
-import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
-import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_URL_PARAMETER;
-import static com.nasnav.constatnts.EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT;
-import static com.nasnav.constatnts.EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE;
-import static com.nasnav.constatnts.EmailConstants.CHANGE_PASSWORD_URL_PARAMETER;
-import static com.nasnav.constatnts.EmailConstants.NEW_EMAIL_ACTIVATION_TEMPLATE;
-import static com.nasnav.constatnts.EmailConstants.OTP_PARAMETER;
-import static com.nasnav.constatnts.EmailConstants.OTP_TEMPLATE;
-import static com.nasnav.constatnts.EmailConstants.USERNAME_PARAMETER;
-import static com.nasnav.constatnts.EmailConstants.USER_SUBSCRIPTION_TEMPLATE;
-import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
-import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
-import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
-import static com.nasnav.enumerations.UserStatus.ACCOUNT_SUSPENDED;
-import static com.nasnav.enumerations.UserStatus.ACTIVATED;
-import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
+import static com.nasnav.constatnts.EmailConstants.*;
+import static com.nasnav.enumerations.Roles.*;
+import static com.nasnav.enumerations.UserStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
@@ -108,10 +58,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 @RequiredArgsConstructor
@@ -135,6 +82,9 @@ public class UserServiceImpl implements UserService {
 	private final AreaRepository areaRepo;
 	private final UserRepository userRepository;
 	private final UserSubscriptionRepository subsRepo;
+	private final OAuth2ProviderRepository providerRepository;
+
+	private final OAuth2UserRepository oAuthUserRepo;
 
 	private final AppConfig appConfig;
 
@@ -185,7 +135,51 @@ public class UserServiceImpl implements UserService {
 		if(referrer != null) givePointsToReferrer(referrer, userJson.getOrgId());
 		return  registerUserV2(userJson);
 	}
+	@Override
+	public UserApiResponse googleRegisterUser(UserDTOs.GoogleUserRegistrationObject json) {
+		UserDTOs.UserRegistrationObjectV2 userJson = json.getUser();
+		validateNewUserRegistration(userJson);
+		UserEntity user = createNewUserEntity(userJson);
+		user.setUserStatus(ACTIVATED.getValue());
+		LoyaltyTierEntity loyaltyTier = loyaltyTierService.getActiveDefaultTier(userJson.getOrgId());
+		if(loyaltyTier != null) {
+			user.setTier(loyaltyTier);
+		}
+		user = userRepository.save(user);
+		String loginToken = generateUserToken(user);
+		saveNewOAuthUserToDB(json.getIdToken(),json.getServerAuthCode(),user);
+		return new UserApiResponse(user.getId(),loginToken);
+	}
+	private void saveNewOAuthUserToDB(String token, String serverCode,UserEntity nasnavUser) {
+		OAuth2UserEntity oAuthUser = new OAuth2UserEntity();
+		oAuthUser.setUser(nasnavUser);
+		oAuthUser.setEmail(nasnavUser.getEmail());
+		oAuthUser.setLoginToken(token);
+		oAuthUser.setOAuth2Id(serverCode);
+		oAuthUser.setOrganizationId(nasnavUser.getOrganizationId());
+		OAuth2ProviderEntity provider = providerRepository.findByProviderNameIgnoreCase("google").get();
+		if (provider == null) {
+			provider = new OAuth2ProviderEntity();
+			provider.setProviderName("google");
+			providerRepository.save(provider);
+		}
+		oAuthUser.setProvider(provider);
+		oAuthUserRepo.save(oAuthUser);
+	}
 
+	private String generateUserToken(BaseUserEntity user) {
+		UserTokensEntity token = new UserTokensEntity();
+		token.setToken(StringUtils.generateUUIDToken());
+		if (user instanceof EmployeeUserEntity) {
+			token.setEmployeeUserEntity((EmployeeUserEntity) user);
+		} else {
+			token.setUserEntity((UserEntity) user);
+		}
+		userTokenRepo.save(token);
+		UserTokensEntity userTokensEntity = userTokenRepo.getUserEntityByToken(token.getToken());
+		userTokenRepo.save(userTokensEntity);
+		return token.getToken();
+	}
 
 	private void givePointsToReferrer(Long referrer, Long orgId) {
 		UserEntity referrerEntity = userRepository.findById(referrer)

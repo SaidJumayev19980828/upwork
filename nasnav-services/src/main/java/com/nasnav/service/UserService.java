@@ -21,6 +21,8 @@ public interface UserService extends CommonUserServiceInterface {
 
     UserApiResponse registerUserReferral(UserDTOs.UserRegistrationObjectV2 userJson, Long referrer) throws BusinessException;
 
+    UserApiResponse googleRegisterUser(UserDTOs.GoogleUserRegistrationObject userJson) throws BusinessException;
+
     RedirectView activateUserAccount(String token, String redirect) throws BusinessException;
 
     UserApiResponse updateUser(UserDTOs.EmployeeUserUpdatingObject userJson);

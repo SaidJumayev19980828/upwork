@@ -266,6 +266,7 @@ public class SecurityConfiguration {
                     	, patternOf("/nasnav/token", POST)
                     	, patternOf("/nasnav/token/jwks.json", GET)
                         , patternOf("/user/register")
+                        , patternOf("/user/google_register")
 						, patternOf("/user/v2/register")
 						, patternOf("/user/v2/register/activate")
 						, patternOf("/user/v2/register/otp/activate")

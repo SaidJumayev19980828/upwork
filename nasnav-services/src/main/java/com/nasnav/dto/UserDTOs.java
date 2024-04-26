@@ -8,6 +8,8 @@ import com.nasnav.enumerations.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
+
+import javax.validation.Valid;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
@@ -62,6 +64,7 @@ public class UserDTOs {
     @Schema(name = "User Registration Data")
     public static class UserRegistrationObjectV2 {
         public String name;
+        @Email
         public String email;
         public String password;
         @JsonProperty("org_id")
@@ -75,6 +78,18 @@ public class UserDTOs {
         private String phoneNumber;
         @JsonProperty(value = "activation_method",defaultValue = "VERIFICATION_LINK")
         private ActivationMethod activationMethod;
+    }
+
+    @Getter
+    @Setter
+    @Schema(name = "User Registration Data")
+    public static class GoogleUserRegistrationObject {
+        @NotNull
+        private String idToken;
+        private String serverAuthCode;
+        private List<String> scopes;
+        @Valid
+        private UserRegistrationObjectV2 user;
     }
 
     @Getter
