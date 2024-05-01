@@ -101,6 +101,11 @@ public class NavboxController {
 	public ProductsResponse getProductsWithFeaturesFilter(@RequestBody ProductSearchParam productSearchParam) throws BusinessException {
 		return productService.getProducts(productSearchParam);
 	}
+	@GetMapping(value = "/products_by_ids", produces = MediaType.APPLICATION_JSON_VALUE)
+	public List<ProductDataDTO> getProductsByIds(@RequestParam List<Long> ids)
+			throws BusinessException {
+		return productService.getProducts(ids);
+	}
 
 	@GetMapping(value = "/filters", produces = APPLICATION_JSON_VALUE)
 	public ProductsFiltersResponse getProductsFilters(ProductSearchParam productSearchParam) throws BusinessException {

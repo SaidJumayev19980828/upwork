@@ -3,18 +3,7 @@ package com.nasnav.yeshtery.controller.v1;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.nasnav.commons.YeshteryConstants;
-import com.nasnav.dto.BundleElementUpdateDTO;
-import com.nasnav.dto.NewProductFlowDTO;
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductFetchDTO;
-import com.nasnav.dto.ProductImageBulkUpdateDTO;
-import com.nasnav.dto.ProductImageUpdateDTO;
-import com.nasnav.dto.ProductImgDetailsDTO;
-import com.nasnav.dto.ProductStockDTO;
-import com.nasnav.dto.ProductStocksDTO;
-import com.nasnav.dto.ProductTagDTO;
-import com.nasnav.dto.ProductsResponse;
-import com.nasnav.dto.VariantUpdateDTO;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
@@ -105,7 +94,7 @@ public class ProductsController {
 	    productService.deleteVariants(variantIds, forceDelete);
     }
 
-	@PostMapping(value = "image", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "image", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
     public ProductImageUpdateResponse updateProductImage(@RequestHeader(name = "User-Token", required = false) String token,
                                                          @RequestPart(value = "image", required = false) @Valid MultipartFile file,
                                                          @RequestPart("properties") @Valid ProductImageUpdateDTO imgMetaData) throws BusinessException {
