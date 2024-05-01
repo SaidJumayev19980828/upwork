@@ -11,8 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 
 @RestController
@@ -40,13 +38,13 @@ public class FollowerController {
     }
 
     @GetMapping("/info")
-    public FollowerInfoDTO getFollowerInfo(@RequestHeader(TOKEN_HEADER) String userToken,
+    public FollowerInfoDTO getFollowerInfo(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
                                            @RequestParam Long userId) {
         return followerServcie.getFollowerInfoByUserId(userId);
     }
 
     @GetMapping("users/list")
-    public PageImpl<UserListFollowProjection> getUsersList(@RequestHeader(TOKEN_HEADER) String userToken ,
+    public PageImpl<UserListFollowProjection> getUsersList(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken ,
                                                            @RequestParam(required = false, defaultValue = "0") Integer start,
                                                            @RequestParam(required = false, defaultValue = "10") Integer count
                                                            ) {
@@ -54,7 +52,7 @@ public class FollowerController {
     }
 
     @PostMapping
-    public void followOrUnfollow(@RequestHeader(TOKEN_HEADER) String userToken,
+    public void followOrUnfollow(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
                                  @RequestParam Boolean followAction,
                                  @RequestParam Long followerId) throws BusinessException {
         followerServcie.followOrUnfollow(followerId,followAction);

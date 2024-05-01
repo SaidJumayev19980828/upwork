@@ -1,40 +1,30 @@
 package com.nasnav.yeshtery.controller.v1;
 
+import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.ActivationMethod;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
+import com.nasnav.dto.response.YeshteryUserApiResponse;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.ImageBase64;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
-import com.nasnav.service.CommonUserService;
-import com.nasnav.service.EmployeeUserService;
-import com.nasnav.service.ReviewService;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.UserService;
-import com.nasnav.commons.YeshteryConstants;
-import com.nasnav.dto.response.YeshteryUserApiResponse;
+import com.nasnav.service.*;
 import com.nasnav.service.yeshtery.YeshteryUserService;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
@@ -188,7 +178,7 @@ public class YeshteryUserController {
     }
 
     @PostMapping("notification-token")
-    public void updateNotificationToken(@RequestHeader(name = "User-Token") String userToken,
+    public void updateNotificationToken(@RequestHeader(name = "User-Token", required = false) String userToken,
             @Schema(example = "YYYYYYYYYY:XXXXXXXXXXXX") @RequestBody String notificationToken) {
         securityService.setCurrentUserNotificationToken(userToken, notificationToken);
     }

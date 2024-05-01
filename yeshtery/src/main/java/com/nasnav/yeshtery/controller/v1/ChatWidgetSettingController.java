@@ -17,19 +17,19 @@ public class ChatWidgetSettingController {
 	private final ChatWidgetServiceImpl chatWidgetService;
 
 	@PostMapping(value="/create")
-	public ResponseEntity<ChatWidgetSettingResponse> create(@RequestHeader(TOKEN_HEADER) String userToken,
+	public ResponseEntity<ChatWidgetSettingResponse> create(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
 															@RequestBody CreateChatWidgetRequest request) {
 		return ResponseEntity.ok(chatWidgetService.create(request));
 	}
 
 	@PostMapping(value="/publish")
-	public ResponseEntity<ChatWidgetSettingResponse> publish(@RequestHeader(TOKEN_HEADER) String userToken,
+	public ResponseEntity<ChatWidgetSettingResponse> publish(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
 															@RequestParam("org_id") Long orgId) {
 		return ResponseEntity.ok(chatWidgetService.publish(orgId));
 	}
 
 	@GetMapping(value="/get-unpublished")
-	public ResponseEntity<ChatWidgetSettingResponse> getUnPublished(@RequestHeader(TOKEN_HEADER) String userToken,
+	public ResponseEntity<ChatWidgetSettingResponse> getUnPublished(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
 															 @RequestParam("org_id") Long orgId) {
 		return ResponseEntity.ok(chatWidgetService.getUnPublished(orgId));
 	}

@@ -10,19 +10,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.mail.MessagingException;
 import javax.validation.Valid;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +43,7 @@ public class PersonalEventController {
      *                   was saved in the database.
      */
     @PostMapping
-    public ResponseEntity<PersonalEventEntity> createPersonalEvent(@RequestHeader(TOKEN_HEADER) String userToken,
+    public ResponseEntity<PersonalEventEntity> createPersonalEvent(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
                                                                   @Valid @RequestBody PersonalEventDTO event
                                                    ) {
        return  ResponseEntity.status(HttpStatus.CREATED).body(personalEventService.createPersonalEvent(event));
@@ -68,7 +59,7 @@ public class PersonalEventController {
      */
 
     @DeleteMapping(value = "{eventId}")
-    public void deletePersonalEvent(@RequestHeader(TOKEN_HEADER) String userToken,
+    public void deletePersonalEvent(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
                                     @PathVariable long eventId) {
         personalEventService.cancelPersonalEvent(eventId);
     }
@@ -85,7 +76,7 @@ public class PersonalEventController {
      */
     @GetMapping(value = "all")
     public PageImpl<PersonalEvent> getAllPersonalEvents(
-            @RequestHeader(TOKEN_HEADER) String userToken,
+            @RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
             @RequestParam(required = false, defaultValue = "0") Integer start,
             @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
 
@@ -108,7 +99,7 @@ public class PersonalEventController {
 
     @GetMapping(value = "{eventId}")
     public PersonalEvent getPersonalEvent(
-            @RequestHeader(TOKEN_HEADER) String userToken,
+            @RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
             @PathVariable long eventId) {
         return personalEventService.getPersonalEvent(eventId);
     }
@@ -124,7 +115,7 @@ public class PersonalEventController {
      *              people to the personal event.
      */
     @PostMapping(value = "invite/{eventId}")
-    public void inviteToPersonalEvent(@RequestHeader(TOKEN_HEADER) String userToken,
+    public void inviteToPersonalEvent(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
                                     @PathVariable long eventId,
                                     @RequestBody InvitePeopleDTO invite) throws MessagingException, IOException {
         personalEventService.inviteToPersonalEvent(eventId, invite);
@@ -141,7 +132,7 @@ public class PersonalEventController {
      *              And all event that user was invited to also.
      */
     @GetMapping(value = "mine")
-    public List<Map<String,Object>> getMyPersonalEvents(@RequestHeader(TOKEN_HEADER) String userToken) {
+    public List<Map<String,Object>> getMyPersonalEvents(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken) {
         return personalEventService.findMyAllEvents();
     }
 

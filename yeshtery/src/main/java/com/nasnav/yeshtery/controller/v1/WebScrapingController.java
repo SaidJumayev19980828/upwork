@@ -10,17 +10,10 @@ import com.nasnav.service.WebScrapingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import javax.validation.Valid;
 
+import javax.validation.Valid;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
@@ -39,14 +32,14 @@ public class WebScrapingController {
 
 
     @PostMapping
-    public String scrapeDataFromUrl(@RequestHeader(name = "User-Token") String userToken, @Valid @RequestBody WebScrapingRequest scraping) throws JsonProcessingException {
+    public String scrapeDataFromUrl(@RequestHeader(name = "User-Token", required = false) String userToken, @Valid @RequestBody WebScrapingRequest scraping) throws JsonProcessingException {
          webScrapingService.scrapeDataFromUrl(scraping);
         return "Your web scraping request has been received and is being processed.";
     }
 
     @PostMapping("/file")
     public  WebScrapingLog scrapeData(
-            @RequestHeader(name = "User-Token") String userToken,
+            @RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestParam("manualCollect") Boolean manualCollect,
             @RequestParam("bootName") String bootName,
             @RequestParam("orgId") Long orgId,
@@ -57,7 +50,7 @@ public class WebScrapingController {
 
     @GetMapping
     public PageImpl<WebScrapingLog> getScrapingLogs(
-            @RequestHeader(name = "User-Token") String userToken,
+            @RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestParam(required = false, defaultValue = "0") Integer start,
             @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
             @RequestParam(required = false) Long orgId ,
@@ -68,7 +61,7 @@ public class WebScrapingController {
 
     @DeleteMapping
     public void deleteScrapingLog(
-            @RequestHeader(name = "User-Token") String userToken,
+            @RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestParam("id") Long id
     ) {
         webScrapingService.deleteScrapingLog(id);

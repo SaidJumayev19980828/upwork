@@ -1,9 +1,8 @@
 package com.nasnav.yeshtery.controller.v1;
 
-import com.nasnav.service.FileService;
 import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.enumerations.ConvertedImageTypes;
-
+import com.nasnav.service.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
@@ -29,7 +28,7 @@ public class FilesController {
 
     @PostMapping(consumes = MULTIPART_FORM_DATA_VALUE)
 	@ResponseStatus(HttpStatus.OK)
-    public String updateShop(@RequestHeader(TOKEN_HEADER) String userToken,
+    public String updateShop(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
     		                 @RequestParam("org_id") @Nullable Long orgId,
     		                 @RequestParam("file") MultipartFile file) {
         return fileService.saveFile(file, orgId);

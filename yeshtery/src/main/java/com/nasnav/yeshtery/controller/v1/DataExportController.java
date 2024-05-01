@@ -1,9 +1,9 @@
 package com.nasnav.yeshtery.controller.v1;
 
+import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.enumerations.FileType;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.service.CsvExcelDataExportService;
-import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -30,7 +30,7 @@ public class DataExportController {
 
 	@GetMapping(value = "/products")
 	@ResponseBody
-	public ResponseEntity<byte[]> generateProductsCsv(@RequestHeader(TOKEN_HEADER) String token,
+	public ResponseEntity<byte[]> generateProductsCsv(@RequestHeader(value = TOKEN_HEADER, required = false) String token,
 													  @RequestParam(name = "shop_id", required = false)Long shopId) throws Exception {
 			ByteArrayOutputStream s = csvExportService.generateProductsFile(shopId, false);
 			return ResponseEntity.ok()
@@ -40,7 +40,7 @@ public class DataExportController {
 	}
  	@GetMapping(value = "/products/xlsx")
 	@ResponseBody
-	public ResponseEntity<byte[]> generateProductsXLSX(@RequestHeader(TOKEN_HEADER) String token,
+	public ResponseEntity<byte[]> generateProductsXLSX(@RequestHeader(value = TOKEN_HEADER, required = false) String token,
 													   @RequestParam(name = "shop_id", required = false) Long shopId,
 													   @RequestParam(name = "validate", required = false) Boolean validate) throws Exception {
 			ByteArrayOutputStream s = excelExportService.generateProductsFile(shopId, validate);
@@ -52,7 +52,7 @@ public class DataExportController {
 
 	@GetMapping(value = "/products/csv")
 	@ResponseBody
-	public ResponseEntity<byte[]> generateProductsCSV(@RequestHeader(TOKEN_HEADER) String token,
+	public ResponseEntity<byte[]> generateProductsCSV(@RequestHeader(value = TOKEN_HEADER, required = false) String token,
 													  @RequestParam(name = "shop_id", required = false)Long shopId) throws Exception {
 		ByteArrayOutputStream s = csvExportService.generateProductsFile(shopId, false);
 		return ResponseEntity.ok()
@@ -63,7 +63,7 @@ public class DataExportController {
 
 	@GetMapping(value = "/products/images", params = "type=CSV")
 	@ResponseBody
-	public ResponseEntity<byte[]> generateProductsImagesCsv(@RequestHeader(TOKEN_HEADER) String token,
+	public ResponseEntity<byte[]> generateProductsImagesCsv(@RequestHeader(value = TOKEN_HEADER, required = false) String token,
 			@RequestParam(name = "type") FileType type) throws IOException {
 		ByteArrayOutputStream s = csvExportService.generateProductsImagesFile();
 		return ResponseEntity.ok()
@@ -74,7 +74,7 @@ public class DataExportController {
 
 	@GetMapping(value = "/products/images", params = "type=XLSX")
 	@ResponseBody
-	public ResponseEntity<byte[]> generateProductsImagesExcel(@RequestHeader(TOKEN_HEADER) String token,
+	public ResponseEntity<byte[]> generateProductsImagesExcel(@RequestHeader(value = TOKEN_HEADER, required = false) String token,
 			@RequestParam(name = "type") FileType type) throws IOException {
 		ByteArrayOutputStream s = excelExportService.generateProductsImagesFile();
 		return ResponseEntity.ok()
@@ -85,7 +85,7 @@ public class DataExportController {
 
 	@GetMapping(value = "/products/images/csv")
 	@ResponseBody
-	public ResponseEntity<byte[]> generateProductsImagesCSV(@RequestHeader(TOKEN_HEADER) String token) throws IOException {
+	public ResponseEntity<byte[]> generateProductsImagesCSV(@RequestHeader(value = TOKEN_HEADER, required = false) String token) throws IOException {
 		ByteArrayOutputStream s = csvExportService.generateProductsImagesFile();
 			return ResponseEntity.ok()
 					.contentType(MediaType.parseMediaType("text/csv"))
@@ -95,7 +95,7 @@ public class DataExportController {
 
 	@GetMapping(value = "/products/images/xlsx")
 	@ResponseBody
-	public ResponseEntity<byte[]> generateProductsImagesXLSX(@RequestHeader(TOKEN_HEADER) String token) throws IOException {
+	public ResponseEntity<byte[]> generateProductsImagesXLSX(@RequestHeader(value = TOKEN_HEADER, required = false) String token) throws IOException {
 		ByteArrayOutputStream s = excelExportService.generateProductsImagesFile();
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/csv"))
@@ -106,7 +106,7 @@ public class DataExportController {
 
 	@GetMapping(value = { "/orders", "/orders/csv" })
 	@ResponseBody
-	public ResponseEntity<byte[]> generateOrdersCsv(@RequestHeader(TOKEN_HEADER) String token,
+	public ResponseEntity<byte[]> generateOrdersCsv(@RequestHeader(value = TOKEN_HEADER, required = false) String token,
 													OrderSearchParam params) throws Exception {
 		ByteArrayOutputStream s = csvExportService.generateOrdersFile(params);
 		return ResponseEntity.ok()

@@ -5,15 +5,7 @@ import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.response.ImportProcessStatusResponse;
 import com.nasnav.service.OrganizationProcessService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
@@ -34,7 +26,7 @@ public class DataImportAsyncController {
 
 	@PostMapping(value = "productlist/xlsx", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
 	public ImportProcessStatusResponse  importProductListXLSX(
-			@RequestHeader(name = "User-Token") String token,
+			@RequestHeader(name = "User-Token", required = false) String token,
 			@RequestPart("xlsx") @Valid MultipartFile file,
 			@RequestPart("properties") @Valid ProductListImportDTO importMetaData)
 			throws Exception {
@@ -42,7 +34,7 @@ public class DataImportAsyncController {
 	}
 
 	@PostMapping(value = "productlist/csv", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
-	public ImportProcessStatusResponse importProductListCSV(@RequestHeader(TOKEN_HEADER) String token,
+	public ImportProcessStatusResponse importProductListCSV(@RequestHeader(value = TOKEN_HEADER, required = false) String token,
 																	 @RequestPart("csv") @Valid MultipartFile file,
 																	 @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
 			throws Exception {
@@ -50,39 +42,39 @@ public class DataImportAsyncController {
 	}
 
 	@GetMapping("process")
-	public List<ImportProcessStatusResponse> getAllProcess(@RequestHeader(name = "User-Token") String token) {
+	public List<ImportProcessStatusResponse> getAllProcess(@RequestHeader(name = "User-Token", required = false) String token) {
 
 		return organizationProcessService.getProcessesStatus();
 	}
 
 	@GetMapping("process/{id}/status")
-	public ImportProcessStatusResponse getProcessStatus(@RequestHeader(name = "User-Token") String token,
+	public ImportProcessStatusResponse getProcessStatus(@RequestHeader(name = "User-Token", required = false) String token,
 													  @PathVariable String id) {
 
 		return organizationProcessService.getProcessStatus(id);
 	}
 
 	@GetMapping("process/{id}/result")
-	public Object getProcessResult(@RequestHeader(name = "User-Token") String token,
+	public Object getProcessResult(@RequestHeader(name = "User-Token", required = false) String token,
 								   @PathVariable String id) {
 
 		return organizationProcessService.getProcessResult(id);
 	}
 
 	@PutMapping("process/cancel/{id}")
-	public ImportProcessStatusResponse cancelProcess(@RequestHeader(name = "User-Token") String token,
+	public ImportProcessStatusResponse cancelProcess(@RequestHeader(name = "User-Token", required = false) String token,
 												   @PathVariable String id) {
 
 		return organizationProcessService.cancelProcess(id);
 	}
 
 	@DeleteMapping("process")
-	public void clearAllProcess(@RequestHeader(name = "User-Token") String token){
+	public void clearAllProcess(@RequestHeader(name = "User-Token", required = false) String token){
 		organizationProcessService.clearAllProcess();
 	}
 
 	@DeleteMapping("process/{id}")
-	public void clearProcess(@RequestHeader(name = "User-Token") String token,
+	public void clearProcess(@RequestHeader(name = "User-Token", required = false) String token,
 							 @PathVariable String id){
 		organizationProcessService.clearProcess(id);
 	}

@@ -12,11 +12,7 @@ import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.request.ImageBase64;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
-import com.nasnav.service.CommonUserService;
-import com.nasnav.service.EmployeeUserService;
-import com.nasnav.service.ReviewService;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.UserService;
+import com.nasnav.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,19 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -137,7 +121,7 @@ public class UserController {
     }
 
     @PostMapping("notification-token")
-    public void updateNotificationToken(@RequestHeader(name = "User-Token") String userToken,
+    public void updateNotificationToken(@RequestHeader(name = "User-Token", required = false) String userToken,
                                         @Schema(example = "YYYYYYYYYY:XXXXXXXXXXXX") @RequestBody String notificationToken) {
         securityService.setCurrentUserNotificationToken(userToken, notificationToken);
     }

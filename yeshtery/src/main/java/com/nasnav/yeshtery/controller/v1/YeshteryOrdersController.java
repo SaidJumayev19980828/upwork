@@ -1,5 +1,6 @@
 package com.nasnav.yeshtery.controller.v1;
 
+import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.ReturnRequestRejectDTO;
@@ -13,8 +14,7 @@ import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrdersListResponse;
 import com.nasnav.response.ReturnRequestsResponse;
 import com.nasnav.service.OrderReturnService;
-import com.nasnav.service.*;
-import com.nasnav.commons.YeshteryConstants;
+import com.nasnav.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -41,7 +41,7 @@ public class YeshteryOrdersController {
 	private OrderReturnService returnService;
 
 	@PostMapping(value = "status/update", consumes = APPLICATION_JSON_VALUE)
-	public void updateOrder(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody OrderJsonDto orderJson) {
+	public void updateOrder(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestBody OrderJsonDto orderJson) {
 		orderService.updateExistingOrder(orderJson);
 	}
 
@@ -88,7 +88,7 @@ public class YeshteryOrdersController {
 	}
 
 	@GetMapping(value = "track_info", produces = TEXT_PLAIN_VALUE)
-	public String trackOrder(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam("order_id") Long orderId) {
+	public String trackOrder(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestParam("order_id") Long orderId) {
 		return orderService.trackOrder(orderId);
 	}
 

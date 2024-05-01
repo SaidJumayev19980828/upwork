@@ -9,18 +9,9 @@ import com.nasnav.service.CompensationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-
 import java.util.List;
 
 import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
@@ -43,7 +34,7 @@ public class CompensationController {
      */
     @GetMapping(value = "action/types")
     public List<CompensationActions> getAllActionTypes(
-            @RequestHeader(TOKEN_HEADER) String userToken
+            @RequestHeader(value = TOKEN_HEADER, required = false) String userToken
     ){
         return compensationService.getCompensationActions();
     }
@@ -57,7 +48,7 @@ public class CompensationController {
     @PostMapping(value ="action")
     @ResponseStatus(value = CREATED, reason = "Action created")
     public CompensationActionsEntity createAction(
-            @RequestHeader(TOKEN_HEADER) String userToken, @Valid @RequestBody CompensationAction actionDto){
+            @RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @Valid @RequestBody CompensationAction actionDto){
         return compensationService.createAction(actionDto);
     }
 
@@ -70,7 +61,7 @@ public class CompensationController {
 
     @GetMapping(value = "action")
     public List<CompensationActionsEntity> getAllActions(
-            @RequestHeader(TOKEN_HEADER) String userToken
+            @RequestHeader(value = TOKEN_HEADER, required = false) String userToken
     ){
         return compensationService.getAllActions();
     }
@@ -85,7 +76,7 @@ public class CompensationController {
      */
 
     @GetMapping(value = "action/{id}")
-    public CompensationActionsEntity getActionById(@RequestHeader(TOKEN_HEADER) String userToken,@PathVariable Long id){
+    public CompensationActionsEntity getActionById(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,@PathVariable Long id){
         return compensationService.getAction(id);
     }
 
@@ -101,7 +92,7 @@ public class CompensationController {
     @PostMapping(value="rule")
     @ResponseStatus(value = CREATED, reason = "Rule created")
     public CompensationRulesEntity createRule(
-            @RequestHeader(TOKEN_HEADER) String userToken,
+            @RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
             @Valid @RequestBody CompensationRule rule){
         return  compensationService.createRule(rule);
     }
@@ -118,7 +109,7 @@ public class CompensationController {
      */
     @GetMapping(value = "rule/{id}")
     public CompensationRulesEntity getRuleById(
-            @RequestHeader(TOKEN_HEADER) String userToken, @PathVariable Long id){
+            @RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @PathVariable Long id){
         return compensationService.getRule(id);
     }
 
@@ -136,7 +127,7 @@ public class CompensationController {
 
     @GetMapping(value = "rule/all")
     public PageImpl<CompensationRulesEntity> getAllRules(
-            @RequestHeader(TOKEN_HEADER) String userToken,
+            @RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
             @RequestParam(required = false, defaultValue = "0") Integer start,
             @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
             ){

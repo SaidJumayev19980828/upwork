@@ -4,7 +4,7 @@ import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
-import com.nasnav.dto.UserDTOs.*;
+import com.nasnav.dto.UserDTOs.EmployeeUserWithPassword;
 import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.organization.*;
 import com.nasnav.dto.response.OrgThemeRepObj;
@@ -26,10 +26,8 @@ import com.nasnav.response.*;
 import com.nasnav.service.*;
 import com.nasnav.service.helpers.OrganizationServiceHelper;
 import com.nasnav.service.model.IdAndNamePair;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -969,6 +967,8 @@ public class OrganizationServiceImpl implements OrganizationService {
             if (userOrgId == null || !userOrgId.equals(orgId)) {
                 throw new RuntimeBusinessException(FORBIDDEN, ORG$SITEMAP);
             }
+        }else if (! securityService.getCurrentUserOrganizationId().equals(orgId)) {
+            throw new RuntimeBusinessException(FORBIDDEN, ORG$SITEMAP);
         }
         return createSiteMapResponse(orgId, params);
     }

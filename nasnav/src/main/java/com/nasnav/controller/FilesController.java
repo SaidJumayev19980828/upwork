@@ -2,10 +2,10 @@ package com.nasnav.controller;
 
 import com.nasnav.enumerations.ConvertedImageTypes;
 import com.nasnav.service.FileService;
+import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.jboss.logging.Logger;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,7 +29,7 @@ public class FilesController {
 
     @PostMapping(consumes = MULTIPART_FORM_DATA_VALUE)
 	@ResponseStatus(HttpStatus.OK)
-    public String updateShop(@RequestHeader(TOKEN_HEADER) String userToken,
+    public String updateShop(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
     		                 @RequestParam("org_id") @Nullable Long orgId,
     		                 @RequestParam("file") MultipartFile file) {
         return fileService.saveFile(file, orgId);

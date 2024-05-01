@@ -8,16 +8,7 @@ import com.nasnav.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.io.IOException;
@@ -34,7 +25,7 @@ public class PostController {
     private PostService postService;
 
     @GetMapping("/{id}")
-    public PostResponseDTO getPostById(@RequestHeader(TOKEN_HEADER) String userToken, @PathVariable Long id) throws BusinessException {
+    public PostResponseDTO getPostById(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @PathVariable Long id) throws BusinessException {
         return postService.getPostById(id);
     }
 
@@ -84,32 +75,32 @@ public class PostController {
     }
 
     @PostMapping
-    public PostResponseDTO createPost(@RequestHeader(TOKEN_HEADER) String userToken,@Valid @RequestBody PostCreationDTO post) throws BusinessException, IOException {
+    public PostResponseDTO createPost(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,@Valid @RequestBody PostCreationDTO post) throws BusinessException, IOException {
         return postService.createPost(post);
     }
 
     @PostMapping("/like")
-    public long likeOrDisLikePost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId, @RequestParam boolean likeAction){
+    public long likeOrDisLikePost(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestParam long postId, @RequestParam boolean likeAction){
         return postService.likeOrDisLikePost(postId, likeAction);
     }
 
     @PostMapping("/click")
-    public void clickOnPost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId){
+    public void clickOnPost(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestParam long postId){
         postService.clickOnPost(postId);
     }
 
     @PutMapping("/approve")
-    public void approveOrRejectReview(@RequestHeader(TOKEN_HEADER) String userToken,@RequestParam long postId, @RequestParam PostStatus postStatus){
+    public void approveOrRejectReview(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,@RequestParam long postId, @RequestParam PostStatus postStatus){
         postService.approveOrRejectReview(postId, postStatus);
     }
 
     @PostMapping("/save")
-    public void saveForLater(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId){
+    public void saveForLater(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestParam long postId){
          postService.saveForLater(postId);
     }
 
     @PostMapping("/unsave")
-    public void unSavePost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId){
+    public void unSavePost(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestParam long postId){
         postService.unSavePost(postId);
     }
 

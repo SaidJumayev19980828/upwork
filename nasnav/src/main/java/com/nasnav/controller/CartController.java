@@ -10,9 +10,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.CartCheckoutService;
 import com.nasnav.service.CartOptimizationService;
 import com.nasnav.service.CartService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,7 +35,7 @@ public class CartController {
 
 	@Deprecated
 	@GetMapping(produces=APPLICATION_JSON_VALUE)
-	public Cart getCart(@RequestHeader(TOKEN_HEADER) String userToken,
+	public Cart getCart(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
 						@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
 						@RequestParam(required = false) Set<Long> points) {
 		return cartService.getCart(promoCode, points, false);
@@ -45,7 +43,7 @@ public class CartController {
 
 
 	@GetMapping(value = "/v2",produces=APPLICATION_JSON_VALUE)
-	public Cart getCartVersionTwo(@RequestHeader(TOKEN_HEADER) String userToken,
+	public Cart getCartVersionTwo(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
 						@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
 						@RequestParam(required = false) BigDecimal points) {
 		return cartService.getCart(promoCode, points, false);
@@ -56,7 +54,7 @@ public class CartController {
 	}
 
 	@PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public Cart addCartItem(@RequestHeader(TOKEN_HEADER) String userToken,
+	public Cart addCartItem(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
 							@RequestBody CartItem item,
 							@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
 							@RequestParam(required = false) Set<Long> points) {
@@ -64,7 +62,7 @@ public class CartController {
 	}
 
 	@PostMapping(value = "/items", consumes = APPLICATION_JSON_VALUE, produces=APPLICATION_JSON_VALUE)
-	public Cart addCartItems(@RequestHeader(TOKEN_HEADER) String userToken,
+	public Cart addCartItems(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
 							 @RequestBody List<CartItem> items,
 							 @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
 							 @RequestParam(required = false) Set<Long> points) {
@@ -85,29 +83,29 @@ public class CartController {
 
 
 	@PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-	public Order checkoutCart(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody CartCheckoutDTO dto) {
+	public Order checkoutCart(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestBody CartCheckoutDTO dto) {
 		return cartCheckoutService.checkoutCart(dto);
 	}
 
 	@PostMapping(value = "/store-checkout/initiate", produces= APPLICATION_JSON_VALUE)
-	public void initiateCheckout(@RequestHeader(TOKEN_HEADER) String userToken,
+	public void initiateCheckout(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
 								 @RequestParam("user_id") Long userId) {
 		 cartCheckoutService.initiateCheckout(userId);
 	}
 
 	@PostMapping(value = "/store-checkout/complete", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-	public Order checkoutComplete(@RequestHeader(TOKEN_HEADER) String userToken,
+	public Order checkoutComplete(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
 								  @RequestBody CartCheckoutDTO dto) throws BusinessException {
 		return cartCheckoutService.completeCheckout(dto);
 	}
 
 	@PostMapping(value = "/optimize", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public CartOptimizeResponseDTO optimizeCart(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody CartCheckoutDTO dto) {
+	public CartOptimizeResponseDTO optimizeCart(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestBody CartCheckoutDTO dto) {
 		return cartOptimizeService.validateAndOptimizeCart(dto, false);
 	}
 
 	@GetMapping(value = "/promo/discount", produces = APPLICATION_JSON_VALUE)
-	public AppliedPromotionsResponse calcPromoDiscount(@RequestHeader(TOKEN_HEADER) String userToken,
+	public AppliedPromotionsResponse calcPromoDiscount(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
 													   @RequestParam(value = "promo", required = false) String promoCode) {
 		return cartService.getCartPromotions(promoCode);
 	}
