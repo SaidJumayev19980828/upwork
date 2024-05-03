@@ -145,7 +145,9 @@ public class PostTest extends AbstractTestWithTempBaseDir {
         HttpEntity<?> json = getHttpEntity(requestBody, "123");
         ResponseEntity<Void> response = template.postForEntity("/post/like?postId=1&likeAction=true", json, Void.class);
         assertEquals(200, response.getStatusCode().value());
-        //assertEquals(1L,postLikesRepository.countAllByPost_Id(1L).longValue());
+
+        ResponseEntity<Void> response2 = template.postForEntity("/post/like?postId=1&likeAction=true", json, Void.class);
+        assertEquals(200, response2.getStatusCode().value());
     }
 
     @Test

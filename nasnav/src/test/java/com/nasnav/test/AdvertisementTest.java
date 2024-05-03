@@ -15,6 +15,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +23,13 @@ import org.springframework.test.context.jdbc.Sql;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.test.commons.TestCommons.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertEquals;
 
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Advertisements_Api_Test_Data.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -61,6 +64,25 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    public void likeorDislikePostTest(){
+        String requestBody =
+                json().toString();
+        HttpEntity<?> json = getHttpEntity(requestBody, "99");
+        ResponseEntity<Void> response = template.postForEntity("/post/like?postId=1&likeAction=true", json, Void.class);
+        assertEquals(200, response.getStatusCode().value());
+
+        ResponseEntity<Void> response2 = template.postForEntity("/post/like?postId=1&likeAction=true", json, Void.class);
+        assertEquals(200, response2.getStatusCode().value());
+
+
+        HttpEntity<?> json2 = getHttpEntity(requestBody, "99");
+        ResponseEntity<Void> response3 = template.postForEntity("/post/like?postId=1&likeAction=true", json2, Void.class);
+        assertEquals(200, response3.getStatusCode().value());
+
+    }
+
+
+    @Test
     void testCreateAdvertisement() {
         long prevCount = advertisementRepository.count();
 
@@ -77,6 +99,7 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
                                                 .put("coins", 100)
                                                 .put("likes", 3000)
                                                 .put("product_id", 1001)
+                                                .put("compensation_rules", Set.of(1))
                                         )
                                         .put(1, json()
                                                 .put("coins", 100)

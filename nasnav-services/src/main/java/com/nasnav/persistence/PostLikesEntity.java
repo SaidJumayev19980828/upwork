@@ -42,8 +42,6 @@ public class PostLikesEntity {
 
     @ManyToOne
     @JoinColumn(name = "sub_post_id")
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
     @JsonBackReference
     private SubPostEntity subPost;
 

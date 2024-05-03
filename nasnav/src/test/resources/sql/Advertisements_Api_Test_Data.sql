@@ -19,7 +19,13 @@ VALUES (99002, 'organization_2', 818) on CONFLICT do NOTHING;
 
 INSERT INTO public.bank_accounts(id, created_At, org_id, user_id, wallet_Address, opening_Balance,
                                  opening_Balance_Activity_id, opening_Balance_Date, locked)
-values (10, now(), 99001, null, 'address', 10000, null, now(), false);
+values (10, now(), 99001, null, 'address', 14, null, now(), false);
+
+
+
+INSERT INTO public.bank_account_activities(
+	id, account_id, amount_in)
+	VALUES (1, 10, 14);
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id)
@@ -79,6 +85,12 @@ INSERT INTO public.advertisement_product (id, coins, likes, product_id, advertis
 VALUES (1003, 100, 3000, 1003, 1005);
 
 
+INSERT INTO public.advertisement_product (id, coins, likes, product_id, advertisement_id)
+VALUES (1013, 100, 3000, 1006, 1004);
+
+INSERT INTO public.advertisement_product (id, coins, likes, product_id, advertisement_id)
+VALUES (1014, 100, 3000, 1001, 1004);
+
 
 INSERT INTO public.advertisement_product (id, coins, likes, product_id, advertisement_id)
 VALUES (1004, 100, 3000, 1001, 1006);
@@ -125,6 +137,12 @@ INSERT INTO public.users(id, email, user_name, authentication_token, organizatio
 VALUES (94, 'user6@nasnav.com', 'user6', '7', 99001) on CONFLICT do nothing;
 
 
+INSERT INTO public.users(id, email, user_name, authentication_token, organization_id)
+VALUES (99, 'user99@nasnav.com', 'user6', '99', 99002) on CONFLICT do nothing;
+
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id)
+VALUES (70009, '99', now(), null, 99) on CONFLICT do nothing;
+
 INSERT INTO public.posts(id, user_id, org_id, type, status, advertisement_id)
 values (1001, 88, 99001, 0, 1, 1001) on CONFLICT do nothing;
 
@@ -148,24 +166,44 @@ INSERT INTO public.posts(id, user_id, org_id, type, status, advertisement_id)
 values (1006, 93, 99001, 0, 1, 1004) on CONFLICT do nothing;
 
 
---
---INSERT INTO public.post_likes(id, user_id, post_id, created_at)
---values (1001, 94, 1001, now()) on CONFLICT do nothing;
---
---INSERT INTO public.post_likes(id, user_id, post_id, created_at)
---values (1002, 94, 1001, now()) on CONFLICT do nothing;
---
---INSERT INTO public.post_likes(id, user_id, post_id, created_at)
---values (1003, 94, 1001, now()) on CONFLICT do nothing;
---INSERT INTO public.post_likes(id, user_id, post_id, created_at)
---values (1004, 94, 1001, now()) on CONFLICT do nothing;
---
---INSERT INTO public.post_likes(id, user_id, post_id, created_at)
---values (1005, 94, 1001, now()) on CONFLICT do nothing;
+INSERT INTO public.posts(id, user_id, org_id, type, status, advertisement_id)
+values (1999, 99, 99002, 0, 1, 1006) on CONFLICT do nothing;
 
---
---INSERT INTO public.post_likes(id, user_id, post_id, created_at)
---values (1006, 94, 1001, now()) on CONFLICT do nothing;
---
+INSERT INTO public.sub_posts(
+	id, post_id, product_id)
+	VALUES (1, 1006, 1001),
+           (9, 1999, 1008),
+	       (2,1006,1002) on conflict do nothing;
 
 
+
+INSERT INTO public.compensation_action(
+	id, name, description)
+	VALUES (1, 'LIKE', 'test description for LIKE'),
+           (2, 'JOIN_EVENT', 'test description for Join Event');
+
+INSERT INTO public.compensation_rules(
+	id, name, action_id, organization_id, is_active)
+	VALUES (1, 'rule test', 1, 99001, true);
+
+
+INSERT INTO public.compensation_rule_tier(
+	id, condition, reward, is_active, rule_id)
+	VALUES (1, 1, 10.0, true, 1),
+           (2, 2, 20.0, true, 1);
+
+
+INSERT INTO public.post_likes(id, user_id, created_at ,sub_post_id)
+values (1001, 94 , now(),1) ;
+
+INSERT INTO public.post_likes(id, user_id, created_at ,sub_post_id)
+values (1003, 92 , now(),1) ;
+
+INSERT INTO public.advertisement_product_compensation(
+	id, advertisement_product_id, compensation_rule)
+	VALUES (1, 1014, 1);
+
+
+INSERT INTO public.bank_accounts(id, created_At, org_id, user_id, wallet_Address, opening_Balance,
+                                 opening_Balance_Activity_id, opening_Balance_Date, locked)
+values (11, now(), null, 93, 'address2', 10, null, now(), false);

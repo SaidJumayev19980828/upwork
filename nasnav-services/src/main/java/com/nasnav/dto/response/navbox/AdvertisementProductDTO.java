@@ -7,6 +7,8 @@ import com.nasnav.dto.response.BrandsDTO;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Set;
+
 @Getter
 @Setter
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -17,4 +19,5 @@ public class AdvertisementProductDTO {
     private BrandsDTO brandsDTO;
     private Integer coins;
     private Integer likes;
+    private Set<Long> compensationRules;
 }

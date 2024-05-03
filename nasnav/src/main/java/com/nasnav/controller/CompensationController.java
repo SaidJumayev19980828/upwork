@@ -5,6 +5,7 @@ import com.nasnav.dto.CompensationRule;
 import com.nasnav.enumerations.CompensationActions;
 import com.nasnav.persistence.CompensationActionsEntity;
 import com.nasnav.persistence.CompensationRulesEntity;
+import com.nasnav.persistence.EligibleNotReceivedEntity;
 import com.nasnav.service.CompensationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageImpl;
@@ -132,6 +133,19 @@ public class CompensationController {
             @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
             ){
         return compensationService.getAllRules(start,count);
+    }
+
+    @GetMapping(value = "eligible/all")
+    public PageImpl<EligibleNotReceivedEntity> getAllEligible(
+            @RequestParam(required = false, defaultValue = "0") Integer start,
+            @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
+    ){
+        return compensationService.getAllEligible(start,count);
+    }
+
+    @GetMapping(value = "rule/list")
+    public List<CompensationRulesEntity> getAllRulesByOrg(){
+        return compensationService.getAllActiveRules();
     }
 
 }

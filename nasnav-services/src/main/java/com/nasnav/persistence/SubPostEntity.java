@@ -3,11 +3,9 @@ package com.nasnav.persistence;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -41,9 +39,7 @@ public class SubPostEntity {
     @JoinColumn(name = "product_id")
     private ProductEntity product;
 
-    @OneToMany(mappedBy = "subPost", cascade = CascadeType.ALL)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
+    @OneToMany(mappedBy = "subPost", cascade = CascadeType.ALL , orphanRemoval = true)
     @JsonManagedReference
     private Set<PostLikesEntity> likes = new HashSet<>();
 

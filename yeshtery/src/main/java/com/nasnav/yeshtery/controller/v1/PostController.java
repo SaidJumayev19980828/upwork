@@ -2,6 +2,7 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.request.PostCreationDTO;
+import com.nasnav.dto.response.LikePostResponse;
 import com.nasnav.dto.response.PostResponseDTO;
 import com.nasnav.enumerations.PostStatus;
 import com.nasnav.exceptions.BusinessException;
@@ -78,7 +79,7 @@ public class PostController {
     }
 
     @PostMapping("/like")
-    public long likeOrDisLikePost(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestParam long postId, @RequestParam boolean likeAction){
+    public LikePostResponse likeOrDisLikePost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId, @RequestParam boolean likeAction){
         return postService.likeOrDisLikePost(postId, likeAction);
     }
 

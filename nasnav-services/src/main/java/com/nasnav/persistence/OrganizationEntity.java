@@ -10,8 +10,20 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.json.JSONObject;
 
-import javax.persistence.*;
-import java.time.LocalTime;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -121,7 +133,7 @@ public class OrganizationEntity implements BaseEntity {
     private EmployeeUserEntity owner;
 
 
-    @OneToOne(mappedBy = "organization", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "organization", cascade = CascadeType.ALL)
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
     @JsonIgnore

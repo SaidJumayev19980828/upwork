@@ -517,7 +517,10 @@ public enum ErrorCodes {
 	,BANK$ACC$0006("No reservation with id: [%d]")
 	,BANK$ACC$0007("this transaction is done before")
 	,BANK$ACC$0008("The provide Api key is Not Valid, check it again")
+	,BANK$ACC$0009("no account found for the Organization")
+
 	,BANK$TRANS$0001("Insufficient Fund for that Customer")
+
 
 	,ROOMS$ROOM$NotFound("No Room Template found with %s id [%d]")
 	,ROOMS$ROOM$InvalidStatus("room status can't be changed from %s to %s")
@@ -560,6 +563,8 @@ public enum ErrorCodes {
 	COMPEN$001("No Compensation Action found with the provided ID [%s]"),
 
 	COMPEN$002("No Compensation Rule found with the provided ID [%s] for that Organization"),
+
+	BC$001("An error occurred while processing that request du to %s"),
 
 	STORE_CHECKOUT$001("There is no user for this employee to do checkout");
 			;

@@ -27,4 +27,10 @@ public class PostCreationDTO {
     private boolean isAttachmentValid() {
         return !isReview || (attachment != null && !attachment.isEmpty());
     }
+
+
+    @AssertTrue(message = "Products cannot be empty for Post")
+    private boolean isProductsIdsValid() {
+        return isReview || (productsIds != null && !productsIds.isEmpty());
+    }
 }

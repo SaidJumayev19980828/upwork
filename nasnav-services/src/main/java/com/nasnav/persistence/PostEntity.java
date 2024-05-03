@@ -88,9 +88,7 @@ public class PostEntity {
     private ShopsEntity shop;
 
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL , fetch = FetchType.EAGER)
     @JsonManagedReference
     private Set<SubPostEntity> subPosts = new HashSet<>();
 

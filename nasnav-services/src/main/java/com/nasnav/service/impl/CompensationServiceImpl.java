@@ -1,37 +1,59 @@
 package com.nasnav.service.impl;
 
+import com.google.common.base.Objects;
 import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.dao.CompensationActionsEntityRepository;
 import com.nasnav.dao.CompensationRulesRepository;
+import com.nasnav.dao.EligibleNotReceivedRepository;
+import com.nasnav.dao.ReceivedAwardRepository;
 import com.nasnav.dto.CompensationAction;
 import com.nasnav.dto.CompensationRule;
 import com.nasnav.dto.RuleTier;
 import com.nasnav.enumerations.CompensationActions;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.BankAccountEntity;
 import com.nasnav.persistence.CompensationActionsEntity;
 import com.nasnav.persistence.CompensationRuleTierEntity;
 import com.nasnav.persistence.CompensationRulesEntity;
+import com.nasnav.persistence.EligibleNotReceivedEntity;
 import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ReceivedAwardEntity;
+import com.nasnav.persistence.SubPostEntity;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.service.BankAccountActivityService;
+import com.nasnav.service.BankInsideTransactionService;
 import com.nasnav.service.CompensationService;
 import com.nasnav.service.SecurityService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.nasnav.exceptions.ErrorCodes.BANK$ACC$0009;
 import static com.nasnav.exceptions.ErrorCodes.COMPEN$001;
 import static com.nasnav.exceptions.ErrorCodes.COMPEN$002;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class CompensationServiceImpl implements CompensationService {
     private final CompensationActionsEntityRepository actionRepository;
     private final CompensationRulesRepository ruleRepository;
     private final SecurityService security;
-
+    private final BankAccountActivityService bankAccountActivityService;
+    private final ReceivedAwardRepository receivedAwardRepository;
+    private final EligibleNotReceivedRepository eligibleNotReceivedRepository;
+    private final BankInsideTransactionService bankInsideTransactionService;
     /**
      * Get all the compensation actions available in the system.
      * This is used to populate the dropdown in the UI.
@@ -103,6 +125,12 @@ public class CompensationServiceImpl implements CompensationService {
         return ruleRepository.findByIdAndOrganization(id,loggedInUserOrg()).orElseThrow(()->new RuntimeBusinessException(HttpStatus.NOT_FOUND,COMPEN$002,id));
     }
 
+
+    @Override
+    public List<CompensationRulesEntity> getAllActiveRules() {
+        return ruleRepository.findAllByOrganizationAndIsActiveTrue(loggedInUserOrg());
+    }
+
     /**
      * Get all the compensation rules available in the system based on current logged-in user organization.
      * @param start Page number to be retrieved.
@@ -115,6 +143,119 @@ public class CompensationServiceImpl implements CompensationService {
         CustomPaginationPageRequest pageRequest = new CustomPaginationPageRequest(start,count);
         return ruleRepository.findAllByOrganization(loggedInUserOrg(),pageRequest);
     }
+
+    @Override
+    @Transactional
+    public boolean checkAndProcessReward (Set<CompensationRulesEntity> rules , CompensationActions action , long actionCount , SubPostEntity subPost ) {
+            Set<CompensationRulesEntity> filtered =  filterRules(rules, action);
+            if (!filtered.isEmpty()) {
+               return processReward(rules, actionCount,subPost);
+            }
+            return true;
+    }
+
+    @Override
+    public PageImpl<EligibleNotReceivedEntity> getAllEligible(int start, int count) {
+        CustomPaginationPageRequest pageRequest = new CustomPaginationPageRequest(start,count);
+        return eligibleNotReceivedRepository.findAllByOrganization(loggedInUserOrg(),pageRequest);
+    }
+
+
+    private Set<CompensationRulesEntity> filterRules(Set<CompensationRulesEntity> rules, CompensationActions action) {
+        rules.removeIf(rule-> !Objects.equal(rule.getAction().getName() , action));
+        return rules;
+    }
+
+    private boolean processReward(Set<CompensationRulesEntity> rules, long actionCount , SubPostEntity subPost ) {
+        AtomicBoolean showButton = new AtomicBoolean(true);
+        rules.forEach(rule -> rule.getTiers().forEach(tier -> {
+            if (actionCount >= tier.getCondition()) {
+                UserEntity user = subPost.getPost().getUser();
+                OrganizationEntity organization = rule.getOrganization();
+                if (orgSufficientBalance(organization, tier.getReward())) {
+                    rewardUser(tier,subPost,user,organization);
+                } else {
+                    recordUserAsEligible(tier,subPost,user,organization);
+                    showButton.set(false);
+                }
+            }
+        }));
+        return showButton.get();
+    }
+
+    private boolean orgSufficientBalance( OrganizationEntity organization, BigDecimal reward ){
+        BigDecimal balance = organizationBalance(organization);
+        return balance.compareTo(reward) >= 0;
+    }
+
+    private BigDecimal organizationBalance(OrganizationEntity organization){
+       return BigDecimal.valueOf(bankAccountActivityService.getTotalBalance(getOrganizationBankAddressId(organization)));
+    }
+
+    private Long getOrganizationBankAddressId( OrganizationEntity organization) {
+        BankAccountEntity orgBankAccount = organization.getBankAccount();
+        if (orgBankAccount == null) {
+            throw new RuntimeBusinessException(NOT_FOUND, BANK$ACC$0009);
+        }
+        return orgBankAccount.getId();
+    }
+    private boolean isUserAlreadyRewarded(CompensationRuleTierEntity tier , SubPostEntity subPost , UserEntity user){
+        Optional<ReceivedAwardEntity> award = receivedAwardRepository.findByUserAndSubPostAndCompensationTier(user ,subPost, tier);
+        return award.isEmpty();
+    }
+    private void rewardUser(CompensationRuleTierEntity tier , SubPostEntity subPost , UserEntity user , OrganizationEntity organization) {
+        if (isUserAlreadyRewarded(tier, subPost, user)) {
+            receivedAwardRepository.save(buildReceivedAwardEntity(tier, subPost, user,organization));
+            transferMoneyFromOrgToUser(organization,subPost,user,tier.getReward());
+        }
+    }
+
+    private void transferMoneyFromOrgToUser(OrganizationEntity organization,SubPostEntity subPost ,UserEntity user , BigDecimal reward){
+        log.info("pay {} to user {} for sub post {}", reward, user.getId(), subPost.getId());
+        BankAccountEntity sender = organization.getBankAccount();
+        BankAccountEntity receiver = user.getBankAccount();
+        bankInsideTransactionService.transferImpl(sender, receiver, Float.parseFloat(String.valueOf(reward)) );
+    }
+    private ReceivedAwardEntity buildReceivedAwardEntity(CompensationRuleTierEntity tier, SubPostEntity subPost, UserEntity user , OrganizationEntity organization) {
+        ReceivedAwardEntity award = new ReceivedAwardEntity();
+        award.setCompensationTier(tier);
+        award.setSubPost(subPost);
+        award.setUser(user);
+        award.setAwardDate(LocalDate.now());
+        award.setAwardAmount(tier.getReward());
+        award.setOrganization(organization);
+        String awardDescription = String.format(
+                "Award for achieving %s at tier id %s on %s",
+                tier.getReward(), tier.getId(), LocalDate.now()
+        );
+        award.setAwardDescription(awardDescription);
+        return award;
+    }
+
+    private void recordUserAsEligible(CompensationRuleTierEntity tier , SubPostEntity subPost , UserEntity user,OrganizationEntity organization) {
+        if (isUserAlreadyRewarded(tier, subPost, user) &&
+                isUserNotAlreadyEligible(tier, subPost, user) ) {
+            eligibleNotReceivedRepository.save(buildEligibleEntity(tier, subPost, user,organization));
+        }
+    }
+
+    private boolean isUserNotAlreadyEligible(CompensationRuleTierEntity tier, SubPostEntity subPost, UserEntity user){
+        Optional<EligibleNotReceivedEntity> eligible = eligibleNotReceivedRepository.findByUserAndSubPostAndCompensationTier(user, subPost, tier);
+        return eligible.isEmpty();
+    }
+
+    private EligibleNotReceivedEntity buildEligibleEntity(CompensationRuleTierEntity tier, SubPostEntity subPost, UserEntity user,OrganizationEntity organization) {
+        EligibleNotReceivedEntity eligible = new EligibleNotReceivedEntity();
+        eligible.setCompensationTier(tier);
+        eligible.setSubPost(subPost);
+        eligible.setUser(user);
+        eligible.setEligibilityDate(LocalDate.now());
+        eligible.setEligibleAmount(tier.getReward());
+        eligible.setOrganization(organization);
+        eligible.setReasonForEligibility("Eligible Award but not received organization unSufficient Balance");
+        return eligible;
+    }
+
 
     /**
      * Get the logged-in user organization.

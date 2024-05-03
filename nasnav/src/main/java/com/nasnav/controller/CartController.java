@@ -1,7 +1,10 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.AppliedPromotionsResponse;
+import com.nasnav.dto.EstimateTokensUsdResponse;
+import com.nasnav.dto.TokenValueRequest;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.response.TokenPaymentResponse;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
@@ -12,7 +15,15 @@ import com.nasnav.service.CartOptimizationService;
 import com.nasnav.service.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -109,4 +120,16 @@ public class CartController {
 													   @RequestParam(value = "promo", required = false) String promoCode) {
 		return cartService.getCartPromotions(promoCode);
 	}
+
+	@PostMapping("/estimate-tokens-to-usdc")
+	public EstimateTokensUsdResponse estimateTokensToUsdc(@RequestBody TokenValueRequest request) {
+		return cartService.estimateTokensToUsd(request);
+	}
+	@PostMapping("/token-paymet/{brandId}")
+	public TokenPaymentResponse tokenPayment(
+			@PathVariable Long brandId,
+			@RequestBody TokenValueRequest request) {
+		 return cartService.tokenPayment(brandId,request);
+	}
+
 }

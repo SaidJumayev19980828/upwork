@@ -1,9 +1,12 @@
 package com.nasnav.service;
 
 import com.nasnav.dto.AppliedPromotionsResponse;
+import com.nasnav.dto.EstimateTokensUsdResponse;
 import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.TokenValueRequest;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.mail.AbandonedCartsMail;
+import com.nasnav.dto.response.TokenPaymentResponse;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.persistence.CartItemEntity;
@@ -44,4 +47,7 @@ public interface CartService {
     List<ShopRepresentationObject> getShopsThatCanProvideEachItem();
     void moveOutOfStockCartItemsToWishlist();
     void moveCartItemsToWishlist(List<CartItemEntity> movedItems);
+
+    EstimateTokensUsdResponse estimateTokensToUsd (TokenValueRequest request);
+    TokenPaymentResponse tokenPayment(Long brandId, TokenValueRequest request);
 }

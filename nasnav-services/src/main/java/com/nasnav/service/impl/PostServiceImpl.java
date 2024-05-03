@@ -12,14 +12,18 @@ import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductFetchDTO;
 import com.nasnav.dto.request.PostCreationDTO;
+import com.nasnav.dto.response.LikePostResponse;
 import com.nasnav.dto.response.PostResponseDTO;
 import com.nasnav.dto.response.SubPostResponseDTO;
+import com.nasnav.enumerations.CompensationActions;
 import com.nasnav.enumerations.PostStatus;
 import com.nasnav.enumerations.PostType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.AdvertisementEntity;
+import com.nasnav.persistence.AdvertisementProductCompensation;
 import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.CompensationRulesEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PostAttachmentsEntity;
@@ -31,6 +35,7 @@ import com.nasnav.persistence.ProductTypes;
 import com.nasnav.persistence.SubPostEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.request.ImageBase64;
+import com.nasnav.service.CompensationService;
 import com.nasnav.service.FileService;
 import com.nasnav.service.FollowerServcie;
 import com.nasnav.service.OrganizationService;
@@ -53,6 +58,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -87,6 +93,7 @@ public class PostServiceImpl implements PostService {
     private final  FileService fileService;
     private final ShopService shopService;
     private final SubPostEntityRepository subPostRepository;
+    private final CompensationService compensationService;
     @Override
     public PostResponseDTO getPostById(long id) throws BusinessException {
         return fromEntityToPostResponseDto(postRepository.findById(id).orElseThrow(() -> new BusinessException("No Post with this id can be found", "", HttpStatus.NOT_FOUND)));
@@ -98,12 +105,39 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public long likeOrDisLikePost(long postId, boolean likeAction) {
+    public LikePostResponse likeOrDisLikePost(long postId, boolean likeAction) {
         SubPostEntity post = subPostRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, G$POST$0001, postId));
         UserEntity loggedInUser = validateUser(securityService.getCurrentUser());
-        return  subPostRepository.save(toggleLike(post, loggedInUser)).getLikes().size();
+        SubPostEntity  subPost = subPostRepository.saveAndFlush(toggleLike(post, loggedInUser));
+        long likes = subPost.getLikes().size();
+        boolean showButton = processRewards(subPost , likes);
+        return new LikePostResponse(showButton,likes);
     }
+
+    private boolean processRewards(SubPostEntity  subPost , long actionCount){
+        if (isAdvertisement(subPost.getPost())){
+           return compensationService.checkAndProcessReward(
+                    getRules(subPost.getPost(),subPost.getProduct()), CompensationActions.LIKE,actionCount,subPost);
+        }
+        return true;
+    }
+    private boolean isAdvertisement(PostEntity post){
+        return post.getAdvertisement() != null;
+    }
+    private Set<CompensationRulesEntity> getRules(PostEntity post,ProductEntity product ){
+        AdvertisementEntity advertisement = post.getAdvertisement();
+        if (advertisement == null) {
+            return new HashSet<>();
+        }
+        return advertisement.getAdvertisementProducts().stream()
+                    .filter(adProduct -> adProduct.getProduct().equals(product))
+                    .flatMap(adProduct -> adProduct.getCompensationRules().stream())
+                    .map(AdvertisementProductCompensation::getCompensationRule)
+                    .collect(Collectors.toSet());
+    }
+
+
 
     private UserEntity validateUser(BaseUserEntity loggedIn) {
         if (!(loggedIn instanceof UserEntity user)) {
@@ -118,7 +152,7 @@ public class PostServiceImpl implements PostService {
         boolean userLikedPost = likes.stream()
                 .anyMatch(like -> like.getUser().equals(user));
         if (userLikedPost) {
-            likes.removeIf(like -> like.getUser().equals(user));
+            subPost.getLikes().removeIf(like -> like.getUser().equals(user));
         } else {
            subPost.addLike(buildLike(user));
         }
@@ -298,13 +332,15 @@ public class PostServiceImpl implements PostService {
     private PostEntity fromPostCreationDtoToPostEntity(PostCreationDTO dto) {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
 
-        List<ProductEntity> products = getProducts(dto);
         OrganizationEntity org = getOrganization(dto.getOrganizationId());
 
         PostEntity entity = buildPostEntity(dto, org, (UserEntity) loggedInUser);
 
-        List<SubPostEntity> subPosts = createSubPosts(products);
-        subPosts.forEach(entity::addSubPost);
+        if (!dto.isReview()) {
+            List<ProductEntity> products = getProducts(dto);
+            List<SubPostEntity> subPosts = createSubPosts(products);
+            subPosts.forEach(entity::addSubPost);
+        }
 
         if (dto.isReview()) {
             handleReviewAttachments(dto, org, entity);

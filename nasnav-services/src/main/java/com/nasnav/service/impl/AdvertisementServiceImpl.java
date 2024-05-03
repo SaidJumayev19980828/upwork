@@ -2,18 +2,14 @@ package com.nasnav.service.impl;
 
 import com.nasnav.dao.AdvertisementRepository;
 import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.ProductRepository;
 import com.nasnav.dto.response.AdvertisementDTO;
 import com.nasnav.dto.response.navbox.AdvertisementProductDTO;
-import com.nasnav.mappers.AdvertisementMapper;
-import com.nasnav.mappers.AdvertisementProductCollectionMapper;
-import com.nasnav.mappers.BrandsMapper;
 import com.nasnav.persistence.AdvertisementEntity;
 import com.nasnav.persistence.AdvertisementProductEntity;
-import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.service.AdvertisementProductCustomMapper;
 import com.nasnav.service.AdvertisementProductService;
 import com.nasnav.service.AdvertisementService;
-import com.nasnav.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -27,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 
@@ -36,12 +31,8 @@ import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 public class AdvertisementServiceImpl implements AdvertisementService {
     private final AdvertisementRepository advertisementRepository;
     private final AdvertisementProductService advertisementProductService;
-    private final AdvertisementMapper advertisementMapper;
-    private final AdvertisementProductCollectionMapper advertisementProductCollectionMapper;
     private final OrganizationRepository organizationRepository;
-    private final ProductRepository productRepository;
-    private final ProductService productService;
-    private final BrandsMapper brandsMapper;
+    private final AdvertisementProductCustomMapper advertisementProductCustomMapper;
 
     @Transactional
     @Override
@@ -59,14 +50,14 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         }, page);
         List<AdvertisementDTO> dtos = all.getContent().stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
         return new PageImpl<>(dtos, all.getPageable(), all.getTotalElements());
     }
 
     @Transactional
     @Override
     public AdvertisementDTO create(AdvertisementDTO advertisementDTO) {
-        AdvertisementEntity advertisement = advertisementMapper.toEntity(advertisementDTO);
+        AdvertisementEntity advertisement = toEntity(advertisementDTO);
         advertisement.setName(advertisementDTO.getName());
         if (advertisementDTO.getOrgId() != null) {
             advertisement.setOrganization(organizationRepository.findOneById(advertisementDTO.getOrgId()));
@@ -75,7 +66,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         Assert.notNull(advertisement.getOrganization().getBankAccount(), "organization should have a bank account");
         AdvertisementEntity advertisementEntity = advertisementRepository.save(advertisement);
         List<AdvertisementProductDTO> advertisementProductDTOS = advertisementProductService.save(advertisementEntity, advertisementDTO.getProducts());
-        AdvertisementDTO dto = advertisementMapper.toDto(advertisementEntity);
+        AdvertisementDTO dto = fromEntityToDto(advertisementEntity);
         dto.setProducts(advertisementProductDTOS);
         dto.setName(advertisementEntity.getName());
         return dto;
@@ -102,7 +93,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
     public void update(AdvertisementDTO advertisementDTO) {
         advertisementRepository.findById(advertisementDTO.getId())
                 .ifPresent(e -> {
-                    AdvertisementEntity advertisement = advertisementMapper.toEntity(advertisementDTO);
+                    AdvertisementEntity advertisement = toEntity(advertisementDTO);
                     advertisement.setName(advertisementDTO.getName());
                     if (advertisementDTO.getOrgId() != null) {
                         advertisement.setOrganization(organizationRepository.findOneById(advertisementDTO.getOrgId()));
@@ -116,17 +107,61 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         });
     }
 
+    private AdvertisementDTO fromEntityToDto(AdvertisementEntity entity) {
+        if ( entity == null ) {
+            return null;
+        }
+        AdvertisementDTO advertisementDTO = new AdvertisementDTO();
+        advertisementDTO.setOrgId( entityOrganizationId( entity ) );
+        advertisementDTO.setId( entity.getId() );
+        advertisementDTO.setName( entity.getName() );
+        advertisementDTO.setBannerUrl( entity.getBannerUrl() );
+        advertisementDTO.setCreationDate( entity.getCreationDate() );
+        advertisementDTO.setFromDate( entity.getFromDate() );
+        advertisementDTO.setToDate( entity.getToDate() );
+
+        return advertisementDTO;
+    }
+    private Long entityOrganizationId(AdvertisementEntity advertisementEntity) {
+        if ( advertisementEntity == null ) {
+            return null;
+        }
+        OrganizationEntity organization = advertisementEntity.getOrganization();
+        if ( organization == null ) {
+            return null;
+        }
+        return organization.getId();
+    }
+
     private AdvertisementDTO toDto(AdvertisementEntity entity) {
-        AdvertisementDTO dto = advertisementMapper.toDto(entity);
+        AdvertisementDTO dto = fromEntityToDto(entity);
         dto.setName(entity.getName());
-        dto.setProducts(advertisementProductCollectionMapper.toDto(entity.getAdvertisementProducts()).stream().map(itx -> {
-            if (itx.getProductId() != null) {
-                ProductEntity product = productRepository.getById(itx.getProductId());
-                itx.setProductDetailsDTO(productService.toProductDetailsDTO(product, false));
-                itx.setBrandsDTO(brandsMapper.toBrandsDTO(product.getBrand()));
-            }
-            return itx;
-        }).collect(Collectors.toList()));
+        dto.setProducts(advertisementProductCustomMapper.toDto(entity.getAdvertisementProducts()));
         return dto;
+    }
+
+    private AdvertisementEntity toEntity(AdvertisementDTO dto) {
+        AdvertisementEntity advertisementEntity = new AdvertisementEntity();
+        advertisementEntity.setOrganization( advertisementDTOToOrganizationEntity( dto ) );
+        advertisementEntity.setId( dto.getId() );
+        advertisementEntity.setName( dto.getName() );
+        advertisementEntity.setBannerUrl( dto.getBannerUrl() );
+        advertisementEntity.setFromDate( dto.getFromDate() );
+        advertisementEntity.setToDate( dto.getToDate() );
+        advertisementEntity.setCreationDate( dto.getCreationDate() );
+
+        return advertisementEntity;
+    }
+
+    private OrganizationEntity advertisementDTOToOrganizationEntity(AdvertisementDTO advertisementDTO) {
+        if ( advertisementDTO == null ) {
+            return null;
+        }
+
+        OrganizationEntity organizationEntity = new OrganizationEntity();
+
+        organizationEntity.setId( advertisementDTO.getOrgId() );
+
+        return organizationEntity;
     }
 }

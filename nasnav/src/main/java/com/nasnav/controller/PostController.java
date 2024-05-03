@@ -1,6 +1,7 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.request.PostCreationDTO;
+import com.nasnav.dto.response.LikePostResponse;
 import com.nasnav.dto.response.PostResponseDTO;
 import com.nasnav.enumerations.PostStatus;
 import com.nasnav.exceptions.BusinessException;
@@ -75,32 +76,32 @@ public class PostController {
     }
 
     @PostMapping
-    public PostResponseDTO createPost(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,@Valid @RequestBody PostCreationDTO post) throws BusinessException, IOException {
+    public PostResponseDTO createPost(@RequestHeader(TOKEN_HEADER) String userToken,@Valid @RequestBody PostCreationDTO post) throws BusinessException, IOException {
         return postService.createPost(post);
     }
 
     @PostMapping("/like")
-    public long likeOrDisLikePost(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestParam long postId, @RequestParam boolean likeAction){
+    public LikePostResponse likeOrDisLikePost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId, @RequestParam boolean likeAction){
         return postService.likeOrDisLikePost(postId, likeAction);
     }
 
     @PostMapping("/click")
-    public void clickOnPost(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestParam long postId){
+    public void clickOnPost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId){
         postService.clickOnPost(postId);
     }
 
     @PutMapping("/approve")
-    public void approveOrRejectReview(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,@RequestParam long postId, @RequestParam PostStatus postStatus){
+    public void approveOrRejectReview(@RequestHeader(TOKEN_HEADER) String userToken,@RequestParam long postId, @RequestParam PostStatus postStatus){
         postService.approveOrRejectReview(postId, postStatus);
     }
 
     @PostMapping("/save")
-    public void saveForLater(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestParam long postId){
+    public void saveForLater(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId){
          postService.saveForLater(postId);
     }
 
     @PostMapping("/unsave")
-    public void unSavePost(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestParam long postId){
+    public void unSavePost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId){
         postService.unSavePost(postId);
     }
 

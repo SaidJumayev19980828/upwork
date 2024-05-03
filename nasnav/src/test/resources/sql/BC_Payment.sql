@@ -1,0 +1,103 @@
+----------------------------inserting dummy data----------------------------
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
+--inserting organizations
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
+
+--inserting brands
+INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
+INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 201, 'brand_2', 99001);
+
+--inserting categories
+INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
+INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
+
+--inserting product features
+INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234,'Shoe size', 's-size', 'Size of the shoes', 99001);
+INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'Shoe color', 's-color', 'Color of the shoes', 99001);
+INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Shoe size', 's-size', 'Size of the shoes', 99002);
+
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '01111234567');
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300002, 'address line', 1, '01111234567');
+
+
+--inserting shops
+INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (501, 'shop_1', 102, 99001, 12300001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (502, 'shop_2', 101, 99001, 12300001);
+
+--insering employees
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+VALUES (69, 'testuser2@nasnav.com', 99002, '131415',  501);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+VALUES (70, 'ahmed.galal@nasnav.com', 99001, '161718',  502);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+VALUES (71, 'testuser3@nasnav.com', 99002, '5289361',  NULL);
+
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '101112', now(), 68, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '131415', now(), 69, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700005, '5289361', now(), 71, null);
+
+
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, no_of_purchase_from, no_of_purchase_to, organization_id, constraints) VALUES (1, 'default_tier', true, now(), 1, 5, 99001, '{"ORDER_ONLINE":0.05}');
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, no_of_purchase_from, no_of_purchase_to, organization_id, constraints) VALUES (2, 'Gold', true, now(), 6, 10, 99001,'{"ORDER_ONLINE":0.05}');
+
+
+insert into public.loyalty_point_config
+values (31001, 'description', 99001, 501, true, now(), 1, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
+insert into public.loyalty_point_config
+values (31002, 'description_2', 99001, 501, true, now(), 2, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
+
+--inserting users
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id,tier_id)
+    VALUES (88, 'user1@nasnav.com','user1','123', 99001,2);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (89, 'test2@nasnav.com','user2','456', 99001);
+
+
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '123', now(), null, 88);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700004, '456', now(), null, 89);
+
+
+--inserting Roles
+insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
+insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
+insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
+insert into roles(id, name,  organization_id) values(6, 'ORGANIZATION_MANAGER', 99001);
+
+
+--inserting Roles EmployeeUsers relations
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 68, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25, 68, 6);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26, 69, 4);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (27, 71, 2);
+
+
+--insert units
+INSERT INTO PUBLIC.units(id, name)values(18999, 'pcs');
+
+--inserting products
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, barcode) VALUES (1002, 'product_2',101, 201, 99002, now(), now(),'123456789');
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1003, 'product_3',101, 202, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',102, 201, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1005, 'product_5',102, 202, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1006, 'product_6',102, 201, 99002, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1007, 'product_7',101, 202, 99002, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99002, now(), now());
+
+
+INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
+
+INSERT INTO public.bank_accounts(id,created_At,org_id,user_id,wallet_Address,opening_Balance,opening_Balance_Activity_id,opening_Balance_Date,locked)
+values (10,now(),null,88,'0x0461bc5A911fD95890bb4db5c1323B0A0bDB890D',0,null,now(),false);
+INSERT INTO public.bank_accounts(id,created_At,org_id,user_id,wallet_Address,opening_Balance,opening_Balance_Activity_id,opening_Balance_Date,locked)
+values (11,now(),99001,null,'0x0461bc5A911fD95890bb4db5c1323B0A0bDB840D',0,null,now(),false);
+
+INSERT into public.bank_account_activities(id, account_id, amount_in, amount_out, activity_date)
+values (1,10,40,0,now());

@@ -7,6 +7,7 @@ import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.enumerations.CompensationActions;
 import com.nasnav.persistence.CompensationActionsEntity;
 import com.nasnav.persistence.CompensationRulesEntity;
+import com.nasnav.persistence.EligibleNotReceivedEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
@@ -169,6 +170,32 @@ private TestRestTemplate restTemplate;
         assertEquals(1, actions.getNumberOfElements());
         int tiersCount = actions.getContent().get(0).getTiers().size();
         assertEquals(2, tiersCount);
+    }
+
+    @Test
+    public void getRuleTest() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("User-Token", "123");
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        ParameterizedTypeReference<List<CompensationRulesEntity>> responseType =
+                new ParameterizedTypeReference<List<CompensationRulesEntity>>() {};
+        ResponseEntity<List<CompensationRulesEntity>> response =
+                restTemplate.exchange("/compensation/rule/list", HttpMethod.GET, request, responseType);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    public void getEligibleTest() {
+        int start= 0;
+        int count = 10;
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("User-Token", "123");
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        ParameterizedTypeReference<RestResponsePage<EligibleNotReceivedEntity>> responseType =
+                new ParameterizedTypeReference<RestResponsePage<EligibleNotReceivedEntity>>() {};
+        ResponseEntity<RestResponsePage<EligibleNotReceivedEntity>> response =
+                restTemplate.exchange("/compensation/eligible/all?start"+ start + "&count"+count, HttpMethod.GET, request, responseType);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
     @Test

@@ -1,22 +1,44 @@
 package com.nasnav.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dao.*;
-import com.nasnav.dto.AppliedPromotionsResponse;
+import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.MetaOrderRepository;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationCartOptimizationRepository;
+import com.nasnav.dao.ReferralTransactionRepository;
+import com.nasnav.dao.ReferralWalletRepository;
+import com.nasnav.dao.UserOtpRepository;
+import com.nasnav.dao.UserRepository;
+import com.nasnav.dao.WishlistItemRepository;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
-import com.nasnav.dto.response.navbox.*;
+import com.nasnav.dto.response.navbox.Cart;
+import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
+import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.dto.response.navbox.Shipment;
+import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.enumerations.ReferralTransactionsType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.ErrorResponseDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.*;
-import com.nasnav.service.*;
-import com.nasnav.service.helpers.CartServiceHelper;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.MetaOrderEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationCartOptimizationEntity;
+import com.nasnav.persistence.ReferralTransactions;
+import com.nasnav.persistence.ReferralWallet;
+import com.nasnav.persistence.ShipmentEntity;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.UserOtpEntity;
+import com.nasnav.service.CartService;
+import com.nasnav.service.MailService;
+import com.nasnav.service.OrderService;
 import com.nasnav.service.impl.CartServiceImpl;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
@@ -26,7 +48,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -36,18 +57,24 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
-import static com.nasnav.enumerations.OrderStatus.*;
+import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
+import static com.nasnav.enumerations.OrderStatus.DISCARDED;
+import static com.nasnav.enumerations.OrderStatus.FINALIZED;
+import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
+import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.enumerations.PaymentStatus.COD_REQUESTED;
-import static com.nasnav.exceptions.ErrorCodes.GEN$0003;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.WAREHOUSE;
 import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_ID;
 import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_TYPE;
@@ -56,11 +83,25 @@ import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.http.HttpMethod.*;
-import static org.springframework.http.HttpStatus.*;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -1608,6 +1649,19 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		ResponseEntity<Order> res = template.postForEntity("/cart/store-checkout/complete", request, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
 	}
+
+	@Test
+	public void timeEstimateTest(){
+		JSONObject requestBody =new JSONObject();
+		requestBody.put("currency", "EGP");
+		requestBody.put("amount", 500);
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+
+		ResponseEntity<Order> res = template.postForEntity("/cart/estimate-tokens-to-usdc", request, Order.class);
+		assertEquals(200, res.getStatusCodeValue());
+	}
+
+
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Store_Checkout_1.sql"})
