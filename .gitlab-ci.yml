@@ -36,6 +36,7 @@ sonarqube-check:
     - docker
   only:
     - develop
+    - merge_requests
 
 test:maven:
   stage: test
