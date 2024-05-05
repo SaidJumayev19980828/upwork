@@ -27,7 +27,11 @@
 
         <spring-security.version>5.8.11</spring-security.version>
 
+        <!-- Sonar -->
         <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../report-aggregate/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.junit.reportPaths>${project.basedir}/../nasnav/target/surefire-reports/,${project.basedir}/../yeshtery/target/surefire-reports/</sonar.junit.reportPaths>
+        <sonar.cpd.exclusions>${project.basedir}/../nasnav/**/*Controller.java</sonar.cpd.exclusions>
     </properties>
     <modules>
         <module>nasnav</module>

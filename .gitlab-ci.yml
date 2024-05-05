@@ -30,25 +30,8 @@ sonarqube-check:
     - cp ./deploy/properties-test/* ./nasnav/src/main/resources/
     - cp ./deploy/properties-test/* ./yeshtery/src/main/resources/
     - mvn verify sonar:sonar -Dsonar.projectKey=meetusvr_nasnav-backend_AY8DFqHraX-5tQIjwRi4
-  allow_failure: true
-  tags:
-    - meetusvr
-    - docker
-  only:
-    - develop
-    - merge_requests
-
-test:maven:
-  stage: test
-  services:
-    - postgres:15.2-alpine
-  image: maven:3.8.5-openjdk-17
-  script:
-    - mvn --version
-    - cp ./deploy/properties-test/* ./nasnav/src/main/resources/
-    - cp ./deploy/properties-test/* ./yeshtery/src/main/resources/
-    - mvn -B --no-transfer-progress test
     - ./coverage.sh report-aggregate/target/site/jacoco-aggregate/jacoco.csv
+  allow_failure: true
   coverage: '/Code coverage: \d+\.\d+/'
   artifacts:
     when: always
@@ -62,10 +45,37 @@ test:maven:
     - meetusvr
     - docker
   only:
-    - nasnav-develop
-    - review
+    - develop
     - merge_requests
-    - DEVOPS201-add-jwt
+
+# test:maven:
+#   stage: test
+#   services:
+#     - postgres:15.2-alpine
+#   image: maven:3.8.5-openjdk-17
+#   script:
+#     - mvn --version
+#     - cp ./deploy/properties-test/* ./nasnav/src/main/resources/
+#     - cp ./deploy/properties-test/* ./yeshtery/src/main/resources/
+#     - mvn -B --no-transfer-progress test
+#     - ./coverage.sh report-aggregate/target/site/jacoco-aggregate/jacoco.csv
+#   coverage: '/Code coverage: \d+\.\d+/'
+#   artifacts:
+#     when: always
+#     paths:
+#       - report-aggregate/target/site/jacoco-aggregate/jacoco.xml
+#     reports:
+#       junit:
+#         - nasnav/target/surefire-reports/TEST-*.xml
+#         - yeshtery/target/surefire-reports/TEST-*.xml
+#   tags:
+#     - meetusvr
+#     - docker
+#   only:
+#     - nasnav-develop
+#     - review
+#     - merge_requests
+#     - DEVOPS201-add-jwt
 
 test:coverage:
   stage: visualize-coverage
@@ -78,7 +88,7 @@ test:coverage:
       $CI_PROJECT_DIR/nasnav/src/main/java/
       $CI_PROJECT_DIR/yeshtery/src/main/java/
       > $CI_PROJECT_DIR/report-aggregate/target/site/cobertura.xml"
-  needs: ["test:maven"]
+  needs: ["sonarqube-check"]
   artifacts:
     reports:
       coverage_report:
@@ -88,11 +98,8 @@ test:coverage:
     - meetusvr
     - docker
   only:
-    - java-17-migration
-    - nasnav-develop
-    - tests
+    - develop
     - merge_requests
-    - DEVOPS201-add-jwt
 
 build:compile:
   stage: compile
