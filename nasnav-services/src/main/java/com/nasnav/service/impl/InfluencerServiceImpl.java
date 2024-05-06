@@ -6,6 +6,7 @@ import com.nasnav.dao.EventRepository;
 import com.nasnav.dao.EventRequestsRepository;
 import com.nasnav.dao.InfluencerRepository;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.PostRepository;
 import com.nasnav.dto.CategoryDTO;
 import com.nasnav.dto.EventRequestsDTO;
 import com.nasnav.dto.InfluencerDTO;
@@ -17,6 +18,7 @@ import com.nasnav.dto.request.EventOrganiseRequestDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.enumerations.EventRequestStatus;
 import com.nasnav.enumerations.EventStatus;
+import com.nasnav.enumerations.PostStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.CategoriesEntity;
@@ -80,6 +82,8 @@ public class InfluencerServiceImpl implements InfluencerService {
     private OrganizationService organizationService;
     @Autowired
     private ProductService productService;
+    @Autowired
+    private PostRepository postRepository;
 
     @Override
     public InfluencerDTO getInfluencerById(Long id) {
@@ -421,11 +425,14 @@ public class InfluencerServiceImpl implements InfluencerService {
             dto.setImage(entity.getUser().getImage());
             dto.setUserId(entity.getUser().getId());
             dto.setUserRepresentationObject(entity.getUser().getRepresentation());
+            dto.setShare(postRepository.countAllByUser_IdAndStatus(entity.getUser().getId(),
+                                    PostStatus.APPROVED.getValue()));
         }
-        dto.setCategories(entity.getCategories().stream().map(this::toCategoryDTO).collect(Collectors.toList()));
+        dto.setCategories(entity.getCategories().stream().map(this::toCategoryDTO).toList());
         dto.setHostedEvents(eventRepository.countAllByInfluencersContains(entity));
         dto.setInterests(eventLogsRepository.countByEvent_InfluencersContains(entity.getId()));
         dto.setAttends(eventLogsRepository.countByEvent_InfluencersContainsAndAttendAtNotNull(entity.getId()));
+        dto.setSellingProduct(0);
         dto.setIsGuided(entity.getIsGuided());
         dto.setDate(entity.getCreatedAt());
         return dto;

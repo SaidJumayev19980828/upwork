@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +83,7 @@ public class PersonalEventImpl implements PersonalEventService {
         String creatorName = getCreatorName(personalEvent);
         String inviteeMail = getInviteeMail(eventInvitee , invite);
 
-        prepareAndSendMail(orgName, inviteeMail, creatorName, personalEvent.getStartsAt(), personalEvent.getEndsAt());
+        prepareAndSendMail(orgName, inviteeMail, creatorName, personalEvent.getStartsAt());
     }
 
     @Override
@@ -176,25 +177,26 @@ public class PersonalEventImpl implements PersonalEventService {
     }
 
     @Async
-    private void prepareAndSendMail(String orgName  , String inviteeMail, String creatorName , LocalDateTime startAt , LocalDateTime endAt ) throws MessagingException, IOException {
-        this.sendInviteEmail(orgName ,inviteeMail,creatorName, startAt , endAt ,"Event Invitation",INVITE_MAIL );
+    private void prepareAndSendMail(String orgName  , String inviteeMail, String creatorName , LocalDateTime startAt) throws MessagingException, IOException {
+        String emailSubject = "You're Invited to Join a private VR meeting with %s"
+                .formatted(creatorName);
+        this.sendInviteEmail(orgName ,inviteeMail,creatorName, startAt ,emailSubject,INVITE_MAIL );
     }
-    public void sendInviteEmail(String orgName ,String inviteeMail, String creatorName, LocalDateTime startAt , LocalDateTime endAt, String emailSubject , String mailTemplate) throws MessagingException, IOException {
-        Map<String, String> parametersMap = prepareMailContent(creatorName,inviteeMail,startAt,endAt);
+    public void sendInviteEmail(String orgName ,String inviteeMail, String creatorName, LocalDateTime startAt, String emailSubject , String mailTemplate) throws MessagingException, IOException {
+        Map<String, String> parametersMap = prepareMailContent(creatorName,inviteeMail,startAt);
         this.mailService.send( orgName , inviteeMail, emailSubject, mailTemplate,parametersMap);
     }
 
 
 
 
-    public Map<String, String> prepareMailContent(String creatorName,String inviteeMail ,  LocalDateTime startAt , LocalDateTime endAt ) {
+    public Map<String, String> prepareMailContent(String creatorName,String inviteeMail ,  LocalDateTime startAt ) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE dd MMMM yyyy HH:mm");
+        String startDateTime = startAt.format(formatter);
         Map<String, String> parametersMap = new HashMap<>();
         parametersMap.put("#inviteeMail#", inviteeMail);
         parametersMap.put("#creator#", creatorName);
-        parametersMap.put("#startDate#",  startAt.toLocalDate().toString());
-        parametersMap.put("#endDate#", endAt.toLocalDate().toString());
-        parametersMap.put("#startime#", startAt.toLocalTime().toString());
-        parametersMap.put("#endtime#", endAt.toLocalTime().toString());
+        parametersMap.put("#startDateTime#",  startDateTime);
         return parametersMap;
     }
 

@@ -1,10 +1,8 @@
 package com.nasnav.dto;
 
-import com.nasnav.dto.response.EventResponseDto;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 
 @Data
@@ -23,4 +21,6 @@ public class InfluencerDTO {
     private Boolean isGuided;
     private LocalDateTime date;
     private UserRepresentationObject userRepresentationObject;
+    private Long share;
+    private Integer sellingProduct;
 }
