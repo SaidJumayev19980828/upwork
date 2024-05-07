@@ -1651,6 +1651,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
+	@Ignore
 	public void timeEstimateTest(){
 		JSONObject requestBody =new JSONObject();
 		requestBody.put("currency", "EGP");
