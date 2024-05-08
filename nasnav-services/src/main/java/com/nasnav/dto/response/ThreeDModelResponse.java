@@ -18,6 +18,7 @@ public class ThreeDModelResponse {
     private String sku;
     private String color;
     private String model;
+    private String imageUrl;
     private long size;
     private List<String> urls;
     public static ThreeDModelResponse get3dModelResponse(ProductThreeDModel threeDModel, List<String> filesUrls) {

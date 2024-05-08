@@ -73,7 +73,8 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
                 .put("model", "model-test")
                 .put("size", 30L)
                 .put("description", "des-test")
-                .put("color", "red");
+                .put("color", "red")
+                .put("image", "image");
     }
 
     @Test

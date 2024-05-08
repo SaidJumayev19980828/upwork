@@ -19,6 +19,7 @@ public class ProductThreeDModel {
     private String color;
     private String model;
     private Long size;
+    private String imageUrl;
     public static ProductThreeDModel getProductThreeDModel(ThreeDModelDTO threeDModelDTO) {
         ProductThreeDModel productThreeDModel =new ProductThreeDModel();
         productThreeDModel.setName(threeDModelDTO.getName());
@@ -28,6 +29,7 @@ public class ProductThreeDModel {
         productThreeDModel.setColor(threeDModelDTO.getColor());
         productThreeDModel.setModel(threeDModelDTO.getModel());
         productThreeDModel.setSize(threeDModelDTO.getSize());
+        productThreeDModel.setImageUrl(threeDModelDTO.getImage());
         return productThreeDModel;
     }
 

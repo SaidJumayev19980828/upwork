@@ -85,7 +85,9 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         ProductThreeDModel threeDModel = threeDModelRepository.save(productThreeDModel);
         MultipartFile[] filesTobeSaved = validateModelFiles(files);
         List<String> filesUrls = save3DModelFiles(filesTobeSaved, threeDModel.getId());
-        return getThreeDModelResponse(threeDModel, filesUrls);
+        ThreeDModelResponse threeDModelResponse = getThreeDModelResponse(threeDModel, filesUrls);
+        threeDModelResponse.setImageUrl(threeDModel.getImageUrl());
+        return threeDModelResponse;
     }
 
     @Override

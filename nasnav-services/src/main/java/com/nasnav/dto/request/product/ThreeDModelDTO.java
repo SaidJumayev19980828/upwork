@@ -18,5 +18,6 @@ public class ThreeDModelDTO {
     private String sku;
     private String color;
     private String model;
+    private String image;
     private Long size;
 }
