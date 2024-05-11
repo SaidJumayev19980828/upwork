@@ -56,6 +56,12 @@ public class HandlerChainProcessStatus {
     }
 
     @JsonIgnore
+    public boolean isFailed() {
+
+        return Status.FAILED.equals(status);
+    }
+
+    @JsonIgnore
     public boolean isInProgress() {
 
         return Status.IN_PROGRESS.equals(status);

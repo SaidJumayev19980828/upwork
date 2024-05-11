@@ -1,22 +1,26 @@
 package com.nasnav.service.handler;
 
-import com.nasnav.commons.model.handler.ImportDataCommand;
-import com.nasnav.exceptions.ProcessCancelException;
-import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.commons.model.handler.*;
+import com.nasnav.dao.*;
+import com.nasnav.dto.request.notification.PushMessageDTO;
+import com.nasnav.enumerations.NotificationType;
+import com.nasnav.exceptions.*;
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.response.ImportProcessStatusResponse;
 import com.nasnav.service.handler.chain.process.ImportDataHandlingChainProcess;
 import com.nasnav.service.handler.dataimport.HandlerChainFactory;
+import com.nasnav.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
+
+import static com.nasnav.exceptions.ErrorCodes.U$0001;
 
 @Service
 @Slf4j
@@ -24,6 +28,9 @@ import java.util.stream.Collectors;
 public class ImportDataHandlingChainProcessManagerService {
 
     private final HandlerChainFactory handlerChainFactory;
+    private final NotificationService notificationService;
+    private final UserRepository userRepository;
+    private final EmployeeUserRepository employeeUserRepository;
 
     Map<String, ImportDataHandlingChainProcess> processes = new HashMap<>();
 
@@ -81,7 +88,20 @@ public class ImportDataHandlingChainProcessManagerService {
 
     public ImportDataHandlingChainProcess createExcelImportDataHandlerChainProcess(ImportDataCommand command) {
 
-        return new ImportDataHandlingChainProcess(command, handlerChainFactory.importExcelDataHandlerChain());
+        return new ImportDataHandlingChainProcess(command, handlerChainFactory.importExcelDataHandlerChain(), this::onFinishingProcess);
+    }
+
+    private void onFinishingProcess(String processId) {
+        Long userId = processes.get(processId).getProcessData().getUserId();
+        BaseUserEntity user = employeeUserRepository.findById(userId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, U$0001, userId));
+        HandlerChainProcessStatus processStatus = getProcessStatus(processId).getProcessStatus();
+        JSONObject bodyJSON = new JSONObject().put("Process Id", processId).put("Status", processStatus.getStatus());
+        if (processStatus.isFailed()) {
+            bodyJSON.put("Result", getProcessResult(processId));
+        }
+        PushMessageDTO<Object> messageDTO = new PushMessageDTO<>("Importing Data Process Update", bodyJSON.toString(),
+                NotificationType.IMPORT_DATA_PROCESS_UPDATE);
+        notificationService.sendMessage(user, messageDTO);
     }
 
     public void clearAllProcess() {
@@ -99,7 +119,7 @@ public class ImportDataHandlingChainProcessManagerService {
 
     public ImportDataHandlingChainProcess createCsvImportDataHandlerChainProcess(final ImportDataCommand command) {
 
-        return new ImportDataHandlingChainProcess(command, handlerChainFactory.importCsvDataHandlerChain());
+        return new ImportDataHandlingChainProcess(command, handlerChainFactory.importCsvDataHandlerChain(), this::onFinishingProcess);
     }
 
     public List<ImportProcessStatusResponse> getProcessesStatus(final List<String> processIds) {

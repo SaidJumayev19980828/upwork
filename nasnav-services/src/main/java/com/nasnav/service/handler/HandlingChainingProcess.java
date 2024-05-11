@@ -66,7 +66,10 @@ public abstract class HandlingChainingProcess<T> implements Runnable {
 
         if (currentStatus.isInProgress())
             currentStatus.changeStatusToSuccess();
+        onFinishingProcess();
     }
+
+    protected abstract void onFinishingProcess();
 
     private void updateProgress(final String handlerName) {
 

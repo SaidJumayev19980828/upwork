@@ -10,14 +10,18 @@ import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
-
+import java.util.function.Consumer;
 
 @Slf4j
 public class ImportDataHandlingChainProcess extends HandlingChainingProcess<ImportDataCommand> {
 
-    public ImportDataHandlingChainProcess(final ImportDataCommand processData, final List<Handler<ImportDataCommand>> handlers) {
+    private final Consumer<String> onFinishingProcessConsumer;
+
+    public ImportDataHandlingChainProcess(final ImportDataCommand processData, final List<Handler<ImportDataCommand>> handlers,
+            Consumer<String> onFinishingProcess) {
 
         super(processData, handlers);
+        this.onFinishingProcessConsumer = onFinishingProcess;
     }
 
     @Override
@@ -44,6 +48,11 @@ public class ImportDataHandlingChainProcess extends HandlingChainingProcess<Impo
         }
     }
 
-    
+    @Override
+    protected void onFinishingProcess(){
+        if (onFinishingProcessConsumer == null)
+            return;
+        onFinishingProcessConsumer.accept(getCurrentStatus().getId());
+    }
 
 }
