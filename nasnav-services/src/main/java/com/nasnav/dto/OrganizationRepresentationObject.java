@@ -1,7 +1,5 @@
 package com.nasnav.dto;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -9,14 +7,10 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.enumerations.DiscountStrategies;
-import com.nasnav.enumerations.VideoChatOrgState;
-import com.nasnav.enumerations.YeshteryState;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 
-import javax.persistence.Column;
 import java.util.List;
 import java.util.Map;
 
@@ -105,6 +99,6 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private String shortDescription;
     private String openingHours;
     private Map<DiscountStrategies,Boolean> strategies;
-
+    private SubscriptionInfoDTO subscriptionInfo;
 }
 

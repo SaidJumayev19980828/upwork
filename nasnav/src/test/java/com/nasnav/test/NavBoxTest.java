@@ -38,9 +38,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static junit.framework.TestCase.*;
@@ -195,6 +193,22 @@ public class NavBoxTest extends AbstractTestWithTempBaseDir {
 
         response = template.getForEntity("/navbox/organization?p_name=2", String.class);
         Assert.assertTrue(response.getStatusCodeValue() == 404);
+    }
+
+    @Test
+    public void testSubscribedOrganization()
+    {
+        ResponseEntity<OrganizationRepresentationObject> response = template.getForEntity("/navbox/organization?org_id=99004",
+                OrganizationRepresentationObject.class);
+        Assert.assertTrue(Objects.requireNonNull(response.getBody()).getSubscriptionInfo().isSubscribed());
+    }
+
+    @Test
+    public void testExpiredSubscriptionOrganization()
+    {
+        ResponseEntity<OrganizationRepresentationObject> response = template.getForEntity("/navbox/organization?org_id=99003",
+                OrganizationRepresentationObject.class);
+        Assert.assertFalse(Objects.requireNonNull(response.getBody()).getSubscriptionInfo().isSubscribed());
     }
 
 

@@ -9,10 +9,7 @@ import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.organization.*;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
-import com.nasnav.enumerations.DiscountStrategies;
-import com.nasnav.enumerations.Roles;
-import com.nasnav.enumerations.Settings;
-import com.nasnav.enumerations.SettingsType;
+import com.nasnav.enumerations.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
@@ -139,6 +136,10 @@ public class OrganizationServiceImpl implements OrganizationService {
     private InfluencerService influencerService;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private SubscriptionRepository subscriptionRepository;
+    @Autowired
+    private OrganizationServiceImpl organizationService;
 
     private final Logger classLogger = LogManager.getLogger(OrganizationServiceImpl.class);
 
@@ -207,9 +208,35 @@ public class OrganizationServiceImpl implements OrganizationService {
         //Google analytical site id
         orgRepObj.setGoogleAnalyticsSiteId(entity.getGoogleAnalyticsSiteId());
         orgRepObj.setStrategies(entity.getDiscountStrategies(entity.getDiscountStrategies(),DiscountStrategies.class));
+        orgRepObj.setSubscriptionInfo(organizationService.getSubscriptionInfo(entity));
         return orgRepObj;
     }
 
+    @Transactional
+    public SubscriptionInfoDTO getSubscriptionInfo(OrganizationEntity org) throws RuntimeBusinessException
+    {
+        SubscriptionInfoDTO subscriptionInfoDTO = new SubscriptionInfoDTO();
+        subscriptionInfoDTO.setSubscribed(false);
+        List<SubscriptionEntity> subscriptionEntityList = subscriptionRepository.findByOrganizationAndStatusNotIn(org,
+                List.of(SubscriptionStatus.CANCELED.getValue(), SubscriptionStatus.INCOMPLETE_EXPIRED.getValue()));
+        for (SubscriptionEntity subscriptionEntity : subscriptionEntityList)
+        {
+            if (subscriptionEntity.getExpirationDate() == null || subscriptionEntity.getExpirationDate().after(new Date())) {
+                //Hasn't expiration date or Not Expired
+                subscriptionInfoDTO.setSubscribed(true);
+                subscriptionInfoDTO.setType(subscriptionEntity.getType());
+                subscriptionInfoDTO.setExpirationDate(subscriptionEntity.getExpirationDate());
+                subscriptionInfoDTO.setStatus(subscriptionEntity.getStatus());
+                subscriptionInfoDTO.setSubscriptionEntityId(subscriptionEntity.getId());
+                subscriptionInfoDTO.setPackageId(subscriptionEntity.getPackageEntity().getId());
+            }
+            else {
+                subscriptionEntity.setStatus("canceled");
+                subscriptionRepository.save(subscriptionEntity);
+            }
+        }
+        return subscriptionInfoDTO;
+    }
 
     private  <E extends Enum<E>> Set<E> transformToEnumSet(Map<E, Boolean> mapList) {
         return mapList.entrySet().stream()
