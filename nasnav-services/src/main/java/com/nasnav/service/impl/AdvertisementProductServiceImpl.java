@@ -3,6 +3,7 @@ package com.nasnav.service.impl;
 import com.nasnav.dao.AdvertisementProductRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dto.response.navbox.AdvertisementProductDTO;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.AdvertisementEntity;
 import com.nasnav.persistence.AdvertisementProductCompensation;
 import com.nasnav.persistence.AdvertisementProductEntity;
@@ -11,11 +12,14 @@ import com.nasnav.service.AdvertisementProductCustomMapper;
 import com.nasnav.service.AdvertisementProductService;
 import com.nasnav.service.CompensationService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
+
+import static com.nasnav.exceptions.ErrorCodes.ADVER$002;
 
 @Service
 @AllArgsConstructor
@@ -45,6 +49,8 @@ public class AdvertisementProductServiceImpl implements AdvertisementProductServ
             rules.forEach(rule -> advertisementProduct.addCompensationRule(buildCompensation(compensationService.getRule(rule))));
     }
 
+
+
     private AdvertisementProductCompensation buildCompensation(CompensationRulesEntity rule){
         AdvertisementProductCompensation compensation = new AdvertisementProductCompensation();
         compensation.setCompensationRule(rule);
@@ -63,7 +69,24 @@ public class AdvertisementProductServiceImpl implements AdvertisementProductServ
         advertisementProduct.setLikes(dto.getLikes());
         addCompensation(dto.getCompensationRules(), advertisementProduct);
         advertisementProduct.setAdvertisement(advertisement);
+        validCompensationRequest(advertisementProduct);
         return advertisementProduct;
     }
+
+    private void validCompensationRequest(AdvertisementProductEntity advertisementProduct){
+        if (advertisementProduct.getCompensationRules() != null && !advertisementProduct.getCompensationRules().isEmpty())
+            validateRules(advertisementProduct.getCompensationRules());
+    }
+    public void validateRules(Set<AdvertisementProductCompensation> advertisementProduct) {
+        boolean hasDuplicates = advertisementProduct.stream()
+                .map(compensation -> compensation.getCompensationRule().getAction().getId())
+                .distinct()
+                .count() != advertisementProduct.size();
+
+        if (hasDuplicates) {
+            throw new RuntimeBusinessException(HttpStatus.BAD_REQUEST , ADVER$002);
+        }
+    }
+
 
 }

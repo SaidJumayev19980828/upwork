@@ -22,6 +22,11 @@ public interface CompensationService {
 
 
     CompensationRulesEntity createRule (CompensationRule dto);
+
+    CompensationRulesEntity updateRule (CompensationRule dto , Long ruleId);
+
+    void deleteRule (long id);
+
     CompensationRulesEntity getRule (long id);
     PageImpl<CompensationRulesEntity> getAllRules(int start, int count) ;
 

@@ -1,10 +1,12 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dto.response.RuleResponseDTO;
 import com.nasnav.dto.response.navbox.AdvertisementProductDTO;
 import com.nasnav.mappers.BrandsMapper;
 import com.nasnav.persistence.AdvertisementProductCompensation;
 import com.nasnav.persistence.AdvertisementProductEntity;
+import com.nasnav.persistence.CompensationRulesEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.service.AdvertisementProductCustomMapper;
 import com.nasnav.service.ProductService;
@@ -32,12 +34,20 @@ public class AdvertisementProductMapperImpl implements AdvertisementProductCusto
         advertisementProductDTO.setId( entity.getId() );
         advertisementProductDTO.setCoins( entity.getCoins() );
         advertisementProductDTO.setLikes( entity.getLikes() );
-        advertisementProductDTO.setCompensationRules(compensationRuleIds(entity.getCompensationRules()));
+        advertisementProductDTO.setRules(compensationRules(entity.getCompensationRules()));
         return productDetails(advertisementProductDTO);
     }
-    private Set<Long> compensationRuleIds(Set<AdvertisementProductCompensation> compensationRules){
+
+    private RuleResponseDTO ruleResponse (CompensationRulesEntity compensationRule){
+       return new RuleResponseDTO(compensationRule.getId() , compensationRule.getName() ,
+                compensationRule.getDescription()
+                );
+    }
+    private Set<RuleResponseDTO> compensationRules(Set<AdvertisementProductCompensation> compensationRules){
       return  compensationRules.stream().
-              map(AdvertisementProductCompensation::getId).collect(Collectors.toSet());
+              map(advertisementProductCompensation ->
+                      ruleResponse(advertisementProductCompensation.getCompensationRule()))
+              .collect(Collectors.toSet());
     }
 
     private AdvertisementProductDTO productDetails(AdvertisementProductDTO dto){

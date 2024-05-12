@@ -527,6 +527,7 @@ public enum ErrorCodes {
 	,ROOMS$ORG$NotFound("Organization with id [%d] not found or inaccessible")
 
 	,ADVER$001("No Advertisement found with id [%d]")
+	,ADVER$002(" Advertisement product must not contain multiple rules with the same action!")
 
 
 	,NOTIF$0001("Firebase not initialized")
@@ -563,6 +564,8 @@ public enum ErrorCodes {
 	COMPEN$001("No Compensation Action found with the provided ID [%s]"),
 
 	COMPEN$002("No Compensation Rule found with the provided ID [%s] for that Organization"),
+
+	COMPEN$003("Cannot update or delete a rule that is currently in use with an advertisement!"),
 
 	BC$001("An error occurred while processing that request du to %s"),
 

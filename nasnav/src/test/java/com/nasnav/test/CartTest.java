@@ -71,10 +71,8 @@ import java.util.Set;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.DISCARDED;
-import static com.nasnav.enumerations.OrderStatus.FINALIZED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
-import static com.nasnav.enumerations.PaymentStatus.COD_REQUESTED;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.WAREHOUSE;
 import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_ID;
 import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_TYPE;
@@ -1651,7 +1649,6 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
-	@Ignore
 	public void timeEstimateTest(){
 		JSONObject requestBody =new JSONObject();
 		requestBody.put("currency", "EGP");

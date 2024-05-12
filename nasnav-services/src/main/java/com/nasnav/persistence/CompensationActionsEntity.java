@@ -31,5 +31,4 @@ public class CompensationActionsEntity {
     private CompensationActions name;
     @Column(name = "description")
     private String description;
-
 }

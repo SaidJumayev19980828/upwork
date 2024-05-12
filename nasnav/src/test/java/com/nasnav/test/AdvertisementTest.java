@@ -8,6 +8,12 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dto.response.AdvertisementDTO;
 import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.dto.response.navbox.AdvertisementProductDTO;
+import com.nasnav.enumerations.CompensationActions;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.AdvertisementProductCompensation;
+import com.nasnav.persistence.CompensationActionsEntity;
+import com.nasnav.persistence.CompensationRulesEntity;
+import com.nasnav.service.impl.AdvertisementProductServiceImpl;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,14 +28,28 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.nasnav.test.commons.TestCommons.*;
+import static com.nasnav.exceptions.ErrorCodes.ADVER$002;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Advertisements_Api_Test_Data.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -48,6 +68,9 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private OrganizationRepository organizationRepository;
+
+    @Autowired
+    private AdvertisementProductServiceImpl advertisementProductServiceImpl;
 
 
     @ParameterizedTest
@@ -306,5 +329,79 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
             assertThat(productRepository.findById(it).isPresent(), equalTo(true));
         });
     }
+
+
+
+        // Validates a set of AdvertisementProductCompensation objects with unique CompensationRulesEntity action IDs.
+        @Test
+        void test_validation_unique_action_ids() {
+            // Arrange
+            Set<AdvertisementProductCompensation> advertisementProduct = new HashSet<>();
+            CompensationActionsEntity action1 = new CompensationActionsEntity(1L, CompensationActions.LIKE, "Action 1");
+            CompensationActionsEntity action2 = new CompensationActionsEntity(2L, CompensationActions.SHARE, "Action 2");
+            CompensationRulesEntity rule1 = new CompensationRulesEntity(1L, "Rule 1", "Rule 1 description", action1, null, true, new HashSet<>());
+            CompensationRulesEntity rule2 = new CompensationRulesEntity(2L, "Rule 2", "Rule 2 description", action2, null, true, new HashSet<>());
+            AdvertisementProductCompensation compensation1 = new AdvertisementProductCompensation();
+            compensation1.setCompensationRule(rule1);
+            compensation1.setId(1L);
+            AdvertisementProductCompensation compensation2 = new AdvertisementProductCompensation();
+            compensation2.setCompensationRule(rule2);
+            compensation2.setId(2L);
+            advertisementProduct.add(compensation1);
+            advertisementProduct.add(compensation2);
+
+            // Act & Assert
+            assertDoesNotThrow(() -> advertisementProductServiceImpl.validateRules(advertisementProduct));
+        }
+
+        // Validates an empty set of AdvertisementProductCompensation objects.
+        @Test
+        void test_empty_set() {
+            // Arrange
+            Set<AdvertisementProductCompensation> advertisementProduct = new HashSet<>();
+
+            // Act & Assert
+            assertDoesNotThrow(() -> advertisementProductServiceImpl.validateRules(advertisementProduct));
+        }
+
+
+        // Throws a RuntimeBusinessException with a BAD_REQUEST HttpStatus and ADVER$002 error code when the set of AdvertisementProductCompensation objects has duplicate CompensationRulesEntity action IDs.
+        @Test
+        void test_duplicate_action_ids() {
+            // Arrange
+            Set<AdvertisementProductCompensation> advertisementProduct = new HashSet<>();
+            CompensationActionsEntity action1 = new CompensationActionsEntity(1L, CompensationActions.LIKE, "Action 1");
+            CompensationRulesEntity rule1 = new CompensationRulesEntity(1L, "Rule 1", "Rule 1 description", action1, null, true, new HashSet<>());
+            AdvertisementProductCompensation compensation1 = new AdvertisementProductCompensation();
+            compensation1.setCompensationRule(rule1);
+            compensation1.setId(1L);
+            AdvertisementProductCompensation compensation2 = new AdvertisementProductCompensation();
+            compensation2.setCompensationRule(rule1);
+            compensation2.setId(2L);
+            advertisementProduct.add(compensation1);
+            advertisementProduct.add(compensation2);
+
+            // Act & Assert
+            RuntimeBusinessException exception = assertThrows(RuntimeBusinessException.class, () -> advertisementProductServiceImpl.validateRules(advertisementProduct));
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+            assertEquals(ADVER$002.getValue(), exception.getErrorMessage());
+        }
+
+        @Test
+        public void test_single_element() {
+            // Arrange
+            Set<AdvertisementProductCompensation> advertisementProduct = new HashSet<>();
+            CompensationActionsEntity action1 = new CompensationActionsEntity(1L, CompensationActions.LIKE, "Action 1");
+            CompensationRulesEntity rule1 = new CompensationRulesEntity(1L, "Rule 1", "Rule 1 description", action1, null, true, new HashSet<>());
+            AdvertisementProductCompensation compensation1 = new AdvertisementProductCompensation();
+            compensation1.setId(1L);
+            compensation1.setCompensationRule(rule1);
+            advertisementProduct.add(compensation1);
+
+            // Act & Assert
+            assertDoesNotThrow(() -> advertisementProductServiceImpl.validateRules(advertisementProduct));
+        }
+
+
 
 }

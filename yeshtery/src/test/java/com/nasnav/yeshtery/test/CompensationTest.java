@@ -1,4 +1,4 @@
-package com.nasnav.test;
+package com.nasnav.yeshtery.test;
 
 import com.nasnav.dto.CompensationAction;
 import com.nasnav.dto.CompensationRule;
@@ -8,7 +8,7 @@ import com.nasnav.enumerations.CompensationActions;
 import com.nasnav.persistence.CompensationActionsEntity;
 import com.nasnav.persistence.CompensationRulesEntity;
 import com.nasnav.persistence.EligibleNotReceivedEntity;
-import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,7 +39,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @NotThreadSafe
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Compensation_Test_Data.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-public class CompensationTest  extends AbstractTestWithTempBaseDir {
+public class CompensationTest extends AbstractTestWithTempBaseDir {
 @Autowired
 private TestRestTemplate restTemplate;
 
@@ -50,7 +50,7 @@ private TestRestTemplate restTemplate;
         HttpHeaders headers = new HttpHeaders();
         headers.add("User-Token", "123");
         HttpEntity<CompensationAction> request = new HttpEntity<>(action,headers);
-        ResponseEntity<Void> response = restTemplate.postForEntity("/compensation/action", request, Void.class);
+        ResponseEntity<Void> response = restTemplate.postForEntity("/v1/compensation/action", request, Void.class);
         assertEquals(201, response.getStatusCode().value());
     }
 
@@ -60,7 +60,7 @@ private TestRestTemplate restTemplate;
         HttpHeaders headers = new HttpHeaders();
         headers.add("User-Token", "123");
         HttpEntity<CompensationAction> request = new HttpEntity<>(action,headers);
-        ResponseEntity<Void> response = restTemplate.postForEntity("/compensation/action", request, Void.class);
+        ResponseEntity<Void> response = restTemplate.postForEntity("/v1/compensation/action", request, Void.class);
         assertEquals(400, response.getStatusCode().value());
     }
 
@@ -70,7 +70,7 @@ private TestRestTemplate restTemplate;
         HttpHeaders headers = new HttpHeaders();
         headers.add("User-Token", "54333");
         HttpEntity<CompensationAction> request = new HttpEntity<>(action, headers);
-        ResponseEntity<Void> response = restTemplate.postForEntity("/compensation/action", request, Void.class);
+        ResponseEntity<Void> response = restTemplate.postForEntity("/v1/compensation/action", request, Void.class);
         assertEquals(401, response.getStatusCode().value());
     }
     @Test
@@ -81,7 +81,7 @@ private TestRestTemplate restTemplate;
         ParameterizedTypeReference<List<CompensationActions>> responseType =
                 new ParameterizedTypeReference<List<CompensationActions>>() {};
         ResponseEntity<List<CompensationActions>> response =
-                restTemplate.exchange("/compensation/action/types", HttpMethod.GET, request, responseType);
+                restTemplate.exchange("/v1/compensation/action/types", HttpMethod.GET, request, responseType);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(3, Objects.requireNonNull(response.getBody()).size());
     }
@@ -94,7 +94,7 @@ private TestRestTemplate restTemplate;
         ParameterizedTypeReference<List<CompensationActionsEntity>> responseType =
                 new ParameterizedTypeReference<List<CompensationActionsEntity>>() {};
         ResponseEntity<List<CompensationActionsEntity>> response =
-                restTemplate.exchange("/compensation/action", HttpMethod.GET, request, responseType);
+                restTemplate.exchange("/v1/compensation/action", HttpMethod.GET, request, responseType);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         List<CompensationActionsEntity> actions =  Objects.requireNonNull(response.getBody());
         assertEquals(2, actions.size());
@@ -108,7 +108,7 @@ private TestRestTemplate restTemplate;
         ParameterizedTypeReference<CompensationActionsEntity> responseType =
                 new ParameterizedTypeReference<CompensationActionsEntity>() {};
         ResponseEntity<CompensationActionsEntity> response =
-                restTemplate.exchange("/compensation/action/1", HttpMethod.GET, request, responseType);
+                restTemplate.exchange("/v1/compensation/action/1", HttpMethod.GET, request, responseType);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         CompensationActionsEntity action =  Objects.requireNonNull(response.getBody());
         assertEquals(CompensationActions.SHARE, action.getName());
@@ -122,7 +122,7 @@ private TestRestTemplate restTemplate;
         ParameterizedTypeReference<CompensationActionsEntity> responseType =
                 new ParameterizedTypeReference<CompensationActionsEntity>() {};
         ResponseEntity<CompensationActionsEntity> response =
-                restTemplate.exchange("/compensation/action/100", HttpMethod.GET, request, responseType);
+                restTemplate.exchange("/v1/compensation/action/100", HttpMethod.GET, request, responseType);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 
@@ -136,9 +136,25 @@ private TestRestTemplate restTemplate;
         HttpHeaders headers = new HttpHeaders();
         headers.add("User-Token", "123");
         HttpEntity<CompensationRule> request = new HttpEntity<>(rule, headers);
-        ResponseEntity<Void> response = restTemplate.postForEntity("/compensation/rule", request, Void.class);
+        ResponseEntity<Void> response = restTemplate.postForEntity("/v1/compensation/rule", request, Void.class);
         assertEquals(201, response.getStatusCode().value());
     }
+
+    @Test
+    public void createDuplicateRule(){
+        RuleTier ruleTier = new RuleTier(10, BigDecimal.valueOf(10), true);
+        RuleTier ruleTier2 = new RuleTier(10, BigDecimal.valueOf(10), false);
+        RuleTier ruleTier3 = new RuleTier(10, BigDecimal.valueOf(10), true);
+        Set<RuleTier> ruleTiers = new HashSet<>(Arrays.asList(ruleTier, ruleTier2, ruleTier3));
+        CompensationRule rule = new CompensationRule(1, "rule Test", "description",true, ruleTiers);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("User-Token", "123");
+        HttpEntity<CompensationRule> request = new HttpEntity<>(rule, headers);
+        ResponseEntity<Void> response = restTemplate.postForEntity("/v1/compensation/rule", request, Void.class);
+        assertEquals(201, response.getStatusCode().value());
+    }
+
+
 
 
     @Test
@@ -151,7 +167,7 @@ private TestRestTemplate restTemplate;
         HttpHeaders headers = new HttpHeaders();
         headers.add("User-Token", "123");
         HttpEntity<CompensationRule> request = new HttpEntity<>(rule, headers);
-        ResponseEntity<String> response = restTemplate.exchange("/compensation/rule/1",
+        ResponseEntity<String> response = restTemplate.exchange("/v1/compensation/rule/1",
                 HttpMethod.PUT,request, String.class);
         assertEquals(200, response.getStatusCode().value());
     }
@@ -167,7 +183,7 @@ private TestRestTemplate restTemplate;
         HttpHeaders headers = new HttpHeaders();
         headers.add("User-Token", "123");
         HttpEntity<CompensationRule> request = new HttpEntity<>(rule, headers);
-        ResponseEntity<String> response = restTemplate.exchange("/compensation/rule/12",
+        ResponseEntity<String> response = restTemplate.exchange("/v1/compensation/rule/12",
                 HttpMethod.PUT,request, String.class);
         assertEquals(400, response.getStatusCode().value());
     }
@@ -177,7 +193,7 @@ private TestRestTemplate restTemplate;
         HttpHeaders headers = new HttpHeaders();
         headers.add("User-Token", "123");
         HttpEntity<Void> request = new HttpEntity<>(headers);
-        ResponseEntity<String> response = restTemplate.exchange("/compensation/rule/1",
+        ResponseEntity<String> response = restTemplate.exchange("/v1/compensation/rule/1",
                 HttpMethod.DELETE,request, String.class);
         assertEquals(200, response.getStatusCode().value());
     }
@@ -187,22 +203,9 @@ private TestRestTemplate restTemplate;
         HttpHeaders headers = new HttpHeaders();
         headers.add("User-Token", "123");
         HttpEntity<Void> request = new HttpEntity<>(headers);
-        ResponseEntity<String> response = restTemplate.exchange("/compensation/rule/12",
+        ResponseEntity<String> response = restTemplate.exchange("/v1/compensation/rule/12",
                 HttpMethod.DELETE,request, String.class);
         assertEquals(400, response.getStatusCode().value());
-    }
-    @Test
-    public void createDuplicateRule(){
-        RuleTier ruleTier = new RuleTier(10, BigDecimal.valueOf(10), true);
-        RuleTier ruleTier2 = new RuleTier(10, BigDecimal.valueOf(10), false);
-        RuleTier ruleTier3 = new RuleTier(10, BigDecimal.valueOf(10), true);
-        Set<RuleTier> ruleTiers = new HashSet<>(Arrays.asList(ruleTier, ruleTier2, ruleTier3));
-        CompensationRule rule = new CompensationRule(1, "rule Test", "description",true, ruleTiers);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("User-Token", "123");
-        HttpEntity<CompensationRule> request = new HttpEntity<>(rule, headers);
-        ResponseEntity<Void> response = restTemplate.postForEntity("/compensation/rule", request, Void.class);
-        assertEquals(201, response.getStatusCode().value());
     }
 
     @Test
@@ -215,7 +218,7 @@ private TestRestTemplate restTemplate;
         ParameterizedTypeReference<RestResponsePage<CompensationRulesEntity>> responseType =
                 new ParameterizedTypeReference<RestResponsePage<CompensationRulesEntity>>() {};
         ResponseEntity<RestResponsePage<CompensationRulesEntity>> response =
-                restTemplate.exchange("/compensation/rule/all?start"+ start + "&count"+count, HttpMethod.GET, request, responseType);
+                restTemplate.exchange("/v1/compensation/rule/all?start"+ start + "&count"+count, HttpMethod.GET, request, responseType);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         RestResponsePage<CompensationRulesEntity> actions =  Objects.requireNonNull(response.getBody());
         assertEquals(2, actions.getNumberOfElements());
@@ -231,7 +234,7 @@ private TestRestTemplate restTemplate;
         ParameterizedTypeReference<List<CompensationRulesEntity>> responseType =
                 new ParameterizedTypeReference<List<CompensationRulesEntity>>() {};
         ResponseEntity<List<CompensationRulesEntity>> response =
-                restTemplate.exchange("/compensation/rule/list", HttpMethod.GET, request, responseType);
+                restTemplate.exchange("/v1/compensation/rule/list", HttpMethod.GET, request, responseType);
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
@@ -245,7 +248,7 @@ private TestRestTemplate restTemplate;
         ParameterizedTypeReference<RestResponsePage<EligibleNotReceivedEntity>> responseType =
                 new ParameterizedTypeReference<RestResponsePage<EligibleNotReceivedEntity>>() {};
         ResponseEntity<RestResponsePage<EligibleNotReceivedEntity>> response =
-                restTemplate.exchange("/compensation/eligible/all?start"+ start + "&count"+count, HttpMethod.GET, request, responseType);
+                restTemplate.exchange("/v1/compensation/eligible/all?start"+ start + "&count"+count, HttpMethod.GET, request, responseType);
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
@@ -257,7 +260,7 @@ private TestRestTemplate restTemplate;
         ParameterizedTypeReference<CompensationRulesEntity> responseType =
                 new ParameterizedTypeReference<CompensationRulesEntity>() {};
         ResponseEntity<CompensationRulesEntity> response =
-                restTemplate.exchange("/compensation/rule/1", HttpMethod.GET, request, responseType);
+                restTemplate.exchange("/v1/compensation/rule/1", HttpMethod.GET, request, responseType);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         CompensationRulesEntity rule = response.getBody();
         assertNotNull(rule);
@@ -271,7 +274,7 @@ private TestRestTemplate restTemplate;
         ParameterizedTypeReference<CompensationRulesEntity> responseType =
                 new ParameterizedTypeReference<CompensationRulesEntity>() {};
         ResponseEntity<CompensationRulesEntity> response =
-                restTemplate.exchange("/compensation/rule/1", HttpMethod.GET, request, responseType);
+                restTemplate.exchange("/v1/compensation/rule/1", HttpMethod.GET, request, responseType);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 

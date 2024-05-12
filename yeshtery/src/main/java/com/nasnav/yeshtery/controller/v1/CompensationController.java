@@ -1,5 +1,6 @@
-package com.nasnav.controller;
+package com.nasnav.yeshtery.controller.v1;
 
+import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.CompensationAction;
 import com.nasnav.dto.CompensationRule;
 import com.nasnav.enumerations.CompensationActions;
@@ -11,7 +12,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -19,12 +30,14 @@ import java.util.List;
 import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
-@RequestMapping(value = "/compensation")
+@RequestMapping(value = CompensationController.API_PATH, produces = APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 @Validated
 public class CompensationController {
+    static final String API_PATH = YeshteryConstants.API_PATH + "/compensation";
     private final CompensationService compensationService;
 
 

@@ -41,6 +41,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.nasnav.exceptions.ErrorCodes.BANK$ACC$0009;
 import static com.nasnav.exceptions.ErrorCodes.COMPEN$001;
 import static com.nasnav.exceptions.ErrorCodes.COMPEN$002;
+import static com.nasnav.exceptions.ErrorCodes.COMPEN$003;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
@@ -110,9 +112,32 @@ public class CompensationServiceImpl implements CompensationService {
      */
     @Override
     public CompensationRulesEntity createRule(CompensationRule dto) {
-       return ruleRepository.save(buildRule(dto));
+       return ruleRepository.save(buildRule(dto , new CompensationRulesEntity()));
     }
 
+    @Override
+    public CompensationRulesEntity updateRule(CompensationRule dto, Long ruleId) {
+        return ruleRepository.save(buildRule(dto , getRuleForUpdate(ruleId)));
+    }
+
+    @Override
+    public void deleteRule(long id) {
+        CompensationRulesEntity rule = getRuleForUpdate(id);
+        rule.setActive(false);
+        ruleRepository.save(rule);
+    }
+
+    private CompensationRulesEntity getRuleForUpdate(Long ruleId){
+        CompensationRulesEntity rule = getRule(ruleId);
+        checkIfRuleInUseNow(rule);
+        return rule;
+    }
+    private void checkIfRuleInUseNow(CompensationRulesEntity rule){
+        boolean inUse = ruleRepository.checkIfRuleInUseNow(rule);
+        if (inUse){
+            throw new RuntimeBusinessException(BAD_REQUEST, COMPEN$003, rule.getId());
+        }
+    }
     /**
      * Get a compensation rule by id.
      * @param id Id of the compensation rule to be retrieved.
@@ -284,9 +309,9 @@ public class CompensationServiceImpl implements CompensationService {
      * @throws RuntimeBusinessException if the action does not exist.
      * @return the compensation rule.
      */
-    private CompensationRulesEntity buildRule (CompensationRule ruleDto){
-        CompensationRulesEntity entity = new CompensationRulesEntity();
+    private CompensationRulesEntity buildRule (CompensationRule ruleDto ,  CompensationRulesEntity entity ){
         entity.setName(ruleDto.name());
+        entity.setDescription(ruleDto.description());
         entity.setActive(ruleDto.isActive());
         entity.setAction(getAction(ruleDto.action()));
         addTiers(entity, ruleDto.tiers());
