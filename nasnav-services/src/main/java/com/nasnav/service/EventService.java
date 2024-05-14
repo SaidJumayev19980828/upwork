@@ -1,7 +1,6 @@
 package com.nasnav.service;
 
 import com.nasnav.dto.EventInterestsProjection;
-import com.nasnav.dto.EventProjection;
 import com.nasnav.dto.EventsNewDTO;
 import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.EventInterestDTO;
@@ -9,7 +8,6 @@ import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.enumerations.EventStatus;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EventEntity;
-
 import org.springframework.data.domain.PageImpl;
 
 import javax.mail.MessagingException;
@@ -41,6 +39,6 @@ public interface EventService {
 
      EventsNewDTO mapEventProjectionToDTO(EventInterestsProjection eventInterestsProjection);
 
-     void sendInterestEmail(LocalDateTime startAt,String eventName ,String orgName ,String userName,String userEmail ,String mailTemplate , String emailSubject) throws MessagingException, IOException;
+     void sendInterestEmail(LocalDateTime startAt,String eventName ,String orgName ,String userName,String userEmail ,String mailTemplate , String emailSubject , String access) throws MessagingException, IOException;
 
 }

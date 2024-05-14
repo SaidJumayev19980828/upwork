@@ -24,8 +24,8 @@ VALUES (89, 'user2@nasnav.com','user2','456', 99001);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, '123', now(), null, 88);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, '456', now(), null, 89);
 
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id ,  name)
+VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502 , 'test employee');
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (69, 'testuser2@nasnav.com', 99001, '131415',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
@@ -57,11 +57,13 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.influencers(id,created_at,employee_user_id,approved) values (100,now(),71,false);
 INSERT INTO public.influencers(id,created_at,employee_user_id,approved) values (101,now(),70,true);
 
-INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(100,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status,access_code) values(100,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name','desc',0,'ABCD983');
 INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(101,now(),CURRENT_DATE - INTERVAL '30 day',CURRENT_DATE + INTERVAL '30 day',99001,false,'name','desc',0);
 INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(102,now(),CURRENT_DATE - INTERVAL '20 day',CURRENT_DATE + INTERVAL '20 day',99001,false,'name','desc',0);
 INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(103,now(),CURRENT_DATE - INTERVAL '17 day',CURRENT_DATE + INTERVAL '17 day',99001,false,'name','desc',0);
 INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(104,now(),CURRENT_DATE - INTERVAL '12 day',CURRENT_DATE + INTERVAL '12 day',99001,false,'name','desc',0);
+
+INSERT INTO public.event_influencers(id, event_id, influencer_id) values(1, 100, 100);
 
 INSERT INTO public.event_requests(id,created_at,starts_at,ends_at,event_id,influencer_id,status) values(100,now(),now(),now(),100,100,0);
 INSERT INTO public.event_logs(

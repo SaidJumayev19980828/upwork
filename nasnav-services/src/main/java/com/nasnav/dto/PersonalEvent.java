@@ -16,8 +16,14 @@ public interface PersonalEvent {
     @Value("#{target.employee != null ? target.employee.name : target.user != null ? target.user.name : null}")
     String getCreatorName();
 
-    @Value("#{target.employee != null ? true : (target.user != null ? false : null)}")
-    Boolean isEmployee();
+    String getStatus();
+
+
+    @Value("#{target.employee != null ? target.employee.id : target.user != null ? target.user.id : null}")
+    Long getCreatorId();
+
+    @Value("#{target.employee != null ? 'employee' : (target.user != null ? 'user' : null)}")
+    String getCreatorType();
 
     List<Invitees> getInvitees();
 

@@ -3,8 +3,6 @@ package com.nasnav.service.scheduler;
 import com.nasnav.dao.EventLogsRepository;
 import com.nasnav.dao.SchedulerTaskRepository;
 import com.nasnav.dto.InterestEventInfo;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EventLogsEntity;
 import com.nasnav.persistence.SchedulerTaskEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.BankAccountService;
@@ -30,9 +28,16 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
-import static com.nasnav.constatnts.EmailConstants.*;
+import static com.nasnav.constatnts.EmailConstants.INTEREST_REMINDER_MAIL;
+import static com.nasnav.constatnts.EmailConstants.NEW_CLIENT_EMAIL_Booked_Appointment_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.NEW_EMPLOYEE_EMAIL_Booked_Appointment_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.USERNAME_PARAMETER;
 
 @Service
 public class ScheduleTaskHelper {
@@ -189,7 +194,7 @@ public class ScheduleTaskHelper {
             System.out.println(LocalDateTime.now());
             ScheduledFuture<?> scheduledTask = scheduledExecutorService.schedule(() -> {
                 try {
-                    eventService.sendInterestEmail(reminder.getStartAt(),reminder.getEventName(), reminder.getOrganizationName(),  reminder.getUserName(), reminder.getUserEmail(), INTEREST_REMINDER_MAIL , "Gentle Reminder For Event");
+                    eventService.sendInterestEmail(reminder.getStartAt(),reminder.getEventName(), reminder.getOrganizationName(),  reminder.getUserName(), reminder.getUserEmail(), INTEREST_REMINDER_MAIL , "Gentle Reminder For Event",reminder.getAccessCode());
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

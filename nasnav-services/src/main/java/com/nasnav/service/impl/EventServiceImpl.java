@@ -1,8 +1,23 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.commons.utils.CustomPaginationPageRequest;
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
+import com.nasnav.dao.EventAttachmentsRepository;
+import com.nasnav.dao.EventLogsRepository;
+import com.nasnav.dao.EventRepository;
+import com.nasnav.dao.EventRequestsRepository;
+import com.nasnav.dao.EventRoomTemplateRepository;
+import com.nasnav.dao.InfluencerRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.OrganizationThemeRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dto.EventInterestsProjection;
+import com.nasnav.dto.EventProjection;
+import com.nasnav.dto.EventsNewDTO;
+import com.nasnav.dto.InfluencerDTO;
+import com.nasnav.dto.OrganizationNewDTO;
+import com.nasnav.dto.OrganizationProjection;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductFetchDTO;
 import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
@@ -36,9 +51,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,26 +96,18 @@ public class EventServiceImpl implements EventService{
     private final EventRoomTemplateRepository roomTemplateRepository;
     private final MailService mailService;
 
-
     @Override
     @Transactional
     public EventResponseDto createEvent(EventForRequestDTO dto) {
-
-        InfluencerEntity influencer = null;
         OrganizationEntity org = organizationRepository.findById(dto.getOrganizationId()).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, dto.getOrganizationId())
         );
-        if(dto.getInfluencerId() != null){
-            influencer = influencerRepository.findById(dto.getInfluencerId()).orElseThrow(
-                    () -> new RuntimeBusinessException(NOT_FOUND, G$INFLU$0001, dto.getOrganizationId())
-            );
-        }
         dto.getProductsIds().forEach(id -> {
             ProductEntity productEntity = productRepository.findById(id).orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,P$PRO$0002,id));
             if(!Arrays.asList(ProductTypes.STOCK_ITEM,ProductTypes.BUNDLE).contains(productEntity.getProductType()))
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE,P$PRO$0016,id);
         });
-       EventEntity event = eventRepository.save(toEntity(dto, org, null));
+       EventEntity event = eventRepository.save(toEntity(dto, org, null , new EventEntity()));
         saveNewRoomTemplate(event, dto.getSceneId());
         return toDto(event);
     }
@@ -112,7 +118,7 @@ public class EventServiceImpl implements EventService{
                 () -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,eventId)
         );
         List<EventEntity> relatedEvents = new ArrayList<>();
-        List<Long> categoryIds = entity.getProducts().stream().map(o -> o.getCategoryId()).collect(Collectors.toList());
+        List<Long> categoryIds = entity.getProducts().stream().map(ProductEntity::getCategoryId).collect(Collectors.toList());
         categoryIds.removeAll(Collections.singletonList(null));
         if(!categoryIds.isEmpty()){
             relatedEvents = eventRepository.getRelatedEvents(categoryIds, eventId);
@@ -120,7 +126,7 @@ public class EventServiceImpl implements EventService{
         EventResponseDto dto = toDto(entity);
         Integer interests= eventLogsRepository.countByEventId(eventId);
         dto.setInterests(interests);
-        dto.setRelatedEvents(relatedEvents.stream().map(this::toDto).collect(Collectors.toList()));
+        dto.setRelatedEvents(relatedEvents.stream().map(this::toDto).toList());
         return dto;
     }
 
@@ -176,8 +182,7 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public List<EventResponseDto> getAdvertisedEvents() {
-    return eventRepository.getAllByInfluencersNullAndStartsAtAfter(LocalDateTime.now()).stream().map(this::toDto).collect(Collectors.toList());
-
+    return eventRepository.getAllByInfluencersNullAndStartsAtAfter(LocalDateTime.now()).stream().map(this::toDto).toList();
     }
 
 
@@ -202,7 +207,7 @@ public class EventServiceImpl implements EventService{
     public PageImpl<EventInterestDTO> getInterestsByEventId(Long eventId,Integer start, Integer count) {
         PageRequest page = getQueryPage(start, count);
         PageImpl<EventLogsEntity> source = eventLogsRepository.getAllByEventIdPageable(eventId, page);
-        List<EventInterestDTO> dtos = source.getContent().stream().map(this::toEventInterstDto).collect(Collectors.toList());
+        List<EventInterestDTO> dtos = source.getContent().stream().map(this::toEventInterstDto).toList();
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
 
@@ -215,10 +220,7 @@ public class EventServiceImpl implements EventService{
         if(entity.getEndsAt().isBefore(LocalDateTime.now())){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,EVENT$NOT$EDITABLE$0002,eventId);
         }
-
-        eventAttachmentsRepository.deleteAllByEvent_Id(eventId);
-        entity = toEntity(dto, entity.getOrganization(), entity.getId());
-        eventRepository.save(entity);
+        eventRepository.save(toEntity(dto, entity.getOrganization(), entity.getId(), entity));
     }
 
     @Override
@@ -243,8 +245,8 @@ public class EventServiceImpl implements EventService{
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,EVENT$HAS$INTEREST$0006,eventId);
         }
         EventLogsEntity entity = new EventLogsEntity();
-        if(loggedInUser instanceof UserEntity){
-            entity.setUser((UserEntity) loggedInUser);
+        if(loggedInUser instanceof UserEntity user){
+            entity.setUser(user);
         }
         else {
             entity.setEmployee((EmployeeUserEntity) loggedInUser);
@@ -253,14 +255,11 @@ public class EventServiceImpl implements EventService{
         entity.setInterestedAt(LocalDateTime.now());
         entity.setCreatedAt(LocalDateTime.now());
         eventLogsRepository.save(entity);
-        sendInterestEmail(event.getStartsAt(),event.getName(),event.getOrganization().getName(), loggedInUser.getName(), loggedInUser.getEmail(),INTEREST_MAIL, "Event Interest");
+        sendInterestEmail(event.getStartsAt(),event.getName(),event.getOrganization().getName(), loggedInUser.getName(), loggedInUser.getEmail(),INTEREST_MAIL, "Event Interest", event.getAccessCode());
 
     }
 
-    private EventEntity toEntity(EventForRequestDTO dto, OrganizationEntity org,  Long id){
-        EventEntity entity = new EventEntity();
-        List<ProductEntity> products = new ArrayList<>();
-        entity.setId(id);
+    private EventEntity toEntity(EventForRequestDTO dto, OrganizationEntity org,  Long id, EventEntity entity){
         entity.setCreatedAt(LocalDateTime.now());
         entity.setStartsAt(dto.getStartsAt());
         entity.setEndsAt(dto.getEndsAt());
@@ -273,33 +272,29 @@ public class EventServiceImpl implements EventService{
             });
         }
         entity.setCoin(entity.getInfluencers() == null || entity.getInfluencers().isEmpty() ?  dto.getCoin() : null);
-        entity.setProducts(products);
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
         entity.setVisible(dto.getVisible());
-        entity.setAttachments(dto.getAttachments());
-
-        if (dto.getProductsIds()!= null && dto.getProductsIds().size() > 0) {
+        List<ProductEntity> products = new ArrayList<>();
+        if (dto.getProductsIds()!= null && !dto.getProductsIds().isEmpty()) {
             dto.getProductsIds().forEach(i -> {
                 Optional<ProductEntity> product = productRepository.findByIdAndOrganizationId(i, org.getId());
-                if (product.isPresent()) {
-                    products.add(product.get());
-                }
+                product.ifPresent(products::add);
             });
         }
-        if (dto.getAttachments() != null && dto.getAttachments().size() > 0) {
-            dto.getAttachments().forEach(o -> {
-                o.setEvent(entity);
-            });
+        entity.setProducts(products);
+        if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
+            dto.getAttachments().forEach(o -> o.setEvent(entity));
         }
-
+        entity.setAttachments(dto.getAttachments());
 
         if(id == null){
             entity.setStatus(EventStatus.PENDING.getValue());
         }
-        else {
+        if (id !=null && dto.getStatus() != null){
             entity.setStatus(dto.getStatus().getValue());
         }
+
         return entity;
     }
 
@@ -339,6 +334,7 @@ public class EventServiceImpl implements EventService{
         dto.setAttachments(entity.getAttachments());
         dto.setDescription(entity.getDescription());
         dto.setName(entity.getName());
+        dto.setAccessCode(entity.getAccessCode());
         dto.setCoin(entity.getCoin());
         dto.setStatus(EventStatus.getEnumByValue(entity.getStatus()));
         dto.setStatusRepresentation(EventStatus.getStatusRepresentation(entity.getStartsAt(), entity.getEndsAt()));
@@ -429,10 +425,8 @@ public class EventServiceImpl implements EventService{
 
     @Async
     @Override
-    public void sendInterestEmail(LocalDateTime startAt,String eventName ,String orgName ,String userName,String userEmail ,String mailTemplate , String emailSubject) throws MessagingException, IOException {
-        LocalDate eventDate =  startAt.toLocalDate();
-        LocalTime eventTime = startAt.toLocalTime();
-        Map<String, String> parametersMap = prepareMailContent(eventName,userName,eventDate,eventTime);
+    public void sendInterestEmail(LocalDateTime startAt,String eventName ,String orgName ,String userName,String userEmail ,String mailTemplate , String emailSubject , String access) throws MessagingException, IOException {
+        Map<String, String> parametersMap = prepareMailContent(eventName,userName,startAt , access);
         mailService.send(orgName, userEmail, emailSubject, mailTemplate,parametersMap);
     }
 
@@ -446,14 +440,15 @@ public class EventServiceImpl implements EventService{
     }
 
 
-    public Map<String, String> prepareMailContent(String eventName,String userName,LocalDate eventDate,
-                                                  LocalTime eventTime) {
+    public Map<String, String> prepareMailContent(String eventName,String userName,LocalDateTime startAt , String access) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE dd MMMM yyyy HH:mm");
+        String startDateTime = startAt.format(formatter);
         Map<String, String> parametersMap = new HashMap<>();
         parametersMap.put("#EventName#", eventName);
-        parametersMap.put("#CustomerName#", userName);
-        parametersMap.put("#EventDate#", String.valueOf(eventDate));
-        parametersMap.put("#EventTime#",String.valueOf(eventTime));
+        parametersMap.put("#interests#", userName);
+        parametersMap.put("#startDateTime#",startDateTime);
         parametersMap.put("#EventLink#","https://www.nasnav.com/");
+        parametersMap.put("#EventAccess#", access);
         return parametersMap;
     }
 

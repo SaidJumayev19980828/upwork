@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.nasnav.dto.InfluencerDTO;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.EventStatus;
 import com.nasnav.persistence.EventAttachmentsEntity;
 import lombok.Data;
@@ -37,4 +36,5 @@ public class EventResponseDto {
     private Set<ProductDetailsDTO> products;
     private List<EventResponseDto> relatedEvents;
     private Integer interests;
+    private String accessCode;
 }

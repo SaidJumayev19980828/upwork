@@ -91,23 +91,66 @@ public class EventTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    public void createEvent2(){
+        EventForRequestDTO eventForRequestDTO = new EventForRequestDTO();
+        eventForRequestDTO.setOrganizationId(99001L);
+        eventForRequestDTO.setStartsAt(LocalDateTime.now());
+        eventForRequestDTO.setEndsAt(LocalDateTime.now().plusMonths(2));
+        eventForRequestDTO.setName("name");
+        eventForRequestDTO.setDescription("description");
+        Set<Long> influencersIds = new HashSet<>();
+        influencersIds.add(100L);
+        eventForRequestDTO.setInfluencersIds(influencersIds);
+        eventForRequestDTO.setSceneId("testasc");
+        eventForRequestDTO.setCoin(10L);
+        eventForRequestDTO.setVisible(false);
+        Set<Long> productsIds = new HashSet<>();
+        productsIds.add(1001L);
+        eventForRequestDTO.setProductsIds(productsIds);
+
+
+        HttpCookie cookie = new HttpCookie("User-Token", "161718");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cookie", cookie.toString());
+        headers.add("User-Token", "161718");
+        HttpEntity<EventForRequestDTO> request = new HttpEntity<>(eventForRequestDTO,headers);
+
+        ResponseEntity<Void> response = template.postForEntity("/v1/event",request ,Void.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void delete(){
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ResponseEntity<Void> response = template.exchange("/v1/event/100?force=true", HttpMethod.DELETE, httpEntity, Void.class);
+
+        ResponseEntity<Void> response2 = template.exchange("/v1/event/100", HttpMethod.GET, httpEntity, Void.class);
+        assertEquals(404, response2.getStatusCode().value());
+
+    }
+
+    @Test
+    public void eventById(){
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ResponseEntity<Void> response = template.exchange("/v1/event/100", HttpMethod.GET, httpEntity, Void.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+    @Test
     public void updateEvent(){
         EventAttachmentsEntity attachment1 = new EventAttachmentsEntity();
-        attachment1.setUrl("URL");
-        attachment1.setType("Media type");
-        List<EventAttachmentsEntity> attachments = Arrays.asList(attachment1,attachment1);
         JSONObject requestBody = json()
                 .put("id",1)
                 .put("startsAt","2023-01-28T15:08:39")
                 .put("endsAt","2023-01-29T15:08:39")
                 .put("organizationId","99001")
-                .put("attachments",attachments)
                 .put("name","name")
                 .put("status","PENDING")
                 .put("description","description")
-                .put("productsIds",Arrays.asList(1001))
-                .put("visible",true)
-                ;
+                .put("status","PENDING")
+                .put("attachments",Collections.emptyList())
+                .put("influencersIds",Collections.emptyList())
+                .put("productsIds", Collections.emptyList())
+                .put("visible",true);
 
         template.put("/v1/event/100",
                 getHttpEntity(requestBody.toString(), "101112"), String.class);
@@ -118,22 +161,34 @@ public class EventTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    public void getEventAdvertisement(){
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ResponseEntity<Void> response = template.exchange("/v1/event/list/advertise", HttpMethod.GET, httpEntity, Void.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void getEventInterests(){
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ResponseEntity<Void> response = template.exchange("/v1/event/interests/101", HttpMethod.GET, httpEntity, Void.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+    @Test
     public void getAllEvents(){
         HttpEntity<Object> httpEntity = getHttpEntity("101112");
-        ParameterizedTypeReference<RestResponsePage<EventsNewDTO>> responseType = new ParameterizedTypeReference<>() {
-        };
         LocalDateTime fromDate = LocalDateTime.now().minusDays(15);
         LocalDateTime toDate = LocalDateTime.now().plusDays(15);
-        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/list?fromDate=" + fromDate + "&toDate=" + toDate, HttpMethod.GET, httpEntity, responseType);
+        ResponseEntity<Void> response = template.exchange("/v1/event/list?fromDate=" + fromDate + "&toDate=" + toDate, HttpMethod.GET, httpEntity, Void.class);
         assertEquals(200, response.getStatusCode().value());
+
+        ResponseEntity<Void> response2 = template.exchange("/v1/event/list?orgId=" + 99001L + "&toDate=" + toDate, HttpMethod.GET, httpEntity, Void.class);
+        assertEquals(200, response2.getStatusCode().value());
     }
 
     @Test
     public void getEventsByName(){
         HttpEntity<Object> httpEntity = getHttpEntity("101112");
-        ParameterizedTypeReference<RestResponsePage<EventsNewDTO>> responseType = new ParameterizedTypeReference<>() {
-        };
-        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/getEventByName/name" , HttpMethod.GET, httpEntity, responseType);
+        ResponseEntity<Void> response = template.exchange("/v1/event/getEventByName/name" , HttpMethod.GET, httpEntity, Void.class);
         assertEquals(200, response.getStatusCode().value());
     }
 
@@ -145,15 +200,14 @@ public class EventTest extends AbstractTestWithTempBaseDir {
     }
 
 
+
     @Test
     public void getAllEventsForUnAuth(){
         HttpEntity<Object> httpEntity = getHttpEntity("");
-        ParameterizedTypeReference<RestResponsePage<EventsNewDTO>> responseType = new ParameterizedTypeReference<>() {
-        };
-        Long organizationId = 99001L;
+        long organizationId = 99001L;
         LocalDateTime fromDate = LocalDateTime.now().minusDays(15);
 
-        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/all?fromDate=" + fromDate + "&?orgId=" + organizationId  , HttpMethod.GET, httpEntity, responseType);
+        ResponseEntity<Void> response = template.exchange("/v1/event/all?fromDate=" + fromDate + "&?orgId=" + organizationId  , HttpMethod.GET, httpEntity, Void.class);
         assertEquals(200, response.getStatusCode().value());
 
     }
@@ -197,6 +251,10 @@ public class EventTest extends AbstractTestWithTempBaseDir {
                 getHttpEntity("", "123"), String.class);
         assertEquals(200, response.getStatusCode().value());
         assertTrue(eventLogsRepository.existsByEvent_IdAndUser_IdOrEvent_IdAndEmployee_Id(100L,88L,100L,88L));
+
+        ResponseEntity<String> response2 = template.postForEntity("/v1/event/interset/100",
+                getHttpEntity("", "101112"), String.class);
+        assertEquals(200, response2.getStatusCode().value());
     }
 
 

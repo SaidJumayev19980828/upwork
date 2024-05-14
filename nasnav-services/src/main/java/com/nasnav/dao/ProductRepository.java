@@ -1,16 +1,16 @@
 package com.nasnav.dao;
 
 import com.nasnav.dto.Pair;
-import com.nasnav.dto.ProductAddonsDTO;
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.service.model.IdAndNamePair;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
@@ -18,7 +18,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
+@Repository
+public interface ProductRepository extends JpaRepository<ProductEntity,Long> {
 
     List<ProductEntity> findByOrganizationId(Long organizationId);
 

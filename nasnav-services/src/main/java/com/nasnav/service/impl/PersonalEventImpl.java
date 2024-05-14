@@ -7,6 +7,7 @@ import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.InvitePeopleDTO;
 import com.nasnav.dto.PersonalEvent;
 import com.nasnav.dto.PersonalEventDTO;
+import com.nasnav.enumerations.PersonalEventStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
@@ -156,7 +157,7 @@ public class PersonalEventImpl implements PersonalEventService {
         } else {
             setUserPersonalEvent((UserEntity) loggedInUser, personalEvent);
         }
-
+        personalEvent.setStatus(PersonalEventStatus.NOT_STARTED);
         setPersonalEventDetails(dto, personalEvent);
         return personalEvent;
     }
