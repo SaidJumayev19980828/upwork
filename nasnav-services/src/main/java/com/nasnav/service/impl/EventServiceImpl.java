@@ -152,18 +152,18 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
-    public PageImpl<EventEntity> getAllEventsHistoryForUser(Integer start, Integer count, Boolean previousEvents)
+    public PageImpl<EventResponseDto> getAllEventsHistoryForUser(Integer start, Integer count, Boolean previousEvents)
     {
         PageRequest page = getQueryPage(start, count);
         PageImpl<EventLogsEntity> source;
-        List<EventEntity> dtos;
+        List<EventResponseDto> dtos;
         if (previousEvents != null && previousEvents) {
             source = eventLogsRepository.getPreviousEventsForUserPageable(securityService.getCurrentUser().getId(), page);
         }
         else {
             source = eventLogsRepository.getInterestedEventsForUserPageable(securityService.getCurrentUser().getId(), page);
         }
-        dtos = source.getContent().stream().map(EventLogsEntity::getEvent).collect(Collectors.toList());
+        dtos = source.getContent().stream().map(EventLogsEntity::getEvent).map(this::toDto).toList();
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
 

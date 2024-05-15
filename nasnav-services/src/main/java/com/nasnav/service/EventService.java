@@ -21,7 +21,7 @@ public interface EventService {
     EventResponseDto getEventById(Long eventId);
     List<EventResponseDto> getEventsByOrgIdForUsers(Long orgID, EventStatus status);
     PageImpl<EventResponseDto> getAllEventsForUser(Integer start, Integer count, Date dateFilter);
-    PageImpl<EventEntity> getAllEventsHistoryForUser(Integer start, Integer count, Boolean previousEvents);
+    PageImpl<EventResponseDto> getAllEventsHistoryForUser(Integer start, Integer count, Boolean previousEvents);
     PageImpl<EventsNewDTO> getEventsForEmployee(Integer start, Integer count, EventStatus status, LocalDateTime fromDate, LocalDateTime toDate);
     List<EventResponseDto> getAdvertisedEvents();
     List<EventResponseDto> getAdvertisedEventsForInfluencer();

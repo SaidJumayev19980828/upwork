@@ -7,6 +7,7 @@ import com.nasnav.dao.InfluencerRepository;
 import com.nasnav.dto.EventsNewDTO;
 import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.request.EventForRequestDTO;
+import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.persistence.*;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
@@ -268,7 +269,7 @@ public class EventTest extends AbstractTestWithTempBaseDir {
     @Test
     public void interestedForUser()
     {
-        ResponseEntity<PaginatedResponse<EventEntity>> response = template.exchange("/v1/event/listHistoryForUser", HttpMethod.GET,
+        ResponseEntity<PaginatedResponse<EventResponseDto>> response = template.exchange("/v1/event/listHistoryForUser", HttpMethod.GET,
                 getHttpEntity("123"), new ParameterizedTypeReference<>()
                 {
                 });
@@ -278,7 +279,7 @@ public class EventTest extends AbstractTestWithTempBaseDir {
     @Test
     public void previousInterestedForUser()
     {
-        ResponseEntity<PaginatedResponse<EventEntity>> response = template.exchange("/v1/event/listHistoryForUser?previous_events=true",
+        ResponseEntity<PaginatedResponse<EventResponseDto>> response = template.exchange("/v1/event/listHistoryForUser?previous_events=true",
                 HttpMethod.GET, getHttpEntity("", "123"), new ParameterizedTypeReference<>()
                 {
                 });
