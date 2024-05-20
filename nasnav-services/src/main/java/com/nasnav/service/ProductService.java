@@ -29,7 +29,7 @@ public interface ProductService {
 
   ProductDetailsDTO getProduct(ProductFetchDTO productFetchDTO);
 
-  List<ProductDataDTO> getProducts(List<Long> ids) throws BusinessException;
+  List<ProductDetailsDTO> getProducts(List<Long> ids) throws BusinessException;
 
   Map<String, String> parseVariantFeatures(ProductVariantsEntity variant, Integer returnedName);
 

@@ -197,7 +197,7 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "/products_by_ids", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<ProductDataDTO> getProductsByIds(@RequestParam List<Long> ids) throws BusinessException {
+    public List<ProductDetailsDTO> getProductsByIds(@RequestParam List<Long> ids) throws BusinessException {
         return productService.getProducts(ids);
     }
 

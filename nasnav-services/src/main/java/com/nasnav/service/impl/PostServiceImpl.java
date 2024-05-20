@@ -1,54 +1,19 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.commons.utils.CustomPaginationPageRequest;
-import com.nasnav.dao.AdvertisementRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.PostClicksRepository;
-import com.nasnav.dao.PostLikesRepository;
-import com.nasnav.dao.PostRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.SubPostEntityRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductFetchDTO;
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.PostCreationDTO;
-import com.nasnav.dto.response.LikePostResponse;
-import com.nasnav.dto.response.PostResponseDTO;
-import com.nasnav.dto.response.SubPostResponseDTO;
-import com.nasnav.enumerations.CompensationActions;
-import com.nasnav.enumerations.PostStatus;
-import com.nasnav.enumerations.PostType;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AdvertisementEntity;
-import com.nasnav.persistence.AdvertisementProductCompensation;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.CompensationRulesEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.PostAttachmentsEntity;
-import com.nasnav.persistence.PostClicksEntity;
-import com.nasnav.persistence.PostEntity;
-import com.nasnav.persistence.PostLikesEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductTypes;
-import com.nasnav.persistence.SubPostEntity;
-import com.nasnav.persistence.UserEntity;
+import com.nasnav.dto.response.*;
+import com.nasnav.enumerations.*;
+import com.nasnav.exceptions.*;
+import com.nasnav.persistence.*;
 import com.nasnav.request.ImageBase64;
-import com.nasnav.service.CompensationService;
-import com.nasnav.service.FileService;
-import com.nasnav.service.FollowerServcie;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.PostService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.ShopService;
+import com.nasnav.service.*;
 import com.nasnav.util.MultipartFileUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -56,24 +21,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
-import static com.nasnav.exceptions.ErrorCodes.ADVER$001;
-import static com.nasnav.exceptions.ErrorCodes.E$USR$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$ORG$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$POST$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
-import static com.nasnav.exceptions.ErrorCodes.GLOBAL;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0000;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0016;
-import static com.nasnav.exceptions.ErrorCodes.POST$REVIEW$ATTACHMENT;
-import static com.nasnav.exceptions.ErrorCodes.U$0001;
+import static com.nasnav.exceptions.ErrorCodes.*;
 
 @Service
 @RequiredArgsConstructor
@@ -220,26 +172,34 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PageImpl<PostResponseDTO> getFilterForUser(long userId, Integer start, Integer count, String type)
-    {
+    public PageImpl<PostResponseDTO> getFilterForUser(long userId, Integer start, Integer count, String type) {
         PageRequest page = getQueryPage(start, count);
         UserEntity user = userRepository.findById(userId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, E$USR$0001));
-        PageImpl<PostEntity> source = null;
+        PageImpl<PostEntity> source;
         List<PostResponseDTO> dtos = new ArrayList<>();
-        if ("explore".equals(type) || type == null) {
-            source = postRepository.getAllByUserAndStatus(user, PostStatus.APPROVED.getValue(), page);
-        }
-        else if ("reviews".equals(type)) {
+        if ("reviews".equalsIgnoreCase(type)) {
             source = postRepository.getAllByUser_IdAndType(userId, PostType.REVIEW.getValue(), page);
+        } else if ("postsOfTheWeek".equalsIgnoreCase(type)) {
+            PageImpl<TrendyPostRep> trendyPostReps = postRepository.findTrendyPostsOfTheWeek(LocalDateTime.now().minusWeeks(1), page);
+            source = new PageImpl<>(trendyPostReps.getContent().stream().map(TrendyPostRep::getPostEntity).toList(), trendyPostReps.getPageable(),
+                    trendyPostReps.getTotalElements());
+        } else {
+            // Explore and Following works together as needed. Waiting for updates
+            PageImpl<TrendyPostRep> trendyPostReps = postRepository.findAllTrendyPosts(page);
+            source = new PageImpl<>(trendyPostReps.getContent().stream().map(TrendyPostRep::getPostEntity).toList(), trendyPostReps.getPageable(),
+                    trendyPostReps.getTotalElements());
         }
-        else if ("following".equals(type)) {
-            source = postRepository.getAllByUser_IdAndType(userId, PostType.POST.getValue(), page);
-        }
-        if (source != null){
+        if (source != null) {
             dtos = source.getContent().stream().map(this::fromEntityToPostResponseDto).toList();
             return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
         }
         return new PageImpl<>(dtos);
+    }
+
+    public interface TrendyPostRep {
+        Long getCount();
+
+        PostEntity getPostEntity();
     }
 
     @Override

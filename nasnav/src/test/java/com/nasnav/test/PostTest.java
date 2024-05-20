@@ -292,6 +292,16 @@ public class PostTest extends AbstractTestWithTempBaseDir {
         assertEquals(200, response.getStatusCode().value());
     }
 
+    @Test
+    public void getForYouUserPostsOfTheWeek() {
+        int start = 0, count = 10;
+        ResponseEntity<PaginatedResponse<PostResponseDTO>> response = template.exchange(
+                "/post/filterForUser?userId=" + 88 + "&start=" + start + "&count=" + count + "&type=postsOfTheWeek", HttpMethod.GET,
+                getHttpEntity("123"), new ParameterizedTypeReference<>() {
+                });
+        assertEquals(200, response.getStatusCode().value());
+    }
+
     public void getForYouUserWithoutType()
     {
         int start = 0, count = 10;

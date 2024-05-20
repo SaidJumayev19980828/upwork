@@ -4,19 +4,14 @@ import com.nasnav.dto.Pair;
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.service.model.IdAndNamePair;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Repository
 public interface ProductRepository extends JpaRepository<ProductEntity,Long> {
@@ -57,6 +52,8 @@ public interface ProductRepository extends JpaRepository<ProductEntity,Long> {
 			          and ( (org.yeshteryState in (1)) OR :allowAll = true )
 			""")
 	Optional<ProductEntity> findByProductIdAndOrganizationId(@Param("id") Long id, @Param("orgId") Long orgId, @Param("allowAll") Boolean allowAll);
+
+	List<ProductEntity> findAllByIdIn(List<Long> ids);
 
     @Query("select distinct p.id from ProductEntity p " +
             " LEFT JOIN OrganizationEntity org on p.organizationId = org.id " +

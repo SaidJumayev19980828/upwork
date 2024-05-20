@@ -343,7 +343,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("User-Token", "131415");
 		HttpEntity<ProductStocksDTO> request = new HttpEntity<>(headers);
-		ResponseEntity<List> response = template.exchange("/navbox/products_by_ids?ids=1001,1003,1004", HttpMethod.GET, request, List.class);
+		ResponseEntity<List> response = template.exchange("/navbox/products_by_ids?ids=1001,1003,1004,5114", HttpMethod.GET, request, List.class);
 		assertEquals(200, response.getStatusCodeValue());
 		List resBody=response.getBody();
 		assertNotNull(resBody);
