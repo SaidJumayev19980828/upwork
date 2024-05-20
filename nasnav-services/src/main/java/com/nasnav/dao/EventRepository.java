@@ -24,7 +24,29 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
     @Query("select event from EventEntity event where (CAST(:dateFilter as date) is null or CAST(event.startsAt as date) = :dateFilter) order by event.startsAt desc")
     PageImpl<EventEntity> getAllEventFilterByDatePageable(@DateTimeFormat(pattern="yyyy-MM-dd")Date dateFilter, Pageable page);
 
-    List<EventEntity> getAllByInfluencersNullAndStartsAtAfter(LocalDateTime now);
+    @Query("SELECT DISTINCT event " +
+            "FROM EventEntity event " +
+            "LEFT JOIN event.influencers influencer " +
+            "WHERE influencer IS NULL " +
+            "AND (:name IS NULL OR event.name like %:name%) " +
+            "AND (:status IS NULL OR event.status = :status) " +
+            "AND ( to_timestamp(CAST(:fromDate as text), 'yyyy-MM-dd HH24:MI:SS') IS NULL OR " +
+            "        to_timestamp(CAST(event.startsAt as text), 'yyyy-MM-dd HH24:MI:SS') >= " +
+            "       to_timestamp(CAST(:fromDate as text), 'yyyy-MM-dd HH24:MI:SS') " +
+            "        ) " +
+            "AND ( to_timestamp(CAST(:endDate as text), 'yyyy-MM-dd HH24:MI:SS') IS NULL OR " +
+            "    to_timestamp(CAST(event.endsAt as text), 'yyyy-MM-dd HH24:MI:SS') <= " +
+            "    to_timestamp(CAST(:endDate as text), 'yyyy-MM-dd HH24:MI:SS') " +
+            "       )" )
+    PageImpl<EventEntity> getAllByInfluencersNullAndDateBetweenAndMatchStatusAndNameIfNotNull(
+            @Param("status") Integer status,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime fromDate,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime endDate,
+            String name,
+            Pageable pageable
+    );
 
     @Query("SELECT event as event , count(el) as interest FROM EventEntity event " +
             " LEFT JOIN event.influencers influencer" +
@@ -79,6 +101,7 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
             "FROM EventEntity event " +
             "LEFT JOIN EventLogsEntity el ON el.event = event.id " +
             "WHERE event.organization.id = :organizationId " +
+            "AND (:name IS NULL OR event.name like %:name%) " +
             "AND (:status IS NULL OR event.status = :status) " +
             "AND (  " +
             "       ( to_timestamp(CAST(:fromDate as text), 'yyyy-MM-dd HH24:MI:SS') IS NULL OR " +
@@ -99,6 +122,7 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
             LocalDateTime fromDate,
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime endDate,
+            String name,
             Pageable pageable);
 
     @Query("select event from EventEntity event where event.name =:name")

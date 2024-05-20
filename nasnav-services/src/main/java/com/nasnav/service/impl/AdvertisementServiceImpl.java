@@ -11,15 +11,13 @@ import com.nasnav.service.AdvertisementProductCustomMapper;
 import com.nasnav.service.AdvertisementProductService;
 import com.nasnav.service.AdvertisementService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import javax.persistence.criteria.Predicate;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -36,22 +34,12 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
     @Transactional
     @Override
-    public PageImpl<AdvertisementDTO> findAllAdvertisements(String orgId, Integer start, Integer count) {
+    public PageImpl<AdvertisementDTO> findAllAdvertisements(Long orgId, Integer start, Integer count, LocalDateTime fromDate, LocalDateTime toDate,
+            String name) {
         PageRequest page = getQueryPage(start, count);
-        Page<AdvertisementEntity> all = advertisementRepository.findAll((root, criteriaQuery, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            try {
-                if (orgId != null) {
-                    predicates.add(criteriaBuilder.equal(root.get("organization").get("id"), Long.parseLong(orgId)));
-                }
-            } catch (Exception e) {
-            }
-            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
-        }, page);
-        List<AdvertisementDTO> dtos = all.getContent().stream()
-                .map(this::toDto)
-                .toList();
-        return new PageImpl<>(dtos, all.getPageable(), all.getTotalElements());
+        PageImpl<AdvertisementEntity> all = advertisementRepository.getAllByDateBetweenAndStatusEqualsAndNameIfNotNull(orgId, fromDate, toDate, name,
+                page);
+        return new PageImpl<>(all.getContent().stream().map(this::toDto).toList(), all.getPageable(), all.getTotalElements());
     }
 
     @Transactional

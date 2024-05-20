@@ -72,18 +72,22 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private AdvertisementProductServiceImpl advertisementProductServiceImpl;
 
-
-    @ParameterizedTest
-    @ValueSource(strings = {"", "?orgId=99002"})
-    void testFindAllAdvertisement(String urlQuery) {
+    @Test
+    void testFindAllAdvertisement() {
         ParameterizedTypeReference<RestResponsePage<AdvertisementDTO>> responseType = new ParameterizedTypeReference<>() {
         };
-        ResponseEntity<RestResponsePage<AdvertisementDTO>> exchange = template.exchange("/advertisement" + urlQuery, HttpMethod.GET, getHttpEntity("", "1"), responseType);
+        ResponseEntity<RestResponsePage<AdvertisementDTO>> exchange = template.exchange("/advertisement?orgId=" + 99002, HttpMethod.GET,
+                getHttpEntity("", "1"), responseType);
         assertThat(exchange.getStatusCode().is2xxSuccessful(), equalTo(true));
         RestResponsePage<AdvertisementDTO> body = exchange.getBody();
         assertThat(body, is(notNullValue()));
         assertThat(body.getContent(), is(notNullValue()));
         assertThat(body.getContent().size(), is(greaterThan(0)));
+        LocalDateTime fromDate = LocalDateTime.now().minusDays(13);
+        LocalDateTime toDate = LocalDateTime.now().plusDays(13);
+        ResponseEntity<RestResponsePage<AdvertisementDTO>> exchange2 = template.exchange("/advertisement?fromDate=" + fromDate + "&toDate=" + toDate
+                + "&name=dv", HttpMethod.GET, getHttpEntity("", "1"), responseType);
+        assertThat(exchange2.getStatusCode().is2xxSuccessful(), equalTo(true));
     }
 
     @Test

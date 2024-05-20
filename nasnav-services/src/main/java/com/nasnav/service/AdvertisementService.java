@@ -4,12 +4,14 @@ import com.nasnav.dto.response.AdvertisementDTO;
 import com.nasnav.persistence.AdvertisementProductEntity;
 import org.springframework.data.domain.PageImpl;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 public interface AdvertisementService {
-    PageImpl<AdvertisementDTO> findAllAdvertisements(String orgId, Integer start, Integer count);
+    PageImpl<AdvertisementDTO> findAllAdvertisements(Long orgId, Integer start, Integer count, LocalDateTime fromDate,
+            LocalDateTime toDate, String name);
 
     AdvertisementDTO create(AdvertisementDTO advertisementDTO);
 

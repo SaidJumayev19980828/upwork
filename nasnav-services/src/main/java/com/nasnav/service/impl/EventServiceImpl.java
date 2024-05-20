@@ -1,50 +1,17 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.commons.utils.CustomPaginationPageRequest;
-import com.nasnav.dao.EventAttachmentsRepository;
-import com.nasnav.dao.EventLogsRepository;
-import com.nasnav.dao.EventRepository;
-import com.nasnav.dao.EventRequestsRepository;
-import com.nasnav.dao.EventRoomTemplateRepository;
-import com.nasnav.dao.InfluencerRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.OrganizationThemeRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dto.EventInterestsProjection;
-import com.nasnav.dto.EventProjection;
-import com.nasnav.dto.EventsNewDTO;
-import com.nasnav.dto.InfluencerDTO;
-import com.nasnav.dto.OrganizationNewDTO;
-import com.nasnav.dto.OrganizationProjection;
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductFetchDTO;
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.EventForRequestDTO;
-import com.nasnav.dto.response.EventInterestDTO;
-import com.nasnav.dto.response.EventResponseDto;
+import com.nasnav.dto.response.*;
 import com.nasnav.enumerations.EventStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.mappers.EventRoomMapper;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.EventEntity;
-import com.nasnav.persistence.EventLogsEntity;
-import com.nasnav.persistence.EventRoomTemplateEntity;
-import com.nasnav.persistence.InfluencerEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductTypes;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.service.EventService;
-import com.nasnav.service.InfluencerService;
-import com.nasnav.service.MailService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.SecurityService;
+import com.nasnav.persistence.*;
+import com.nasnav.service.*;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,27 +20,12 @@ import javax.mail.MessagingException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.constatnts.EmailConstants.INTEREST_MAIL;
-import static com.nasnav.exceptions.ErrorCodes.EVENT$HAS$INTEREST$0006;
-import static com.nasnav.exceptions.ErrorCodes.EVENT$NOT$EDITABLE$0002;
-import static com.nasnav.exceptions.ErrorCodes.G$EVENT$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$INFLU$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$ORG$0001;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0016;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -168,21 +120,27 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
-    public PageImpl<EventsNewDTO> getEventsForEmployee(Integer start, Integer count, EventStatus status, LocalDateTime fromDate, LocalDateTime endDate) {
+    public PageImpl<EventsNewDTO> getEventsForEmployee(Integer start, Integer count, EventStatus status, LocalDateTime fromDate,
+            LocalDateTime endDate, String name) {
         Pageable page = new CustomPaginationPageRequest(start, count);
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         if (loggedInUser instanceof EmployeeUserEntity) {
             EmployeeUserEntity employeeUserEntity = (EmployeeUserEntity) loggedInUser;
-            Page<EventInterestsProjection> source = eventRepository.findAllEventsByStatusAndOrganizationIdAndBetweenDateTime(loggedInUser.getOrganizationId(),status != null ? status.getValue(): null,fromDate,endDate,page);
-           List<EventsNewDTO> dtos = source.getContent().stream().map(this::mapEventProjectionToDTO).collect(Collectors.toList());
+            Page<EventInterestsProjection> source = eventRepository.findAllEventsByStatusAndOrganizationIdAndBetweenDateTime(
+                    loggedInUser.getOrganizationId(), status != null ? status.getValue() : null, fromDate, endDate, name, page);
+            List<EventsNewDTO> dtos = source.getContent().stream().map(this::mapEventProjectionToDTO).collect(Collectors.toList());
             return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
         }
         return null;
     }
 
     @Override
-    public List<EventResponseDto> getAdvertisedEvents() {
-    return eventRepository.getAllByInfluencersNullAndStartsAtAfter(LocalDateTime.now()).stream().map(this::toDto).toList();
+    public PageImpl<EventResponseDto> getAdvertisedEvents(Integer start, Integer count, EventStatus status, LocalDateTime fromDate,
+            LocalDateTime toDate, String name) {
+        Pageable page = new CustomPaginationPageRequest(start, count);
+        PageImpl<EventEntity> list = eventRepository.getAllByInfluencersNullAndDateBetweenAndMatchStatusAndNameIfNotNull(status != null ? status.getValue() : null, fromDate,
+                toDate, name, page);
+        return new PageImpl<>(list.stream().map(this::toDto).toList(), list.getPageable(), list.getTotalElements());
     }
 
 

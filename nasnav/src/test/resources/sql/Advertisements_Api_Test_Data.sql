@@ -72,8 +72,8 @@ VALUES (1004, now(), 99002) on conflict do nothing;
 INSERT INTO public.advertisements (id, created_at, from_date, to_date, banner_url, organization_id)
 VALUES (1005, now(), now(), now(), 'bannessssssssr_url', 99002) on conflict do nothing;
 
-INSERT INTO public.advertisements (id, created_at, from_date, to_date, banner_url, organization_id)
-VALUES (1006, now(), now(), now(), 'bannessssssssr_url', 99002) on conflict do nothing;
+INSERT INTO public.advertisements (id, name, created_at, from_date, to_date, banner_url, organization_id)
+VALUES (1006, 'adv1', now(), CURRENT_DATE - INTERVAL '12 day', CURRENT_DATE + INTERVAL '12 day', 'bannessssssssr_url', 99002) on conflict do nothing;
 
 
 

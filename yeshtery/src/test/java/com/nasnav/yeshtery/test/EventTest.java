@@ -1,14 +1,9 @@
 package com.nasnav.yeshtery.test;
 
-import com.nasnav.dao.EventLogsRepository;
-import com.nasnav.dao.EventRepository;
-import com.nasnav.dao.EventRequestsRepository;
-import com.nasnav.dao.InfluencerRepository;
-import com.nasnav.dto.EventsNewDTO;
-import com.nasnav.dto.PaginatedResponse;
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.EventForRequestDTO;
-import com.nasnav.dto.response.EventResponseDto;
-import com.nasnav.dto.response.RestResponsePage;
+import com.nasnav.dto.response.*;
 import com.nasnav.persistence.*;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import net.jcip.annotations.NotThreadSafe;
@@ -164,8 +159,20 @@ public class EventTest extends AbstractTestWithTempBaseDir {
     @Test
     public void getEventAdvertisement(){
         HttpEntity<Object> httpEntity = getHttpEntity("101112");
-        ResponseEntity<Void> response = template.exchange("/v1/event/list/advertise", HttpMethod.GET, httpEntity, Void.class);
+        ResponseEntity<RestResponsePage<EventResponseDto>> response = template.exchange(
+                "/v1/event/list/advertise?fromDate=" + LocalDateTime.now().minusDays(15) + "&status=PENDING", HttpMethod.GET, httpEntity,
+                new ParameterizedTypeReference<>()
+                {
+                });
         assertEquals(200, response.getStatusCode().value());
+        LocalDateTime fromDate = LocalDateTime.now().minusDays(15);
+        LocalDateTime toDate = LocalDateTime.now().plusDays(15);
+        ResponseEntity<RestResponsePage<EventResponseDto>> response2 = template.exchange(
+                "/v1/event/list/advertise?fromDate=" + fromDate + "&toDate=" + toDate + "&name=ent", HttpMethod.GET, httpEntity,
+                new ParameterizedTypeReference<>()
+                {
+                });
+        assertEquals(200, response2.getStatusCode().value());
     }
 
     @Test
@@ -182,8 +189,13 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<Void> response = template.exchange("/v1/event/list?fromDate=" + fromDate + "&toDate=" + toDate, HttpMethod.GET, httpEntity, Void.class);
         assertEquals(200, response.getStatusCode().value());
 
-        ResponseEntity<Void> response2 = template.exchange("/v1/event/list?orgId=" + 99001L + "&toDate=" + toDate, HttpMethod.GET, httpEntity, Void.class);
+        ResponseEntity<Void> response2 = template.exchange("/v1/event/list?orgId=" + 99001L + "&toDate=" + toDate + "&status=PENDING", HttpMethod.GET,
+                httpEntity, Void.class);
         assertEquals(200, response2.getStatusCode().value());
+
+        ResponseEntity<Void> response3 = template.exchange("/v1/event/list?orgId=" + 99001L + "&toDate=" + toDate + "&status=PENDING", HttpMethod.GET,
+                getHttpEntity("456"), Void.class);
+        assertEquals(200, response3.getStatusCode().value());
     }
 
     @Test

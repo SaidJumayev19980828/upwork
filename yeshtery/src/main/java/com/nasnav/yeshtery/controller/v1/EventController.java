@@ -64,18 +64,27 @@ public class EventController {
                                                                    @RequestParam(required = false, defaultValue = "0") Integer start,
                                                                    @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
                                                                    @RequestParam(required = false) EventStatus status,
+                                                                   @RequestParam(required = false) String name,
                                                                    @RequestParam(required = false, name = "fromDate")
                                                                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
                                                                    LocalDateTime fromDate,
                                                                    @RequestParam(required = false, name = "toDate")
                                                                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
                                                                    LocalDateTime toDate) {
-        return eventService.getEventsForEmployee(start, count, status, fromDate, toDate);
+        return eventService.getEventsForEmployee(start, count, status, fromDate, toDate, name);
     }
 
     @GetMapping("/list/advertise")
-    public List<EventResponseDto> getAdvertisedEvents(@RequestHeader(name = "User-Token", required = false) String token){
-        return eventService.getAdvertisedEvents();
+    public PageImpl<EventResponseDto> getAdvertisedEvents(@RequestHeader(name = "User-Token", required = false) String token,
+                                                      @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                      @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
+                                                      @RequestParam(required = false) EventStatus status,
+                                                      @RequestParam(required = false) String name,
+                                                      @RequestParam(required = false, name = "fromDate")
+                                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
+                                                      @RequestParam(required = false, name = "toDate")
+                                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate) {
+        return eventService.getAdvertisedEvents(start, count, status, fromDate, toDate, name);
     }
 
     @GetMapping("/list/advertiseForInfluencer")
