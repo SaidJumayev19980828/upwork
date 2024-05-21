@@ -499,6 +499,7 @@ public enum ErrorCodes {
 	,EVENT$HAS$INTEREST$0006("You already interested in Event with id[%d]!!")
 
 	,G$POST$0001("Post Not found with id[%id]!")
+	,REVIEW_001("No Review found with that provided ID!")
 	,POST$LIKE$0002("no record found that the user liked this post before!")
 	,POST$LIKE$0003("user already liked this post before!")
 	,POST$REVIEW$ATTACHMENT("No attachments found fot review you should upload images")

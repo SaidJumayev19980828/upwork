@@ -2,12 +2,13 @@ package com.nasnav.yeshtery.test;
 
 import com.nasnav.dto.CompensationAction;
 import com.nasnav.dto.CompensationRule;
+import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.RuleTier;
+import com.nasnav.dto.response.PostResponseDTO;
 import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.enumerations.CompensationActions;
 import com.nasnav.persistence.CompensationActionsEntity;
 import com.nasnav.persistence.CompensationRulesEntity;
-import com.nasnav.persistence.EligibleNotReceivedEntity;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
@@ -245,10 +246,10 @@ private TestRestTemplate restTemplate;
         HttpHeaders headers = new HttpHeaders();
         headers.add("User-Token", "123");
         HttpEntity<Void> request = new HttpEntity<>(headers);
-        ParameterizedTypeReference<RestResponsePage<EligibleNotReceivedEntity>> responseType =
-                new ParameterizedTypeReference<RestResponsePage<EligibleNotReceivedEntity>>() {};
-        ResponseEntity<RestResponsePage<EligibleNotReceivedEntity>> response =
-                restTemplate.exchange("/v1/compensation/eligible/all?start"+ start + "&count"+count, HttpMethod.GET, request, responseType);
+        ResponseEntity<PaginatedResponse<PostResponseDTO>>  response =
+                restTemplate.exchange("/v1/compensation/eligible/all?start"+ start + "&count"+count,
+                        HttpMethod.GET, request,new ParameterizedTypeReference<>() {});
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 

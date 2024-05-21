@@ -99,3 +99,6 @@ values (1001, 89, now(), 5),
        (1008, 92, now(), 2),
        (1009, 91, now(), 2),
        (1010, 94, now(), 3);
+
+INSERT INTO public.post_likes( id, user_id, created_at, sub_post_id, review_id)
+values(1011, 95, now(), null, 5);

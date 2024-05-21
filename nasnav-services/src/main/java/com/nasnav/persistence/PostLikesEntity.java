@@ -45,4 +45,9 @@ public class PostLikesEntity {
     @JsonBackReference
     private SubPostEntity subPost;
 
+    @ManyToOne
+    @JoinColumn(name = "review_id")
+    @JsonBackReference
+    private PostEntity review;
+
 }

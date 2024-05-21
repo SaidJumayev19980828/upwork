@@ -36,4 +36,5 @@ public class PostResponseDTO {
     private LocalDateTime createdAt;
     private Boolean isSaved;
     private Set<SubPostResponseDTO> subPosts;
+    private long totalReviewLikes;
 }

@@ -14,6 +14,7 @@ public interface PostService {
     public PostResponseDTO getPostById(long id) throws BusinessException;
      PostResponseDTO createPost(PostCreationDTO dto) throws BusinessException, IOException;
     LikePostResponse likeOrDisLikePost(long postId, boolean likeAction);
+    long likeOrDisLikeReview(long postId);
     public void clickOnPost(long postId);
     public void approveOrRejectReview(long postId, PostStatus postStatus);
     public PageImpl<PostResponseDTO> getHomeTimeLine(Integer start, Integer count);

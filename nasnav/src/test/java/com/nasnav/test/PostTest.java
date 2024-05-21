@@ -27,6 +27,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
@@ -148,6 +149,44 @@ public class PostTest extends AbstractTestWithTempBaseDir {
 
         ResponseEntity<Void> response2 = template.postForEntity("/post/like?postId=1&likeAction=true", json, Void.class);
         assertEquals(200, response2.getStatusCode().value());
+    }
+
+
+    @Test
+    public void likeOrDislikeReviewTest(){
+        String requestBody =
+                json().toString();
+        HttpEntity<?> json = getHttpEntity(requestBody, "123");
+        ResponseEntity<Long> response = template.postForEntity("/post/review/like?review=5", json, Long.class);
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(2L, Objects.requireNonNull(response.getBody()).longValue());
+        ResponseEntity<Long> response2 = template.postForEntity("/post/review/like?review=5", json, Long.class);
+        assertEquals(200, response2.getStatusCode().value());
+        assertEquals(1L, Objects.requireNonNull(response2.getBody()).longValue());
+    }
+
+
+    @Test
+    public void getReviewTest(){
+        String requestBody =
+                json().toString();
+        HttpEntity<?> json = getHttpEntity(requestBody, "123");
+        ParameterizedTypeReference<PostResponseDTO> responseType = new ParameterizedTypeReference<>() {
+        };
+        ResponseEntity<PostResponseDTO> response = template.exchange("/post/5", HttpMethod.GET, json, responseType);
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(1L, Objects.requireNonNull(response.getBody()).getTotalReviewLikes());
+
+
+    }
+
+    @Test
+    public void likeOrDislikeReviewTestException(){
+        String requestBody =
+                json().toString();
+        HttpEntity<?> json = getHttpEntity(requestBody, "123");
+        ResponseEntity<Void> response = template.postForEntity("/post/review/like?review=16", json, Void.class);
+        assertEquals(404, response.getStatusCode().value());
     }
 
     @Test

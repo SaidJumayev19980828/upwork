@@ -72,4 +72,12 @@ INSERT INTO public.saved_posts(
 INSERT INTO public.sub_posts(
 	id, post_id, product_id)
 	VALUES (1, 1, 1001),
-	       (2,1,1002)
+	       (2,1,1002);
+
+
+--inserting posts
+INSERT INTO public.posts(id, user_id, org_id, type, status, created_at)
+VALUES (5, 89, 99001, 1, 1, now());
+
+INSERT INTO public.post_likes( id, user_id, created_at, sub_post_id, review_id)
+values(1011, 89, now(), null, 5);

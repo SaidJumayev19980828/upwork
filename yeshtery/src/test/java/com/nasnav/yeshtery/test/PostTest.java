@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Objects;
+
 import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.yeshtery.test.commons.TestCommons.json;
 import static org.junit.Assert.assertEquals;
@@ -118,4 +120,43 @@ public class PostTest extends AbstractTestWithTempBaseDir {
 				});
 		assertEquals(200, response.getStatusCode().value());
 	}
+
+
+	@Test
+	public void likeOrDislikeReviewTest(){
+		String requestBody =
+				json().toString();
+		HttpEntity<?> json = getHttpEntity(requestBody, "123");
+		ResponseEntity<Long> response = template.postForEntity("/v1/post/review/like?review=5", json, Long.class);
+		assertEquals(200, response.getStatusCode().value());
+		assertEquals(2L, Objects.requireNonNull(response.getBody()).longValue());
+		ResponseEntity<Long> response2 = template.postForEntity("/v1/post/review/like?review=5", json, Long.class);
+		assertEquals(200, response2.getStatusCode().value());
+		assertEquals(1L, Objects.requireNonNull(response2.getBody()).longValue());
+	}
+
+
+	@Test
+	public void getReviewTest(){
+		String requestBody =
+				json().toString();
+		HttpEntity<?> json = getHttpEntity(requestBody, "123");
+		ParameterizedTypeReference<PostResponseDTO> responseType = new ParameterizedTypeReference<>() {
+		};
+		ResponseEntity<PostResponseDTO> response = template.exchange("/v1/post/5", HttpMethod.GET, json, responseType);
+		assertEquals(200, response.getStatusCode().value());
+		assertEquals(1L, Objects.requireNonNull(response.getBody()).getTotalReviewLikes());
+
+
+	}
+
+	@Test
+	public void likeOrDislikeReviewTestException(){
+		String requestBody =
+				json().toString();
+		HttpEntity<?> json = getHttpEntity(requestBody, "123");
+		ResponseEntity<Void> response = template.postForEntity("/v1/post/review/like?review=16", json, Void.class);
+		assertEquals(404, response.getStatusCode().value());
+	}
+
 }

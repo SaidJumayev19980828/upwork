@@ -83,6 +83,12 @@ public class PostController {
         return postService.likeOrDisLikePost(postId, likeAction);
     }
 
+    @PostMapping("/review/like")
+    public long likeOrDisLikeReview(@RequestParam long review){
+        return postService.likeOrDisLikeReview(review);
+    }
+
+
     @PostMapping("/click")
     public void clickOnPost(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken, @RequestParam long postId){
         postService.clickOnPost(postId);

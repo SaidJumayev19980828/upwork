@@ -67,6 +67,14 @@ public class PostServiceImpl implements PostService {
         return new LikePostResponse(showButton,likes);
     }
 
+    @Override
+    public long likeOrDisLikeReview(long reviewId) {
+        PostEntity review = postRepository.findByIdAndType(reviewId,PostType.REVIEW.getValue())
+                .orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, REVIEW_001));
+        UserEntity loggedInUser = validateUser(securityService.getCurrentUser());
+        return postRepository.saveAndFlush(reviewLike(review,loggedInUser)).getReviewLikes().size();
+    }
+
     private boolean processRewards(SubPostEntity  subPost , long actionCount){
         if (isAdvertisement(subPost.getPost())){
            return compensationService.checkAndProcessReward(
@@ -111,6 +119,18 @@ public class PostServiceImpl implements PostService {
         return subPost;
     }
 
+
+    private PostEntity reviewLike(PostEntity review, UserEntity user) {
+        Set<PostLikesEntity> likes = review.getReviewLikes();
+        boolean userLikedPost = likes.stream()
+                .anyMatch(like -> like.getUser().equals(user));
+        if (userLikedPost) {
+            review.getReviewLikes().removeIf(like -> like.getUser().equals(user));
+        } else {
+            review.addLike(buildLike(user));
+        }
+        return review;
+    }
     private PostLikesEntity buildLike(UserEntity user){
         PostLikesEntity newLike = new PostLikesEntity();
         newLike.setUser(user);
@@ -444,13 +464,14 @@ public class PostServiceImpl implements PostService {
         return dto;
     }
 
+
     private SubPostResponseDTO buildSubPostResponseDto(Long parentId , SubPostEntity entity , BaseUserEntity user) {
         SubPostResponseDTO dto = new SubPostResponseDTO();
         dto.setId(entity.getId());
         dto.setParentPostId(parentId);
         dto.setProduct(buildProductFetchDto(entity));
-        dto.setLikesCount(likesCount(entity));
-        dto.setLiked(userLikeThePost(entity, user));
+        dto.setLikesCount(likesCount(entity.getLikes()));
+        dto.setLiked(userLikeThePost(entity.getLikes(), user));
         return dto;
     }
 
@@ -463,15 +484,17 @@ public class PostServiceImpl implements PostService {
         return productService.getProduct(dto);
     }
 
-    private long likesCount(SubPostEntity subPost) {
-        return subPost.getLikes().size();
+    private long likesCount(Set<PostLikesEntity> likes ) {
+        return likes.size();
     }
-    private boolean userLikeThePost(SubPostEntity subPost, BaseUserEntity loggedInUser) {
+
+    private boolean userLikeThePost(Set<PostLikesEntity> likes, BaseUserEntity loggedInUser) {
         if (loggedInUser instanceof UserEntity user)
-            return subPost.getLikes().stream().anyMatch(post-> post.getUser().equals(user));
+            return likes.stream().anyMatch(like-> like.getUser().equals(user));
         else
             return false;
     }
+
 
     private void buildReview(PostEntity entity , PostResponseDTO dto){
         if (dto.getType().equals(PostType.REVIEW)) {
@@ -480,9 +503,14 @@ public class PostServiceImpl implements PostService {
                 dto.setShop(entity.getShop().getRepresentation());
             }
             dto.setProductName(entity.getProductName());
+            patchStatistics(entity.getReviewLikes(), dto);
         }
     }
 
+    private void patchStatistics(Set<PostLikesEntity> reviewLikes , PostResponseDTO dto){
+        dto.setTotalReviewLikes(likesCount(reviewLikes));
+        dto.setIsLiked(userLikeThePost(reviewLikes, securityService.getCurrentUser()));
+    }
 
     private Boolean userSaveThatPost(Set<UserEntity> entity , Long userId) {
         return entity.stream().anyMatch(user -> user.getId().equals(userId));

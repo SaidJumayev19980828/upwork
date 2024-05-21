@@ -1,15 +1,21 @@
 package com.nasnav.dao;
 
-import com.nasnav.persistence.*;
+import com.nasnav.persistence.PostEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.impl.PostServiceImpl;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.*;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<PostEntity, Long> {
+
+    Optional<PostEntity> findByIdAndType(long id, int type);
     PageImpl<PostEntity> getAllByUserAndStatus(UserEntity userId, int status, Pageable page);
     PageImpl<PostEntity> getAllByUser_IdAndType(long userId, int type, Pageable page);
     PageImpl<PostEntity> getAllByOrganization_IdAndStatusAndType(long orgId, int status, int type, Pageable page);

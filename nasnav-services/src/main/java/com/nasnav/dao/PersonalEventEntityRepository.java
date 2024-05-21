@@ -34,8 +34,9 @@ public interface PersonalEventEntityRepository extends JpaRepository<PersonalEve
     PageImpl<PersonalEvent> findAllBy(Pageable page);
 
     @Query("""
-               SELECT
-                    pe.id AS id,pe.name AS name, pe.startsAt AS startsAt, pe.endsAt AS endsAt,pe.status as status,
+               SELECT distinct
+                    pe.id AS id,pe.name AS name, pe.startsAt AS startsAt, pe.endsAt AS endsAt,
+                    pe.status as status, pe.description AS description, pe.canceled AS canceled,
                     CASE
                         WHEN pe.user = :user OR pe.employee = :employee THEN true
                         ELSE false

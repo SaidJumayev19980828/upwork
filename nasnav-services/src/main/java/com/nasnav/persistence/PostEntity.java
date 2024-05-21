@@ -93,6 +93,10 @@ public class PostEntity {
     private Set<SubPostEntity> subPosts = new HashSet<>();
 
 
+    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL , orphanRemoval = true)
+    @JsonManagedReference
+    private Set<PostLikesEntity> reviewLikes = new HashSet<>();
+
     public void addAttachment(PostAttachmentsEntity attachment) {
         if (attachment != null) {
             if (!getAttachments().contains(attachment))
@@ -108,4 +112,10 @@ public class PostEntity {
         }
     }
 
+    public void addLike(PostLikesEntity like) {
+        if (like != null) {
+            like.setReview(this);
+            getReviewLikes().add(like);
+        }
+    }
 }
