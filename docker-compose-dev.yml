@@ -1,0 +1,29 @@
+version: "3"
+
+volumes:
+  db-volume:
+
+services:
+  postgres:
+    image: postgres:15.2-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: "nasnav-tests"
+      POSTGRES_USER: "nasnav"
+      POSTGRES_PASSWORD: "nasnav"
+      # for psql
+      PGDATABASE: nasnav-tests
+      PGUSER: nasnav
+      PGPASSWORD: nasnav
+
+  adminer:
+    image: adminer:4.8.1
+    environment:
+      ADMINER_DEFAULT_SERVER: "postgres"
+      ADMINER_DESIGN: rmsoft_blue
+      ADMINER_PLUGINS: "tables-filter edit-calendar"
+    ports:
+      - "8888:8080"
