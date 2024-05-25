@@ -331,7 +331,7 @@ public class EventTest extends AbstractTestWithTempBaseDir {
                 ;
 
         ResponseEntity<String> response = template.postForEntity("/v1/influencer/host",
-                getHttpEntity(requestBody.toString(), "abcdefg"), String.class);
+                getHttpEntity(requestBody.toString(), "161718"), String.class);
         assertEquals(200, response.getStatusCode().value());
         assertTrue(eventRequestsRepository.existsByEvent_IdAndStatusEquals(100L,0));
     }

@@ -5,7 +5,7 @@ import com.nasnav.dto.InfluencerDTO;
 import com.nasnav.dto.InfluencerStatsDTO;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.request.EventOrganiseRequestDTO;
-import com.nasnav.dto.response.EventResponseDto;
+import com.nasnav.dto.response.*;
 import com.nasnav.enumerations.EventRequestStatus;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.InfluencerEntity;
@@ -40,6 +40,7 @@ public interface InfluencerService {
     PageImpl<EventResponseDto> getMyEvents(Integer start, Integer count);
     PageImpl<EventResponseDto> getEventsByInfluencerId(Long influencerId, Integer start, Integer count, Long orgId);
     PageImpl<EventRequestsDTO> getMyEventRequests(Integer start, Integer count, EventRequestStatus status);
+    EventsAndReqsResponse getMyEventsAndRequests(Integer start, Integer count, EventRequestStatus status, String sortBy);
     PageImpl<EventRequestsDTO> getEventsRequestByOrgForEmployee(Integer start, Integer count, EventRequestStatus status);
     void joinEvent();
     void userIsGuided();

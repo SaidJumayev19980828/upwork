@@ -32,11 +32,14 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 VALUES (70, 'testuser4@nasnav.com', 99001, '161718',  503);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (71, 'testuser5@nasnav.com', 99001, '192021',  501);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+VALUES (72, 'testuser6@nasnav.com', 99001, '177147',  501);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (6, '101112', now(), 68, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (7, '161718', now(), 69, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (8, 'abcdefg', now(), 70, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (7, '131415', now(), 69, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (8, '161718', now(), 70, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (9, '192021', now(), 71, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (10, '177147', now(), 72, null);
 
 insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
@@ -51,22 +54,32 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (19
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 4);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 71, 6);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (24, 72, 1);
 
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
 
 INSERT INTO public.influencers(id,created_at,employee_user_id,approved) values (100,now(),71,false);
 INSERT INTO public.influencers(id,created_at,employee_user_id,approved) values (101,now(),70,true);
+INSERT INTO public.influencers(id,created_at,employee_user_id,approved) values (102,now(),68,true);
+INSERT INTO public.influencers(id,created_at,employee_user_id,approved) values (103,now(),69,false);
 
 INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status,access_code) values(100,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name','desc',0,'ABCD983');
 INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(101,now(),CURRENT_DATE - INTERVAL '30 day',CURRENT_DATE + INTERVAL '30 day',99001,false,'name','desc',0);
-INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(102,now(),CURRENT_DATE - INTERVAL '20 day',CURRENT_DATE + INTERVAL '20 day',99001,false,'name','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status,coin) values(102,now(),CURRENT_DATE - INTERVAL '20 day',CURRENT_DATE + INTERVAL '20 day',99001,false,'name','desc',0,600);
 INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(103,now(),CURRENT_DATE - INTERVAL '14 day',CURRENT_DATE + INTERVAL '14 day',99001,false,'event1','desc',0);
 INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(104,now(),CURRENT_DATE - INTERVAL '12 day',CURRENT_DATE + INTERVAL '12 day',99001,false,'name','desc',1);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status,coin) values(105,now(),CURRENT_DATE - INTERVAL '12 day',CURRENT_DATE + INTERVAL '12 day',99001,false,'ev11','desc',0,400);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status,coin) values(106,now(),CURRENT_DATE - INTERVAL '14 day',CURRENT_DATE + INTERVAL '14 day',99001,false,'ev12','desc',0,800);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status,coin) values(107,now(),CURRENT_DATE - INTERVAL '20 day',CURRENT_DATE + INTERVAL '20 day',99001,false,'ev13','desc',1,200);
 
 INSERT INTO public.event_influencers(id, event_id, influencer_id) values(1, 100, 100);
 INSERT INTO public.event_influencers(id, event_id, influencer_id) values(2, 102, 100);
+INSERT INTO public.event_influencers(id, event_id, influencer_id) values(3, 105, 102);
+INSERT INTO public.event_influencers(id, event_id, influencer_id) values(4, 102, 102);
 
 INSERT INTO public.event_requests(id,created_at,starts_at,ends_at,event_id,influencer_id,status) values(100,now(),now(),now(),100,100,0);
+INSERT INTO public.event_requests(id,created_at,starts_at,ends_at,event_id,influencer_id,status) values(101,now(),now(),now(),106,102,0);
+INSERT INTO public.event_requests(id,created_at,starts_at,ends_at,event_id,influencer_id,status) values(102,now(),now(),now(),107,102,1);
 INSERT INTO public.event_logs(
 	id, created_at, interested_at, attend_at, event_id, employee_id)
 	VALUES (99,CURRENT_DATE, CURRENT_DATE + INTERVAL '2 day',CURRENT_DATE + INTERVAL '7 day', 101 , 71);

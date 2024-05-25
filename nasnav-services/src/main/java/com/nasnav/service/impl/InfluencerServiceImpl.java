@@ -1,66 +1,25 @@
 package com.nasnav.service.impl;
 
-import com.nasnav.dao.CategoriesRepository;
-import com.nasnav.dao.EventLogsRepository;
-import com.nasnav.dao.EventRepository;
-import com.nasnav.dao.EventRequestsRepository;
-import com.nasnav.dao.InfluencerRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.PostRepository;
-import com.nasnav.dto.CategoryDTO;
-import com.nasnav.dto.EventRequestsDTO;
-import com.nasnav.dto.InfluencerDTO;
-import com.nasnav.dto.InfluencerStatsDTO;
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductFetchDTO;
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.EventOrganiseRequestDTO;
-import com.nasnav.dto.response.EventResponseDto;
-import com.nasnav.enumerations.EventRequestStatus;
-import com.nasnav.enumerations.EventStatus;
-import com.nasnav.enumerations.PostStatus;
+import com.nasnav.dto.response.*;
+import com.nasnav.enumerations.*;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.CategoriesEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.EventEntity;
-import com.nasnav.persistence.EventRequestsEntity;
-import com.nasnav.persistence.InfluencerEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.service.InfluencerService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.SecurityService;
+import com.nasnav.persistence.*;
+import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.time.*;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
-import static com.nasnav.exceptions.ErrorCodes.E$USR$0002;
-import static com.nasnav.exceptions.ErrorCodes.EVENT$MODIFICATION$0003;
-import static com.nasnav.exceptions.ErrorCodes.EVENT$REQUEST$0004;
-import static com.nasnav.exceptions.ErrorCodes.EVENT$REQUEST$0005;
-import static com.nasnav.exceptions.ErrorCodes.G$EVENT$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$INFLU$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$INFLU$0002;
-import static com.nasnav.exceptions.ErrorCodes.G$INFLU$0003;
-import static com.nasnav.exceptions.ErrorCodes.G$ORG$0001;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.NOT_MODIFIED;
+import static com.nasnav.exceptions.ErrorCodes.*;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 public class InfluencerServiceImpl implements InfluencerService {
@@ -264,12 +223,7 @@ public class InfluencerServiceImpl implements InfluencerService {
     @Override
     public PageImpl<EventResponseDto> getMyEvents(Integer start, Integer count) {
         PageRequest page = getQueryPage(start, count);
-        BaseUserEntity loggedInUser = securityService.getCurrentUser();
-        InfluencerEntity influencerEntity = influencerRepository.getByUser_IdOrEmployeeUser_Id(loggedInUser.getId(),loggedInUser.getId());
-        if(influencerEntity == null)
-            throw new RuntimeBusinessException(NOT_FOUND,G$INFLU$0001,loggedInUser.getId());
-        if(!influencerEntity.getApproved())
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE,G$INFLU$0003,influencerEntity.getId());
+        InfluencerEntity influencerEntity = fetchInfluencerIfFoundAndApproved();
 
         PageImpl<EventEntity> source = eventRepository.getAllByInfluencers(influencerEntity.getId(), null, page);
         List<EventResponseDto> dtos = source.getContent().stream().map(this::eventToDto).collect(Collectors.toList());
@@ -287,12 +241,7 @@ public class InfluencerServiceImpl implements InfluencerService {
     @Override
     public PageImpl<EventRequestsDTO> getMyEventRequests(Integer start, Integer count, EventRequestStatus status){
         PageRequest page = getQueryPage(start, count);
-        BaseUserEntity loggedInUser = securityService.getCurrentUser();
-        InfluencerEntity influencerEntity = influencerRepository.getByUser_IdOrEmployeeUser_Id(loggedInUser.getId(),loggedInUser.getId());
-        if(influencerEntity == null)
-            throw new RuntimeBusinessException(NOT_FOUND,G$INFLU$0001,loggedInUser.getId());
-        if(!influencerEntity.getApproved())
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE,G$INFLU$0003,influencerEntity.getId());
+        InfluencerEntity influencerEntity = fetchInfluencerIfFoundAndApproved();
 
         Integer statusValue = null;
         if(status != null){
@@ -301,6 +250,41 @@ public class InfluencerServiceImpl implements InfluencerService {
         PageImpl<EventRequestsEntity> source = eventRequestsRepository.getAllByInfluencerIdPageable(influencerEntity.getId(), statusValue, page);
         List<EventRequestsDTO> dtos = source.getContent().stream().map(this::eventRequestToDto).collect(Collectors.toList());
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
+    }
+
+    @Override
+    public EventsAndReqsResponse getMyEventsAndRequests(Integer start, Integer count, EventRequestStatus status, String sortBy) {
+        PageRequest page = getQueryPage(start, count);
+        InfluencerEntity influencerEntity = fetchInfluencerIfFoundAndApproved();
+        EventsAndReqsResponse response = new EventsAndReqsResponse();
+        Sort eventSort = Sort.by("startsAt");
+        Sort requestSort = Sort.by("event.startsAt");
+        if (sortBy != null && sortBy.equalsIgnoreCase("coins")) {
+            eventSort = Sort.by("coin");
+            requestSort = Sort.by("event.coin");
+        } else if (sortBy != null && sortBy.equalsIgnoreCase("coins-desc")) {
+            eventSort = Sort.by("coin").descending();
+            requestSort = Sort.by("event.coin").descending();
+        }
+        PageImpl<EventEntity> eventsSource = eventRepository.getAllByInfluencers(influencerEntity.getId(), null, page.withSort(eventSort));
+        response.setEvents(eventsSource.getContent().stream().map(this::eventToDto).collect(Collectors.toList()));
+        Integer statusValue = null;
+        if (status != null)
+            statusValue = status.getValue();
+        PageImpl<EventRequestsEntity> requestsSource = eventRequestsRepository.getAllByInfluencerIdPageable(influencerEntity.getId(), statusValue,
+                page.withSort(requestSort));
+        response.setRequests(requestsSource.getContent().stream().map(this::eventRequestToDto).collect(Collectors.toList()));
+        return response;
+    }
+
+    private InfluencerEntity fetchInfluencerIfFoundAndApproved() {
+        BaseUserEntity loggedInUser = securityService.getCurrentUser();
+        InfluencerEntity influencerEntity = influencerRepository.getByUser_IdOrEmployeeUser_Id(loggedInUser.getId(), loggedInUser.getId());
+        if (influencerEntity == null)
+            throw new RuntimeBusinessException(NOT_FOUND, G$INFLU$0001, loggedInUser.getId());
+        if (!influencerEntity.getApproved())
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$INFLU$0003, influencerEntity.getId());
+        return influencerEntity;
     }
 
     @Override
@@ -386,6 +370,7 @@ public class InfluencerServiceImpl implements InfluencerService {
         dto.setId(entity.getId());
         dto.setStartsAt(entity.getStartsAt());
         dto.setEndsAt(entity.getEndsAt());
+        dto.setCoin(entity.getCoin());
         dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(), 0));
 //        if (entity.getInfluencer() != null) {
 //            dto.setInfluencer(toInfluencerDto(entity.getInfluencer()));

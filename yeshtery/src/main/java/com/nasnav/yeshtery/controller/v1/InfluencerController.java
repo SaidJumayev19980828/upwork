@@ -1,12 +1,9 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.commons.YeshteryConstants;
-import com.nasnav.dto.EventRequestsDTO;
-import com.nasnav.dto.InfluencerDTO;
-import com.nasnav.dto.InfluencerStatsDTO;
-import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.EventOrganiseRequestDTO;
-import com.nasnav.dto.response.EventResponseDto;
+import com.nasnav.dto.response.*;
 import com.nasnav.enumerations.EventRequestStatus;
 import com.nasnav.service.InfluencerService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,10 +11,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
-import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
-
 import java.time.LocalDate;
 import java.util.List;
+
+import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 
 @RestController
 @RequestMapping(InfluencerController.API_PATH)
@@ -111,6 +108,14 @@ public class InfluencerController {
                                                          @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
                                                          @RequestParam(required = false) EventRequestStatus status){
         return influencerService.getMyEventRequests(start, count, status);
+    }
+
+    @GetMapping("/myEventsAndRequests")
+    public EventsAndReqsResponse getMyEventsAndRequests(@RequestHeader(name = "User-Token", required = false) String token,
+            @RequestParam(required = false, defaultValue = "0") Integer start,
+            @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
+            @RequestParam(required = false) EventRequestStatus status, @RequestParam(required = false, defaultValue = "upcoming") String sortBy) {
+        return influencerService.getMyEventsAndRequests(start, count, status, sortBy);
     }
 
     @GetMapping("/hosting-requests")
