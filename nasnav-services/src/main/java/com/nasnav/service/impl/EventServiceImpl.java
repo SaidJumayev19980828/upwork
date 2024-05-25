@@ -300,6 +300,7 @@ public class EventServiceImpl implements EventService{
         dto.setStatus(EventStatus.getEnumByValue(entity.getStatus()));
         dto.setStatusRepresentation(EventStatus.getStatusRepresentation(entity.getStartsAt(), entity.getEndsAt()));
         dto.setProducts(productDetailsDTOS);
+        dto.setInterests(eventLogsRepository.countByEventId(entity.getId()));
         return dto;
     }
 
