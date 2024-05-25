@@ -267,13 +267,13 @@ public class InfluencerServiceImpl implements InfluencerService {
             requestSort = Sort.by("event.coin").descending();
         }
         PageImpl<EventEntity> eventsSource = eventRepository.getAllByInfluencers(influencerEntity.getId(), null, page.withSort(eventSort));
-        response.setEvents(eventsSource.getContent().stream().map(this::eventToDto).collect(Collectors.toList()));
+        response.setEvents(eventsSource.getContent().stream().map(this::eventToDto).toList());
         Integer statusValue = null;
         if (status != null)
             statusValue = status.getValue();
         PageImpl<EventRequestsEntity> requestsSource = eventRequestsRepository.getAllByInfluencerIdPageable(influencerEntity.getId(), statusValue,
                 page.withSort(requestSort));
-        response.setRequests(requestsSource.getContent().stream().map(this::eventRequestToDto).collect(Collectors.toList()));
+        response.setRequests(requestsSource.getContent().stream().map(this::eventRequestToDto).toList());
         return response;
     }
 
@@ -282,7 +282,7 @@ public class InfluencerServiceImpl implements InfluencerService {
         InfluencerEntity influencerEntity = influencerRepository.getByUser_IdOrEmployeeUser_Id(loggedInUser.getId(), loggedInUser.getId());
         if (influencerEntity == null)
             throw new RuntimeBusinessException(NOT_FOUND, G$INFLU$0001, loggedInUser.getId());
-        if (!influencerEntity.getApproved())
+        if (Boolean.FALSE.equals(influencerEntity.getApproved()))
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$INFLU$0003, influencerEntity.getId());
         return influencerEntity;
     }
