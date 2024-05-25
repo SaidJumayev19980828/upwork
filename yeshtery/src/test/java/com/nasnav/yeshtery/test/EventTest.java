@@ -281,21 +281,32 @@ public class EventTest extends AbstractTestWithTempBaseDir {
     @Test
     public void interestedForUser()
     {
-        ResponseEntity<PaginatedResponse<EventResponseDto>> response = template.exchange("/v1/event/listHistoryForUser", HttpMethod.GET,
-                getHttpEntity("123"), new ParameterizedTypeReference<>()
+        ResponseEntity<PaginatedResponse<EventResponseDto>> response = template.exchange("/v1/event/listHistoryForUser?userId=88", HttpMethod.GET,
+                getHttpEntity("456"), new ParameterizedTypeReference<>()
                 {
                 });
         assertEquals(200, response.getStatusCode().value());
+        ResponseEntity<PaginatedResponse<EventResponseDto>> response2 = template.exchange("/v1/event/listHistoryForUser?userId=68", HttpMethod.GET,
+                getHttpEntity("456"), new ParameterizedTypeReference<>()
+                {
+                });
+        assertEquals(200, response2.getStatusCode().value());
     }
 
     @Test
     public void previousInterestedForUser()
     {
-        ResponseEntity<PaginatedResponse<EventResponseDto>> response = template.exchange("/v1/event/listHistoryForUser?previous_events=true",
-                HttpMethod.GET, getHttpEntity("", "123"), new ParameterizedTypeReference<>()
+        ResponseEntity<PaginatedResponse<EventResponseDto>> response = template.exchange(
+                "/v1/event/listHistoryForUser?userId=88&&previous_events=true", HttpMethod.GET, getHttpEntity("", "456"),
+                new ParameterizedTypeReference<>()
                 {
                 });
         assertEquals(200, response.getStatusCode().value());
+        ResponseEntity<PaginatedResponse<EventResponseDto>> response2 = template.exchange(
+                "/v1/event/listHistoryForUser?userId=88&&previous_events=false", HttpMethod.GET, getHttpEntity("", "456"),
+                new ParameterizedTypeReference<>() {
+                });
+        assertEquals(200, response2.getStatusCode().value());
     }
 
     @Test

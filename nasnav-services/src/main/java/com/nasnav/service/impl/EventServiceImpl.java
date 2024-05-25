@@ -47,6 +47,8 @@ public class EventServiceImpl implements EventService{
     private final EventRoomMapper mapper;
     private final EventRoomTemplateRepository roomTemplateRepository;
     private final MailService mailService;
+    private final UserRepository userRepository;
+    private final EmployeeUserRepository employeeRepository;
 
     @Override
     @Transactional
@@ -104,17 +106,18 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
-    public PageImpl<EventResponseDto> getAllEventsHistoryForUser(Integer start, Integer count, Boolean previousEvents)
+    public PageImpl<EventResponseDto> getAllEventsHistoryForUser(Integer start, Integer count, Long userId, Boolean previousEvents)
     {
+        BaseUserEntity userEntity = employeeRepository.findById(userId).orElse(null);
+        if (userEntity == null)
+            userEntity = userRepository.findById(userId).orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$0001, userId));
         PageRequest page = getQueryPage(start, count);
         PageImpl<EventLogsEntity> source;
         List<EventResponseDto> dtos;
-        if (previousEvents != null && previousEvents) {
-            source = eventLogsRepository.getPreviousEventsForUserPageable(securityService.getCurrentUser().getId(), page);
-        }
-        else {
-            source = eventLogsRepository.getInterestedEventsForUserPageable(securityService.getCurrentUser().getId(), page);
-        }
+        if (previousEvents != null && previousEvents)
+            source = eventLogsRepository.getPreviousEventsForUserPageable(userEntity.getId(), page);
+        else
+            source = eventLogsRepository.getInterestedEventsForUserPageable(userEntity.getId(), page);
         dtos = source.getContent().stream().map(EventLogsEntity::getEvent).map(this::toDto).toList();
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }

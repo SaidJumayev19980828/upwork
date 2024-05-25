@@ -54,9 +54,9 @@ public class EventController {
     public PageImpl<EventResponseDto> getEventsHistoryForUser(@RequestHeader(name = "User-Token", required = false) String token,
             @RequestParam(required = false, defaultValue = "0") Integer start,
             @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
-            @RequestParam(name = "previous_events", required = false) Boolean previousEvents)
+            @RequestParam(name = "previous_events", required = false) Boolean previousEvents, @RequestParam Long userId)
     {
-        return eventService.getAllEventsHistoryForUser(start, count, previousEvents);
+        return eventService.getAllEventsHistoryForUser(start, count, userId, previousEvents);
     }
 
     @GetMapping("/list")
