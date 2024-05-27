@@ -43,6 +43,7 @@ public class InfluencerServiceImpl implements InfluencerService {
     private ProductService productService;
     @Autowired
     private PostRepository postRepository;
+    private static final String EVENT_COIN_PROPERTY = "event.coin";
 
     @Override
     public InfluencerDTO getInfluencerById(Long id) {
@@ -236,9 +237,9 @@ public class InfluencerServiceImpl implements InfluencerService {
         InfluencerEntity influencerEntity = fetchInfluencerIfFoundAndApproved();
         Sort sort = Sort.by("event.startsAt");
         if (sortBy != null && sortBy.equalsIgnoreCase("coins"))
-            sort = Sort.by("event.coin");
+            sort = Sort.by(EVENT_COIN_PROPERTY);
         else if (sortBy != null && sortBy.equalsIgnoreCase("coins-desc"))
-            sort = Sort.by("event.coin").descending();
+            sort = Sort.by(EVENT_COIN_PROPERTY).descending();
         PageImpl<EventRequestsEntity> source = eventRequestsRepository.getAllByInfluencerIdPageable(influencerEntity.getId(),
                 EventRequestStatus.PENDING.getValue(), page.withSort(sort));
         List<EventResponseDto> dtos = source.getContent().stream().map(EventRequestsEntity::getEvent).map(this::eventToDto).toList();
@@ -276,10 +277,10 @@ public class InfluencerServiceImpl implements InfluencerService {
         Sort requestSort = Sort.by("event.startsAt");
         if (sortBy != null && sortBy.equalsIgnoreCase("coins")) {
             eventSort = Sort.by("coin");
-            requestSort = Sort.by("event.coin");
+            requestSort = Sort.by(EVENT_COIN_PROPERTY);
         } else if (sortBy != null && sortBy.equalsIgnoreCase("coins-desc")) {
             eventSort = Sort.by("coin").descending();
-            requestSort = Sort.by("event.coin").descending();
+            requestSort = Sort.by(EVENT_COIN_PROPERTY).descending();
         }
         PageImpl<EventEntity> eventsSource = eventRepository.getAllByInfluencers(influencerEntity.getId(), null, page.withSort(eventSort));
         response.setEvents(eventsSource.getContent().stream().map(this::eventToDto).toList());
