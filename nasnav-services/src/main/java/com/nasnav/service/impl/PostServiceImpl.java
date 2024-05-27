@@ -213,7 +213,7 @@ public class PostServiceImpl implements PostService {
             Long myId = securityService.getCurrentUser().getId();
             List<Long> followingsIds = followerServcie.getAllFollowingsByUserId(myId, start, count).getContent().stream()
                     .map(UserRepresentationObject::getId).toList();
-            source = postRepository.getAllByUser_IdIn(followingsIds, page);
+            source = postRepository.getAllByUserIdIn(followingsIds, page);
         } else {
             if (userId != null) {
                 source = postRepository.getAllByUser_IdAndType(userId, PostType.POST.getValue(), page);

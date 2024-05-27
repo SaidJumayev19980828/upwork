@@ -17,7 +17,7 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     PageImpl<PostEntity> getAllByOrganization_IdAndStatusAndType(long orgId, int status, int type, Pageable page);
     PageImpl<PostEntity> getAllByOrganization_IdAndType(long orgId, int type, Pageable page);
     PageImpl<PostEntity> getAllByUserInAndStatus(List<UserEntity> users, int status, Pageable page);
-    PageImpl<PostEntity> getAllByUser_IdIn(List<Long> userIds, Pageable page);
+    PageImpl<PostEntity> getAllByUserIdIn(List<Long> userIds, Pageable page);
     Long countAllByUser_IdAndStatus(Long userId, int status);
 
     @EntityGraph(attributePaths = {"products","advertisement.organization.bankAccount","user"})
