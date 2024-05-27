@@ -200,12 +200,12 @@ public class PostServiceImpl implements PostService {
         if ("reviews".equalsIgnoreCase(type)) {
             source = postRepository.getAllByUser_IdAndType(userId, PostType.REVIEW.getValue(), page);
         } else if ("postsOfTheWeek".equalsIgnoreCase(type)) {
-            PageImpl<TrendyPostRep> trendyPostReps = postRepository.findTrendyPostsOfTheWeek(LocalDateTime.now().minusWeeks(1), page);
+            PageImpl<TrendyPostRep> trendyPostReps = postRepository.findTrendyPostsOfTheWeek(userId, LocalDateTime.now().minusWeeks(1), page);
             source = new PageImpl<>(trendyPostReps.getContent().stream().map(TrendyPostRep::getPostEntity).toList(), trendyPostReps.getPageable(),
                     trendyPostReps.getTotalElements());
         } else {
             // Explore and Following works together as needed. Waiting for updates
-            PageImpl<TrendyPostRep> trendyPostReps = postRepository.findAllTrendyPosts(page);
+            PageImpl<TrendyPostRep> trendyPostReps = postRepository.findAllTrendyPosts(userId, page);
             source = new PageImpl<>(trendyPostReps.getContent().stream().map(TrendyPostRep::getPostEntity).toList(), trendyPostReps.getPageable(),
                     trendyPostReps.getTotalElements());
         }

@@ -110,6 +110,14 @@ public class InfluencerController {
         return influencerService.getMyEventRequests(start, count, status);
     }
 
+    @GetMapping("/myPendingEvents")
+    public PageImpl<EventResponseDto> getMyPendingEvent(@RequestHeader(name = "User-Token", required = false) String token,
+            @RequestParam(required = false, defaultValue = "0") Integer start,
+            @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
+            @RequestParam(required = false, defaultValue = "upcoming") String sortBy) {
+        return influencerService.getMyPendingEvent(start, count, sortBy);
+    }
+
     @GetMapping("/myEventsAndRequests")
     public EventsAndReqsResponse getMyEventsAndRequests(@RequestHeader(name = "User-Token", required = false) String token,
             @RequestParam(required = false, defaultValue = "0") Integer start,

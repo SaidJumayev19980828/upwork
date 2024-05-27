@@ -231,6 +231,21 @@ public class InfluencerServiceImpl implements InfluencerService {
     }
 
     @Override
+    public PageImpl<EventResponseDto> getMyPendingEvent(Integer start, Integer count, String sortBy) {
+        PageRequest page = getQueryPage(start, count);
+        InfluencerEntity influencerEntity = fetchInfluencerIfFoundAndApproved();
+        Sort sort = Sort.by("event.startsAt");
+        if (sortBy != null && sortBy.equalsIgnoreCase("coins"))
+            sort = Sort.by("event.coin");
+        else if (sortBy != null && sortBy.equalsIgnoreCase("coins-desc"))
+            sort = Sort.by("event.coin").descending();
+        PageImpl<EventRequestsEntity> source = eventRequestsRepository.getAllByInfluencerIdPageable(influencerEntity.getId(),
+                EventRequestStatus.PENDING.getValue(), page.withSort(sort));
+        List<EventResponseDto> dtos = source.getContent().stream().map(EventRequestsEntity::getEvent).map(this::eventToDto).toList();
+        return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
+    }
+
+    @Override
     public PageImpl<EventResponseDto> getEventsByInfluencerId(Long influencerId, Integer start, Integer count, Long orgId) {
         PageRequest page = getQueryPage(start, count);
         PageImpl<EventEntity> source = eventRepository.getAllByInfluencers(influencerId, orgId, page);

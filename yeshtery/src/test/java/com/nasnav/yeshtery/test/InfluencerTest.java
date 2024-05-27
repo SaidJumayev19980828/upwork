@@ -1,7 +1,6 @@
 package com.nasnav.yeshtery.test;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.response.EventsAndReqsResponse;
+import com.nasnav.dto.response.*;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
@@ -9,6 +8,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -69,4 +69,22 @@ public class InfluencerTest extends AbstractTestWithTempBaseDir {
                 EventsAndReqsResponse.class);
         assertEquals(404, response.getStatusCode().value());
     }
+
+    @Test
+    public void testMyPendingEvent() {
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ResponseEntity<RestResponsePage<EventResponseDto>> response = template.exchange("/v1/influencer/myPendingEvents?sortBy=coins-desc",
+                HttpMethod.GET, httpEntity, new ParameterizedTypeReference<>() {
+                });
+        assertEquals(200, response.getStatusCode().value());
+        ResponseEntity<RestResponsePage<EventResponseDto>> response2 = template.exchange("/v1/influencer/myPendingEvents?sortBy=coins", HttpMethod.GET,
+                httpEntity, new ParameterizedTypeReference<>() {
+                });
+        assertEquals(200, response2.getStatusCode().value());
+        ResponseEntity<RestResponsePage<EventResponseDto>> response3 = template.exchange("/v1/influencer/myPendingEvents", HttpMethod.GET, httpEntity,
+                new ParameterizedTypeReference<>() {
+                });
+        assertEquals(200, response3.getStatusCode().value());
+    }
+
 }

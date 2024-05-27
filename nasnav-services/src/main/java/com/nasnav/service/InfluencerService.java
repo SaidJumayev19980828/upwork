@@ -38,6 +38,7 @@ public interface InfluencerService {
     void rejectTheRestIfEventHostingRequestApproved(Long requestId);
     void deleteEventHostingRequest(Long requestId);
     PageImpl<EventResponseDto> getMyEvents(Integer start, Integer count);
+    PageImpl<EventResponseDto> getMyPendingEvent(Integer start, Integer count, String sortBy);
     PageImpl<EventResponseDto> getEventsByInfluencerId(Long influencerId, Integer start, Integer count, Long orgId);
     PageImpl<EventRequestsDTO> getMyEventRequests(Integer start, Integer count, EventRequestStatus status);
     EventsAndReqsResponse getMyEventsAndRequests(Integer start, Integer count, EventRequestStatus status, String sortBy);
