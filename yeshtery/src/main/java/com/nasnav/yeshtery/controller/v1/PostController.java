@@ -46,7 +46,7 @@ public class PostController {
     @GetMapping("/filterForUser")
     public PageImpl<PostResponseDTO> getFilterForUser(
             @RequestParam(required = false, defaultValue = "0") Integer start, @RequestParam(required = false, defaultValue = "10") Integer count,
-            @RequestParam long userId, @RequestParam(required = false) String type)
+            @RequestParam(required = false) Long userId, @RequestParam(required = false) String type)
     {
         return postService.getFilterForUser(userId, start, count, type);
     }

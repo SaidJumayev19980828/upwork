@@ -192,22 +192,36 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PageImpl<PostResponseDTO> getFilterForUser(long userId, Integer start, Integer count, String type) {
+    public PageImpl<PostResponseDTO> getFilterForUser(Long userId, Integer start, Integer count, String type) {
         PageRequest page = getQueryPage(start, count);
-        UserEntity user = userRepository.findById(userId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, E$USR$0001));
+        if (userId != null) {
+            UserEntity user = userRepository.findById(userId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, E$USR$0001));
+        }
         PageImpl<PostEntity> source;
         List<PostResponseDTO> dtos = new ArrayList<>();
         if ("reviews".equalsIgnoreCase(type)) {
-            source = postRepository.getAllByUser_IdAndType(userId, PostType.REVIEW.getValue(), page);
+            if (userId != null) {
+                source = postRepository.getAllByUser_IdAndType(userId, PostType.REVIEW.getValue(), page);
+            } else {
+                source = postRepository.findAllByType(PostType.REVIEW.getValue(), page);
+            }
         } else if ("postsOfTheWeek".equalsIgnoreCase(type)) {
-            PageImpl<TrendyPostRep> trendyPostReps = postRepository.findTrendyPostsOfTheWeek(userId, LocalDateTime.now().minusWeeks(1), page);
+            PageImpl<TrendyPostRep> trendyPostReps = postRepository.findTrendyPostsOfTheWeek(LocalDateTime.now().minusWeeks(1), page);
             source = new PageImpl<>(trendyPostReps.getContent().stream().map(TrendyPostRep::getPostEntity).toList(), trendyPostReps.getPageable(),
                     trendyPostReps.getTotalElements());
+        } else if ("following".equalsIgnoreCase(type)) {
+            Long myId = securityService.getCurrentUser().getId();
+            List<Long> followingsIds = followerServcie.getAllFollowingsByUserId(myId, start, count).getContent().stream()
+                    .map(UserRepresentationObject::getId).toList();
+            source = postRepository.getAllByUser_IdIn(followingsIds, page);
         } else {
-            // Explore and Following works together as needed. Waiting for updates
-            PageImpl<TrendyPostRep> trendyPostReps = postRepository.findAllTrendyPosts(userId, page);
-            source = new PageImpl<>(trendyPostReps.getContent().stream().map(TrendyPostRep::getPostEntity).toList(), trendyPostReps.getPageable(),
-                    trendyPostReps.getTotalElements());
+            if (userId != null) {
+                source = postRepository.getAllByUser_IdAndType(userId, PostType.POST.getValue(), page);
+            } else {
+                PageImpl<TrendyPostRep> trendyPostReps = postRepository.findAllTrendyPosts(page);
+                source = new PageImpl<>(trendyPostReps.getContent().stream().map(TrendyPostRep::getPostEntity).toList(), trendyPostReps.getPageable(),
+                        trendyPostReps.getTotalElements());
+            }
         }
         if (source != null) {
             dtos = source.getContent().stream().map(this::fromEntityToPostResponseDto).toList();

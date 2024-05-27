@@ -78,24 +78,36 @@ public class PostTest extends AbstractTestWithTempBaseDir {
 	public void getForYouUserExplore()
 	{
 		int start = 0, count = 10;
-		ResponseEntity<PaginatedResponse<PostResponseDTO>> response = template.exchange(
+		ResponseEntity<PaginatedResponse<PostResponseDTO>> myPostsResponse = template.exchange(
 				"/v1/post/filterForUser?userId=" + 88 + "&start=" + start + "&count=" + count + "&type=explore", HttpMethod.GET, getHttpEntity("123"),
 				new ParameterizedTypeReference<>()
 				{
 				});
-		assertEquals(200, response.getStatusCode().value());
+		assertEquals(200, myPostsResponse.getStatusCode().value());
+		ResponseEntity<PaginatedResponse<PostResponseDTO>> trendyPostsResponse = template.exchange(
+				"/v1/post/filterForUser?start=" + start + "&count=" + count + "&type=explore", HttpMethod.GET, getHttpEntity("123"),
+				new ParameterizedTypeReference<>()
+				{
+				});
+		assertEquals(200, trendyPostsResponse.getStatusCode().value());
 	}
 
 	@Test
 	public void getForYouUserReview()
 	{
 		int start = 0, count = 10;
-		ResponseEntity<PaginatedResponse<PostResponseDTO>> response = template.exchange(
+		ResponseEntity<PaginatedResponse<PostResponseDTO>> myReviewsResponse = template.exchange(
 				"/v1/post/filterForUser?userId=" + 88 + "&start=" + start + "&count=" + count + "&type=reviews", HttpMethod.GET, getHttpEntity("123"),
 				new ParameterizedTypeReference<>()
 				{
 				});
-		assertEquals(200, response.getStatusCode().value());
+		assertEquals(200, myReviewsResponse.getStatusCode().value());
+		ResponseEntity<PaginatedResponse<PostResponseDTO>> othersReviewsResponse = template.exchange(
+				"/v1/post/filterForUser?start=" + start + "&count=" + count + "&type=reviews", HttpMethod.GET, getHttpEntity("123"),
+				new ParameterizedTypeReference<>()
+				{
+				});
+		assertEquals(200, othersReviewsResponse.getStatusCode().value());
 	}
 
 	public void getForYouUserWithoutType()

@@ -23,10 +23,18 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
 VALUES (88, 'user1@nasnav.com','user1','123', 99001);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
 VALUES (89, 'user2@nasnav.com','user2','456', 99002);
+INSERT INTO public.users(id, email, user_name, authentication_token, organization_id)
+VALUES (90, 'user3@nasnav.com', 'user3', '554', 99002);
+INSERT INTO public.users(id, email, user_name, authentication_token, organization_id)
+VALUES (91, 'user4@nasnav.com', 'user4', '778', 99002);
 
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (101, '123', now(), null, 88);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (102, '456', now(), null,89);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id)
+VALUES (103, '554', now(), null, 90);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id)
+VALUES (104, '778', now(), null, 91);
 
 --inserting Employee Users
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
@@ -65,6 +73,20 @@ VALUES (1001, 'product_1',101, 201, 99001, now(), now()),
 --inserting posts
 INSERT INTO public.posts(id,user_id,org_id,type,status) values (1,88,99001,0,1);
 INSERT INTO public.posts(id,user_id,org_id,type,status) values (2,88,99001,1,0);
+INSERT INTO public.posts(id, user_id, org_id, type, status)
+values (3, 89, 99001, 0, 0);
+INSERT INTO public.posts(id, user_id, org_id, type, status)
+values (4, 89, 99001, 0, 0);
+INSERT INTO public.posts(id, user_id, org_id, type, status)
+values (6, 89, 99001, 0, 0);
+INSERT INTO public.posts(id, user_id, org_id, type, status)
+values (7, 90, 99001, 0, 0);
+INSERT INTO public.posts(id, user_id, org_id, type, status)
+values (8, 90, 99001, 0, 0);
+INSERT INTO public.posts(id, user_id, org_id, type, status)
+values (9, 91, 99001, 0, 0);
+INSERT INTO public.posts(id, user_id, org_id, type, status)
+values (10, 91, 99001, 1, 0);
 INSERT INTO public.saved_posts(
 	id, post_id, user_id)
 	VALUES (1, 1, 88);
@@ -74,7 +96,8 @@ INSERT INTO public.sub_posts(
 	VALUES (1, 1, 1001),
 	       (2,1,1002);
 
-
+INSERT INTO public.user_followers(id, user_id, follower_id)
+values (1, 89, 88);
 --inserting posts
 INSERT INTO public.posts(id, user_id, org_id, type, status, created_at)
 VALUES (5, 89, 99001, 1, 1, now());
