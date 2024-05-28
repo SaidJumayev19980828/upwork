@@ -87,4 +87,21 @@ public class InfluencerTest extends AbstractTestWithTempBaseDir {
         assertEquals(200, response3.getStatusCode().value());
     }
 
+    @Test
+    public void testMyEvent() {
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ResponseEntity<RestResponsePage<EventResponseDto>> response = template.exchange("/v1/influencer/myEvents?sortBy=coins-desc",
+                HttpMethod.GET, httpEntity, new ParameterizedTypeReference<>() {
+                });
+        assertEquals(200, response.getStatusCode().value());
+        ResponseEntity<RestResponsePage<EventResponseDto>> response2 = template.exchange("/v1/influencer/myEvents?sortBy=coins", HttpMethod.GET,
+                httpEntity, new ParameterizedTypeReference<>() {
+                });
+        assertEquals(200, response2.getStatusCode().value());
+        ResponseEntity<RestResponsePage<EventResponseDto>> response3 = template.exchange("/v1/influencer/myEvents", HttpMethod.GET, httpEntity,
+                new ParameterizedTypeReference<>() {
+                });
+        assertEquals(200, response3.getStatusCode().value());
+    }
+
 }

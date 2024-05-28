@@ -44,6 +44,8 @@ public class InfluencerServiceImpl implements InfluencerService {
     @Autowired
     private PostRepository postRepository;
     private static final String EVENT_COIN_PROPERTY = "event.coin";
+    private static final String COIN_SORT_METHOD = "coins";
+    private static final String COIN_SORT_METHOD_DESC = "coins-desc";
 
     @Override
     public InfluencerDTO getInfluencerById(Long id) {
@@ -222,12 +224,16 @@ public class InfluencerServiceImpl implements InfluencerService {
     }
 
     @Override
-    public PageImpl<EventResponseDto> getMyEvents(Integer start, Integer count) {
+    public PageImpl<EventResponseDto> getMyEvents(Integer start, Integer count, String sortBy) {
         PageRequest page = getQueryPage(start, count);
         InfluencerEntity influencerEntity = fetchInfluencerIfFoundAndApproved();
-
-        PageImpl<EventEntity> source = eventRepository.getAllByInfluencers(influencerEntity.getId(), null, page);
-        List<EventResponseDto> dtos = source.getContent().stream().map(this::eventToDto).collect(Collectors.toList());
+        Sort sort = Sort.by("startsAt");
+        if (sortBy != null && sortBy.equalsIgnoreCase(COIN_SORT_METHOD))
+            sort = Sort.by("coin");
+        else if (sortBy != null && sortBy.equalsIgnoreCase(COIN_SORT_METHOD_DESC))
+            sort = Sort.by("coin").descending();
+        PageImpl<EventEntity> source = eventRepository.getAllByInfluencers(influencerEntity.getId(), null, page.withSort(sort));
+        List<EventResponseDto> dtos = source.getContent().stream().map(this::eventToDto).toList();
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
 
@@ -236,9 +242,9 @@ public class InfluencerServiceImpl implements InfluencerService {
         PageRequest page = getQueryPage(start, count);
         InfluencerEntity influencerEntity = fetchInfluencerIfFoundAndApproved();
         Sort sort = Sort.by("event.startsAt");
-        if (sortBy != null && sortBy.equalsIgnoreCase("coins"))
+        if (sortBy != null && sortBy.equalsIgnoreCase(COIN_SORT_METHOD))
             sort = Sort.by(EVENT_COIN_PROPERTY);
-        else if (sortBy != null && sortBy.equalsIgnoreCase("coins-desc"))
+        else if (sortBy != null && sortBy.equalsIgnoreCase(COIN_SORT_METHOD_DESC))
             sort = Sort.by(EVENT_COIN_PROPERTY).descending();
         PageImpl<EventRequestsEntity> source = eventRequestsRepository.getAllByInfluencerIdPageable(influencerEntity.getId(),
                 EventRequestStatus.PENDING.getValue(), page.withSort(sort));

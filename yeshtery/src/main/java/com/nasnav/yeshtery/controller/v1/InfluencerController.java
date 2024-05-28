@@ -88,9 +88,10 @@ public class InfluencerController {
 
     @GetMapping("/myEvents")
     public PageImpl<EventResponseDto> getMyEvents(@RequestHeader(name = "User-Token", required = false) String token,
-                                              @RequestParam(required = false, defaultValue = "0") Integer start,
-                                              @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count){
-        return influencerService.getMyEvents(start, count);
+            @RequestParam(required = false, defaultValue = "0") Integer start,
+            @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
+            @RequestParam(required = false, defaultValue = "upcoming") String sortBy) {
+        return influencerService.getMyEvents(start, count, sortBy);
     }
 
     @GetMapping("/events")
