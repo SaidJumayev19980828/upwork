@@ -45,6 +45,9 @@ public class UserRepresentationObject {
     private Long BankAccountId;
     private Long influencerId;
     private Boolean isGuided;
+    private Long followersCount;
+    private Long followingsCount;
+    private Integer eventsCount;
 
     public String getReferral() {
         return id + "";

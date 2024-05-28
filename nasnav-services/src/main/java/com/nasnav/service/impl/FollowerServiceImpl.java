@@ -1,30 +1,19 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.commons.utils.CustomPaginationPageRequest;
-import com.nasnav.dao.FollowerRepository;
-import com.nasnav.dao.PostRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.UserListFollowProjection;
-import com.nasnav.dto.UserRepresentationObject;
-import com.nasnav.dto.response.FollowerDTO;
-import com.nasnav.dto.response.FollowerInfoDTO;
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
+import com.nasnav.dto.response.*;
 import com.nasnav.enumerations.PostStatus;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.FollowerEntity;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.service.FollowerServcie;
-import com.nasnav.service.SecurityService;
-
+import com.nasnav.persistence.*;
+import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
@@ -39,17 +28,23 @@ public class FollowerServiceImpl implements FollowerServcie{
     private UserRepository userRepository;
     @Autowired
     private PostRepository postRepository;
+    @Autowired
+    private EventLogsRepository eventLogsRepository;
 
     @Override
     public PageImpl<FollowerDTO> getAllFollowersByUserId(long userId, Integer start, Integer count) {
         List<FollowerDTO> dtos = new ArrayList<>();
         PageRequest page = getQueryPage(start, count);
         PageImpl<FollowerEntity> source = followerRepository.getAllByUser_Id(userId, page);
-        source.getContent().stream().forEach(o -> {
-                FollowerDTO dto = new FollowerDTO();
-                dto.setUserRepresentationObject(o.getFollower().getRepresentation());
-                dto.setIsFollowed(followerRepository.existsByFollower_IdAndUser_Id(userId, o.getFollower().getId()));
-                dtos.add(dto);
+        source.getContent().forEach(o -> {
+            FollowerDTO dto = new FollowerDTO();
+            UserRepresentationObject representation = o.getFollower().getRepresentation();
+            dto.setUserRepresentationObject(representation);
+            representation.setFollowersCount(followerRepository.countAllByUser_Id(representation.getId()));
+            representation.setFollowingsCount(followerRepository.countAllByFollower_Id(representation.getId()));
+            representation.setEventsCount(eventLogsRepository.countAllByUserId(representation.getId()));
+            dto.setIsFollowed(followerRepository.existsByFollower_IdAndUser_Id(userId, o.getFollower().getId()));
+            dtos.add(dto);
         });
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
@@ -58,7 +53,12 @@ public class FollowerServiceImpl implements FollowerServcie{
     public PageImpl<UserRepresentationObject> getAllFollowingsByUserId(long followerId, Integer start, Integer count) {
         PageRequest page = getQueryPage(start, count);
         PageImpl<FollowerEntity> source = followerRepository.getAllByFollower_Id(followerId, page);
-        List<UserRepresentationObject> dtos = source.getContent().stream().map(o -> o.getUser().getRepresentation()).collect(Collectors.toList());
+        List<UserRepresentationObject> dtos = source.getContent().stream().map(o -> o.getUser().getRepresentation()).toList();
+        dtos.forEach(followingRep -> {
+            followingRep.setFollowersCount(followerRepository.countAllByUser_Id(followingRep.getId()));
+            followingRep.setFollowingsCount(followerRepository.countAllByFollower_Id(followingRep.getId()));
+            followingRep.setEventsCount(eventLogsRepository.countAllByUserId(followingRep.getId()));
+        });
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
 

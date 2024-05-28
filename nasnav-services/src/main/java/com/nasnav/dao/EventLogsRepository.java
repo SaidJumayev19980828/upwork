@@ -24,6 +24,9 @@ public interface EventLogsRepository extends CrudRepository<EventLogsEntity, Lon
     @Query("select event from EventLogsEntity event where (event.user.id =:userId or event.employee.id =:userId) and event.interestedAt is Not null and event.event.endsAt >= CURRENT_DATE ")
     PageImpl<EventLogsEntity> getInterestedEventsForUserPageable(Long userId, Pageable page);
 
+    @Query("select COUNT(*) from EventLogsEntity eventLog where (eventLog.user.id =:userId or eventLog.employee.id =:userId) and eventLog.interestedAt is Not null")
+    int countAllByUserId(Long userId);
+
     @Query("select event from EventLogsEntity event where (event.user.id =:userId or event.employee.id =:userId) and event.event.endsAt < CURRENT_DATE ")
     PageImpl<EventLogsEntity> getPreviousEventsForUserPageable(Long userId, Pageable page);
 
