@@ -8,8 +8,8 @@ import org.springframework.data.domain.PageImpl;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface PersonalEventService {
 
@@ -20,6 +20,9 @@ public interface PersonalEventService {
      * @return PersonalEventEntity object that will represent the values at DB.
      */
     PersonalEventEntity createPersonalEvent(PersonalEventDTO dto);
+
+
+    PersonalEventEntity updatePersonalEvent(long eventId,PersonalEventDTO dto);
 
     /**
      * Cancel Personal Event.
@@ -67,7 +70,7 @@ public interface PersonalEventService {
      *              And all event that user was invited to also.
      */
 
-    List<Map<String,Object>> findMyAllEvents();
+    Set<Map<String,Object>> findMyAllEvents();
 
 
 }

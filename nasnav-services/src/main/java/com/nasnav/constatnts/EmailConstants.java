@@ -68,5 +68,7 @@ public final class EmailConstants {
 
     public  static final String INVITE_MAIL = "mail_templates/invite_party_event_mail.html";
 
+    public  static final String PERSONAL_CANCELLATION_MAIL = "mail_templates/cancel_party_event_mail.html";
+
 
 }

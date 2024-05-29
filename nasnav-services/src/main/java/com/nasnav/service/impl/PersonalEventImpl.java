@@ -18,6 +18,7 @@ import com.nasnav.service.MailService;
 import com.nasnav.service.PersonalEventService;
 import com.nasnav.service.SecurityService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -30,10 +31,12 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.nasnav.constatnts.EmailConstants.INVITE_MAIL;
+import static com.nasnav.constatnts.EmailConstants.PERSONAL_CANCELLATION_MAIL;
 import static com.nasnav.exceptions.ErrorCodes.PE_EVENT_$001;
 import static com.nasnav.exceptions.ErrorCodes.PE_EVENT_$002;
 import static com.nasnav.exceptions.ErrorCodes.U$0001;
@@ -42,6 +45,7 @@ import static com.nasnav.exceptions.ErrorCodes.U$EMP$0002;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PersonalEventImpl implements PersonalEventService {
     private final PersonalEventEntityRepository personalEventRepository;
     private final SecurityService securityService;
@@ -52,7 +56,12 @@ public class PersonalEventImpl implements PersonalEventService {
 
     @Override
     public PersonalEventEntity createPersonalEvent(PersonalEventDTO dto) {
-        return personalEventRepository.save(personalEvent(dto));
+        return personalEventRepository.save(personalEvent(dto , new PersonalEventEntity()));
+    }
+
+    @Override
+    public PersonalEventEntity updatePersonalEvent(long eventId, PersonalEventDTO dto) {
+        return personalEventRepository.save(personalEvent(dto , getPersonalEventByIdAndLoggedInUser(eventId)));
     }
 
     @Override
@@ -60,6 +69,24 @@ public class PersonalEventImpl implements PersonalEventService {
         PersonalEventEntity personalEvent = getPersonalEventByIdAndLoggedInUser(id);
         personalEvent.setCanceled(true);
         personalEventRepository.save(personalEvent);
+        sendCancellationMail(personalEvent);
+    }
+
+    @Async
+    private void sendCancellationMail(PersonalEventEntity personalEvent){
+        String creator = getCreatorName(personalEvent);
+        String orgName = securityService.getCurrentUserOrganization().getName();
+        String eventName = personalEvent.getName();
+        Set<String> invitees = personalEvent.getInvitees().stream().map(this::getInviteeMail).collect(Collectors.toSet());
+        String subject = "Update: Cancellation of %s"
+                .formatted(eventName);
+        invitees.forEach(mail -> {
+            try {
+                sendInviteEmail(orgName, mail, creator, personalEvent.getStartsAt(),subject,PERSONAL_CANCELLATION_MAIL , eventName);
+            } catch (MessagingException | IOException e) {
+                log.error(e.getMessage());
+            }
+        });
     }
 
     @Override
@@ -82,22 +109,27 @@ public class PersonalEventImpl implements PersonalEventService {
 
         String orgName = securityService.getCurrentUserOrganization().getName();
         String creatorName = getCreatorName(personalEvent);
-        String inviteeMail = getInviteeMail(eventInvitee , invite);
+        String inviteeMail = getInviteeMail(eventInvitee);
 
-        prepareAndSendMail(orgName, inviteeMail, creatorName, personalEvent.getStartsAt());
+        String  subject = "You're Invited to Join a private VR meeting with %s"
+                .formatted(creatorName);
+        this.sendInviteEmail(orgName, inviteeMail, creatorName, personalEvent.getStartsAt() , subject , INVITE_MAIL, personalEvent.getName());
     }
 
     @Override
-    public List<Map<String,Object>> findMyAllEvents() {
+    public Set<Map<String,Object>> findMyAllEvents() {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         UserEntity user = null ;
         EmployeeUserEntity employee = null;
+        String mail;
         if (loggedInUser instanceof EmployeeUserEntity employeeUser) {
             employee = employeeUser;
+            mail = employee.getEmail();
         } else {
             user = (UserEntity) loggedInUser;
+            mail = user.getEmail();
         }
-        return personalEventRepository.findMyAllEvents(user,employee);
+        return personalEventRepository.findMyAllEvents(user,employee, mail);
     }
 
     private EventInviteeEntity createEventInvitee(InvitePeopleDTO invite) {
@@ -128,14 +160,15 @@ public class PersonalEventImpl implements PersonalEventService {
                 personalEvent.getEmployee().getName();
     }
 
-    private String getInviteeMail(EventInviteeEntity invite ,InvitePeopleDTO dto) {
+    private String getInviteeMail(EventInviteeEntity invite ) {
         if (invite.getUser() != null) {
             return invite.getUser().getEmail();
         } else if ( invite.getEmployee() != null) {
             return invite.getEmployee().getEmail();
         }
-        return dto.getExternalMail();
+        return invite.getExternalUser();
     }
+
     private PersonalEventEntity getPersonalEventByIdAndLoggedInUser(Long id) {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         UserEntity user = null ;
@@ -145,19 +178,19 @@ public class PersonalEventImpl implements PersonalEventService {
         } else {
             user = (UserEntity) loggedInUser;
         }
-
         return personalEventRepository.findByIdAndStartsAtAfter(id , LocalDateTime.now(),user, employee).orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND , PE_EVENT_$001,id));
     }
-    private PersonalEventEntity personalEvent(PersonalEventDTO dto) {
+    private PersonalEventEntity personalEvent(PersonalEventDTO dto ,PersonalEventEntity personalEvent) {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
-        PersonalEventEntity personalEvent = new PersonalEventEntity();
 
         if (loggedInUser instanceof EmployeeUserEntity user) {
             setEmployeePersonalEvent( user, personalEvent);
         } else {
             setUserPersonalEvent((UserEntity) loggedInUser, personalEvent);
         }
-        personalEvent.setStatus(PersonalEventStatus.NOT_STARTED);
+        if (personalEvent.getStatus() == null) {
+            personalEvent.setStatus(PersonalEventStatus.NOT_STARTED);
+        }
         setPersonalEventDetails(dto, personalEvent);
         return personalEvent;
     }
@@ -177,27 +210,25 @@ public class PersonalEventImpl implements PersonalEventService {
         personalEvent.setDescription(dto.description());
     }
 
+
+
     @Async
-    private void prepareAndSendMail(String orgName  , String inviteeMail, String creatorName , LocalDateTime startAt) throws MessagingException, IOException {
-        String emailSubject = "You're Invited to Join a private VR meeting with %s"
-                .formatted(creatorName);
-        this.sendInviteEmail(orgName ,inviteeMail,creatorName, startAt ,emailSubject,INVITE_MAIL );
-    }
-    public void sendInviteEmail(String orgName ,String inviteeMail, String creatorName, LocalDateTime startAt, String emailSubject , String mailTemplate) throws MessagingException, IOException {
-        Map<String, String> parametersMap = prepareMailContent(creatorName,inviteeMail,startAt);
+    private void sendInviteEmail(String orgName ,String inviteeMail, String creatorName, LocalDateTime startAt, String emailSubject , String mailTemplate, String eventName) throws MessagingException, IOException {
+        Map<String, String> parametersMap = prepareMailContent(creatorName,inviteeMail,startAt,eventName);
         this.mailService.send( orgName , inviteeMail, emailSubject, mailTemplate,parametersMap);
     }
 
 
 
 
-    public Map<String, String> prepareMailContent(String creatorName,String inviteeMail ,  LocalDateTime startAt ) {
+    public Map<String, String> prepareMailContent(String creatorName,String inviteeMail ,  LocalDateTime startAt , String eventName ) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE dd MMMM yyyy HH:mm");
         String startDateTime = startAt.format(formatter);
         Map<String, String> parametersMap = new HashMap<>();
         parametersMap.put("#inviteeMail#", inviteeMail);
         parametersMap.put("#creator#", creatorName);
         parametersMap.put("#startDateTime#",  startDateTime);
+        parametersMap.put("#title#", eventName);
         return parametersMap;
     }
 

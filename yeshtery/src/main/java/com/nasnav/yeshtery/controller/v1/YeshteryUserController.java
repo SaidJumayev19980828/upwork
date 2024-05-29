@@ -20,9 +20,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
@@ -179,8 +181,10 @@ public class YeshteryUserController {
 
     @PostMapping("notification-token")
     public void updateNotificationToken(@RequestHeader(name = "User-Token", required = false) String userToken,
-            @Schema(example = "YYYYYYYYYY:XXXXXXXXXXXX") @RequestBody String notificationToken) {
-        securityService.setCurrentUserNotificationToken(userToken, notificationToken);
+                                        @NonNull HttpServletRequest request,
+                                        @Schema(example = "YYYYYYYYYY:XXXXXXXXXXXX") @RequestBody String notificationToken
+    ) {
+        securityService.setCurrentUserNotificationToken(userToken, notificationToken , request.getHeader("Authorization"));
     }
 
     @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)

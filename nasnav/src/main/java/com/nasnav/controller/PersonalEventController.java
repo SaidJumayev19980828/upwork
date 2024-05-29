@@ -10,13 +10,22 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.mail.MessagingException;
 import javax.validation.Valid;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
@@ -49,6 +58,13 @@ public class PersonalEventController {
        return  ResponseEntity.status(HttpStatus.CREATED).body(personalEventService.createPersonalEvent(event));
     }
 
+    @PutMapping(value = "{eventId}")
+    public ResponseEntity<PersonalEventEntity> updatePersonalEvent(
+            @PathVariable long eventId,
+            @Valid @RequestBody PersonalEventDTO event
+    ) {
+        return  ResponseEntity.status(HttpStatus.CREATED).body(personalEventService.updatePersonalEvent(eventId,event));
+    }
     /**
      *
      * @param userToken header that used to add the token input at Swagger ui
@@ -132,7 +148,7 @@ public class PersonalEventController {
      *              And all event that user was invited to also.
      */
     @GetMapping(value = "mine")
-    public List<Map<String,Object>> getMyPersonalEvents(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken) {
+    public Set<Map<String,Object>> getMyPersonalEvents(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken) {
         return personalEventService.findMyAllEvents();
     }
 

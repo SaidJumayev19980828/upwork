@@ -45,8 +45,8 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '789', now(), null, 88003);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700004, '951', now(), null, 88004);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700005, '77', now(), null, 88005);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700006, '88', now(), null, 88005);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700007, '99', now(), null, 88005);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700006, '88', NOW() - INTERVAL '1 DAY', null, 88005);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700007, '99', NOW() - INTERVAL '2 DAY', null, 88005);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700008, '889966', NOW() - INTERVAL '1 YEAR', null, 88005);
 
 

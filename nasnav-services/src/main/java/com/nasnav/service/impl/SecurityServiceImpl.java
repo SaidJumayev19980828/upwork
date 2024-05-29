@@ -134,15 +134,17 @@ public class SecurityServiceImpl implements SecurityService {
     @Transactional
     @CacheEvict(cacheNames = {USERS_BY_TOKENS})
     public UserApiResponse logout(String headerToken, String cookieToken) {
-        String token = headerToken == null || headerToken.isEmpty() ? cookieToken : headerToken;
-        UserTokensEntity userTokensEntity = userTokenRepo.getUserEntityByToken(token);
-        String notificationToken = null;
-        userTokensEntity.setNotificationToken(notificationToken);
-        userTokenRepo.save(userTokensEntity);
-        userTokenRepo.deleteByToken(token);
+        handleLogOut(getCurrentUser());
         Cookie c = createCookie(null, true);
-
         return new UserApiResponse(c);
+    }
+
+    private void handleLogOut(BaseUserEntity base) {
+        if (base instanceof UserEntity user) {
+            userTokenRepo.deleteByUserEntity(user);
+        } else {
+            userTokenRepo.deleteByEmployeeUserEntity((EmployeeUserEntity) base);
+        }
     }
 
     @Override
@@ -613,13 +615,41 @@ public class SecurityServiceImpl implements SecurityService {
 
     @Override
     public void setCurrentUserNotificationToken(String userToken, String notificationToken) {
-        UserTokensEntity tokenEntity = userTokenRepo.findByToken(userToken);
+        UserTokensEntity tokenEntity = getUserToken();
         tokenEntity.setNotificationToken(notificationToken);
         userTokenRepo.save(tokenEntity);
     }
+
+
+    @Override
+    public void setCurrentUserNotificationToken(String userToken, String notificationToken, String jwtTokens) {
+        UserTokensEntity tokenEntity = getUserToken();
+        String token = StringUtils.isBlankOrNull(userToken) ? jwtTokens : userToken;
+        tokenEntity.setToken(token);
+        tokenEntity.setNotificationToken(notificationToken);
+        userTokenRepo.save(tokenEntity);
+    }
+    private UserTokensEntity getUserToken() {
+        BaseUserEntity base = getCurrentUser();
+        if (base instanceof UserEntity user) {
+            return userTokenRepo.findAllByUserEntityOrderByUpdateTimeDesc(user)
+                    .stream().findFirst().orElse(build(user,null));
+        }else {
+            EmployeeUserEntity employee = (EmployeeUserEntity) base;
+            return userTokenRepo.findAllByEmployeeUserEntityOrderByUpdateTimeDesc(employee)
+                    .stream().findFirst().orElse(build(null ,employee));
+        }
+
+    }
+
+    private UserTokensEntity build(UserEntity user, EmployeeUserEntity employee) {
+        UserTokensEntity userTokenEntity = new UserTokensEntity();
+        userTokenEntity.setUserEntity(user);
+        userTokenEntity.setEmployeeUserEntity(employee);
+        return userTokenEntity;
+    }
+
 }
-
-
 @Data
 @AllArgsConstructor
 class UserPostLoginData {

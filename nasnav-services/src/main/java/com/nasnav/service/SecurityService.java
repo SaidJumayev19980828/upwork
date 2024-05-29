@@ -80,4 +80,6 @@ public interface SecurityService {
     boolean currentEmployeeHasNasnavRoles();
 
     void setCurrentUserNotificationToken(String userToken, String notificationToken);
+    void setCurrentUserNotificationToken(String userToken, String notificationToken,String jwtToken);
+
 }

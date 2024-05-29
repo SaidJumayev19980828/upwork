@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 
@@ -17,9 +18,16 @@ public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Lo
 
     UserTokensEntity findByToken(String token);
 
+
+    List<UserTokensEntity> findAllByUserEntityOrderByUpdateTimeDesc(UserEntity user);
+
+
+    List<UserTokensEntity> findAllByEmployeeUserEntityOrderByUpdateTimeDesc(EmployeeUserEntity employee);
+
     @Transactional
     @Modifying
     void deleteByToken(String token);
+
 
     @Query("select t from UserTokensEntity t left join fetch t.userEntity left join fetch t.employeeUserEntity" +
             " where t.token = :token")

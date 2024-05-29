@@ -1,9 +1,7 @@
 package com.nasnav.test;
 
 import com.nasnav.dto.InvitePeopleDTO;
-import com.nasnav.dto.PersonalEvent;
 import com.nasnav.dto.PersonalEventDTO;
-import com.nasnav.dto.request.PostCreationDTO;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
@@ -20,7 +18,6 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
-
 
 import static org.junit.Assert.assertEquals;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -45,6 +42,19 @@ public class PersonalEventTest  extends AbstractTestWithTempBaseDir {
         headers.add("User-Token", "123");
         HttpEntity<PersonalEventDTO> request = new HttpEntity<>(eventDTO,headers);
         ResponseEntity<Void> response = template.postForEntity("/party-room", request, Void.class);
+        assertEquals(201, response.getStatusCode().value());
+    }
+
+
+    @Test
+    public void updateEventTest(){
+        PersonalEventDTO eventDTO = new PersonalEventDTO("Test Event",LocalDateTime.now().plusMinutes(10),LocalDateTime.now().plusHours(1),"Test Description");
+        HttpCookie cookie = new HttpCookie("User-Token", "123");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cookie", cookie.toString());
+        headers.add("User-Token", "123");
+        HttpEntity<PersonalEventDTO> request = new HttpEntity<>(eventDTO,headers);
+        ResponseEntity<Void> response = template.exchange("/party-room/99",HttpMethod.PUT, request, Void.class);
         assertEquals(201, response.getStatusCode().value());
     }
 

@@ -2,12 +2,22 @@ package com.nasnav.yeshtery.test;
 
 import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dao.*;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.UserOtpRepository;
+import com.nasnav.dao.UserRepository;
+import com.nasnav.dao.UserSubscriptionRepository;
+import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.dao.yeshtery.YeshteryUserOtpRepository;
 import com.nasnav.dao.yeshtery.YeshteryUserRepository;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
-import com.nasnav.persistence.*;
+import com.nasnav.persistence.BaseUserOtpEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.UserSubscriptionEntity;
+import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
@@ -18,34 +28,33 @@ import com.nasnav.service.UserService;
 import com.nasnav.service.otp.OtpType;
 import com.nasnav.yeshtery.test.commons.TestCommons;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
-
 import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.servlet.view.RedirectView;
 
 import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -55,16 +64,26 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.nasnav.commons.YeshteryConstants.API_PATH;
 import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 import static com.nasnav.response.ResponseStatus.EMAIL_EXISTS;
 import static com.nasnav.response.ResponseStatus.INVALID_PARAMETERS;
-import static com.nasnav.commons.YeshteryConstants.API_PATH;
-import static com.nasnav.yeshtery.test.commons.TestCommons.*;
-import static org.junit.Assert.*;
+import static com.nasnav.yeshtery.test.commons.TestCommons.extractAuthTokenFromCookies;
+import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.yeshtery.test.commons.TestCommons.json;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.LOCKED;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 
@@ -550,8 +569,17 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         //--------------------------------------------------
         Assert.assertEquals(200, response.getStatusCode().value());
         assertFalse(userTokenRepo.existsByToken(token));
-        assertEquals("other tokens should remain intact", 1L, userTokensCountBefore - userTokensCountAfter);
+        assertEquals(0 , userTokensCountAfter);
         log.debug(response.getHeaders().get("Set-Cookie").get(0));
+    }
+
+    @Test
+    public void testEmployeeLogout() {
+        String token = "875488";
+        //--------------------------------------------------
+        HttpEntity<?> entity = getHttpEntity(token);
+        ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/logout", entity, UserApiResponse.class);
+        Assertions.assertEquals(200, response.getStatusCode().value());
     }
 
     @Test
