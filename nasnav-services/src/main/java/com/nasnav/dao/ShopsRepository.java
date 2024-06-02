@@ -97,4 +97,6 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 
     List<ShopsEntity> findByYeshteryStateAndRemovedOrderByPriorityDesc(Integer yeshteryState, Integer removed);
 
+    List<ShopsEntity> findByIdIn(List<Long> ids);
+
 }

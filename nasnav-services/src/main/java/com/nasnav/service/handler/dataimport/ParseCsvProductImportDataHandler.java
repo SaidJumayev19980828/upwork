@@ -69,7 +69,7 @@ public class ParseCsvProductImportDataHandler implements Handler<ImportDataComma
         importMetadata.setDryrun(csvImportMetaData.isDryrun());
         importMetadata.setUpdateProduct(csvImportMetaData.isUpdateProduct());
         importMetadata.setUpdateStocks(csvImportMetaData.isUpdateStocks());
-        importMetadata.setShopId(csvImportMetaData.getShopId());
+        importMetadata.setShopIds(csvImportMetaData.getShopIds());
         importMetadata.setCurrency(csvImportMetaData.getCurrency());
         importMetadata.setEncoding(csvImportMetaData.getEncoding());
         importMetadata.setDeleteOldProducts(csvImportMetaData.isDeleteOldProducts());
@@ -81,8 +81,10 @@ public class ParseCsvProductImportDataHandler implements Handler<ImportDataComma
 
 
     private List<CsvRow> parseCsvFile(byte[] file, ProductListImportDTO metaData, ImportProductContext context,Long orgId) throws ImportProductException {
-
-        List<ProductFeaturesEntity> orgFeatures = featureRepo.findByShopId(metaData.getShopId());
+        List<ProductFeaturesEntity> orgFeatures = new ArrayList<>();
+        metaData.getShopIds().forEach(shopId -> {
+            orgFeatures.addAll(featureRepo.findByShopId(shopId));
+        });
 
         ByteArrayInputStream in = new ByteArrayInputStream(file);
         BeanListProcessor<CsvRow> rowProcessor = createRowProcessor(orgFeatures,orgId);

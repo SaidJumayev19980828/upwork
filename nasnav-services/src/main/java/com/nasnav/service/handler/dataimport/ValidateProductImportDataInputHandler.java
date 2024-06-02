@@ -19,15 +19,14 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.validation.Valid;
 
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.anyIsTrue;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.*;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
-import static com.nasnav.exceptions.ErrorCodes.P$IMPORT$0001;
-import static com.nasnav.exceptions.ErrorCodes.S$0002;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service(HandlerChainFactory.VALIDATE_PRODUCT_IMPORT_DATA_INPUT)
@@ -53,11 +52,11 @@ public class ValidateProductImportDataInputHandler implements Handler<ImportData
 
     //TODO Check Duplication AbstractCsvExcelDataImportService
     private void validateProductImportMetaData(@Valid ProductListImportDTO metaData) throws RuntimeBusinessException {
-        var shopId = metaData.getShopId();
+        var shopIds = metaData.getShopIds();
         var encoding = metaData.getEncoding();
         var currency = metaData.getCurrency();
 
-        if( anyIsNull(shopId, encoding, currency)) {
+        if( anyIsNull(shopIds, encoding, currency)) {
             throw new RuntimeBusinessException(
                     ERR_PRODUCT_IMPORT_MISSING_PARAM
                     , "MISSING PARAM"
@@ -65,7 +64,7 @@ public class ValidateProductImportDataInputHandler implements Handler<ImportData
         }
 
         validateFlags(metaData);
-        validateShopId(shopId);
+        validateAndProcessShops(shopIds);
         validateEncodingCharset(encoding);
         validateStockCurrency(currency);
     }
@@ -92,14 +91,28 @@ public class ValidateProductImportDataInputHandler implements Handler<ImportData
     }
 
     //TODO Check Duplication
-    private void validateShopId(Long shopId) throws RuntimeBusinessException {
-        var shop =
-                shopRepo
-                        .findById(shopId)
-                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$0002, shopId));
+    public void validateAndProcessShops(List<Long> shopIds) {
+        if (shopIds.isEmpty()) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0006);
+        }
 
+        List<ShopsEntity> shops = shopRepo.findByIdIn(shopIds);
+
+        Map<Long, ShopsEntity> validShopsMap = shops.stream()
+                .filter(this::validateShop)
+                .collect(Collectors.toMap(ShopsEntity::getId, shop -> shop));
+
+        shopIds.forEach(id -> {
+            if (!validShopsMap.containsKey(id)) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0002, id);
+            }
+        });
+    }
+
+    private boolean validateShop(ShopsEntity shop) {
         validateShopBelongsToOrganization(shop);
-        helper.validateAdminCanManageTheShop(shopId);
+        helper.validateAdminCanManageTheShop(shop.getId());
+        return true;
     }
 
     //TODO Check Duplication

@@ -19,10 +19,8 @@ import javax.validation.Valid;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.anyIsTrue;
@@ -68,7 +66,7 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
         importMetadata.setDryrun(csvImportMetaData.isDryrun());
         importMetadata.setUpdateProduct(csvImportMetaData.isUpdateProduct());
         importMetadata.setUpdateStocks(csvImportMetaData.isUpdateStocks());
-        importMetadata.setShopId(csvImportMetaData.getShopId());
+        importMetadata.setShopIds(csvImportMetaData.getShopIds());
         importMetadata.setCurrency(csvImportMetaData.getCurrency());
         importMetadata.setEncoding(csvImportMetaData.getEncoding());
         importMetadata.setDeleteOldProducts(csvImportMetaData.isDeleteOldProducts());
@@ -92,11 +90,11 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
 
 
     protected void validateProductImportMetaData(@Valid ProductListImportDTO metaData) throws RuntimeBusinessException{
-        var shopId = metaData.getShopId();
+        var shopIds = metaData.getShopIds();
         var encoding = metaData.getEncoding();
         var currency = metaData.getCurrency();
 
-        if( anyIsNull(shopId, encoding, currency)) {
+        if( anyIsNull(shopIds, encoding, currency)) {
             throw new RuntimeBusinessException(
                     ERR_PRODUCT_IMPORT_MISSING_PARAM
                     , "MISSING PARAM"
@@ -104,7 +102,7 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
         }
 
         validateFlags(metaData);
-        validateShopId(shopId);
+        validateAndProcessShops(shopIds);
         validateEncodingCharset(encoding);
         validateStockCurrency(currency);
     }
@@ -139,14 +137,28 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
 
 
 
-    private void validateShopId(Long shopId) throws RuntimeBusinessException {
-        var shop =
-                shopRepo
-                .findById(shopId)
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$0002, shopId));
+    public void validateAndProcessShops(List<Long> shopIds) {
+        if (shopIds.isEmpty()) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0006);
+        }
 
+        List<ShopsEntity> shops = shopRepo.findByIdIn(shopIds);
+
+        Map<Long, ShopsEntity> validShopsMap = shops.stream()
+                .filter(this::validateShop)
+                .collect(Collectors.toMap(ShopsEntity::getId, shop -> shop));
+
+        shopIds.forEach(id -> {
+            if (!validShopsMap.containsKey(id)) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0002, id);
+            }
+        });
+    }
+
+    private boolean validateShop(ShopsEntity shop) {
         validateShopBelongsToOrganization(shop);
-        helper.validateAdminCanManageTheShop(shopId);
+        helper.validateAdminCanManageTheShop(shop.getId());
+        return true;
     }
 
 

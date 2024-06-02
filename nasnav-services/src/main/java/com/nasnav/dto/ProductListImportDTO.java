@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
+
 @Data
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -16,7 +18,7 @@ public class ProductListImportDTO {
 	private boolean resetTags;
     private boolean insertNewProducts;
 	
-	private Long shopId;
+	private List<Long> shopIds;
 	private Integer currency;	
 	private String encoding;	
 	

@@ -545,7 +545,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private void importSingleShopProducts(ProductImportInputData inputData) {
 		try {
 			logger.info(format(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> importing products of shop[%d]"
-					, inputData.getMetadata().getShopId()));
+					, inputData.getMetadata().getShopIds()));
 			ImportProductContext context = dataImportService.importProducts(inputData.getProducts(), inputData.getMetadata());
 			ObjectMapper mapper = new ObjectMapper();
 			String importReport = mapper.writeValueAsString(context);
@@ -569,7 +569,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 				
 		ProductImportMetadata metadata = new ProductImportMetadata();
 		BeanUtils.copyProperties(commonMetaData, metadata);
-		metadata.setShopId(shopProducts.getShopId());
+		metadata.setShopIds(List.of(shopProducts.getShopId()));
 		
 		ProductImportInputData importData = new ProductImportInputData();
 		importData.setProducts(shopProducts.getImportedProducts());

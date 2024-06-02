@@ -4,7 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 import java.io.*;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -75,9 +75,11 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 
 
 	private List<CsvRow> parseCsvFile(MultipartFile file, ProductListImportDTO metaData, ImportProductContext context) throws ImportProductException {
-		List<ProductFeaturesEntity> orgFeatures = featureRepo.findByShopId( metaData.getShopId() );
-		
-		ByteArrayInputStream in = readCsvFile(file, context);		
+		List<ProductFeaturesEntity> orgFeatures = new ArrayList<>();
+		metaData.getShopIds().forEach(shopId -> {
+			orgFeatures.addAll(featureRepo.findByShopId(shopId));
+		});
+		ByteArrayInputStream in = readCsvFile(file, context);
 		BeanListProcessor<CsvRow> rowProcessor = createRowProcessor(metaData, orgFeatures);
 		RowParseErrorHandler rowParsingErrHandler = new RowParseErrorHandler(context);
 		CsvParserSettings settings = createParsingSettings(rowProcessor, rowParsingErrHandler);

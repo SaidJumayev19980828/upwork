@@ -3,6 +3,8 @@ package com.nasnav.dto;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
+
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class ProductImportMetadata {
@@ -14,7 +16,7 @@ public class ProductImportMetadata {
     private boolean resetTags;
     private boolean insertNewProducts;
 
-    private Long shopId;
+    private List<Long> shopIds;
     private Integer currency;
     private String encoding;
     

@@ -79,7 +79,7 @@ public class ParseExcelProductImportDataHandler implements Handler<ImportDataCom
         importMetadata.setDryrun(csvImportMetaData.isDryrun());
         importMetadata.setUpdateProduct(csvImportMetaData.isUpdateProduct());
         importMetadata.setUpdateStocks(csvImportMetaData.isUpdateStocks());
-        importMetadata.setShopId(csvImportMetaData.getShopId());
+        importMetadata.setShopIds(csvImportMetaData.getShopIds());
         importMetadata.setCurrency(csvImportMetaData.getCurrency());
         importMetadata.setEncoding(csvImportMetaData.getEncoding());
         importMetadata.setDeleteOldProducts(csvImportMetaData.isDeleteOldProducts());
