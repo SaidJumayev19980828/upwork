@@ -236,7 +236,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
     public void uploadProductsXLSMissingShopIdTest() throws Throwable {
 
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.remove("shop_id");
+		importProperties.remove("shop_ids");
 
         ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "131415", xlsxFile, importProperties);
 
@@ -271,7 +271,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
     public void uploadProductsXLSNonExistingShopIdTest() throws Exception{
 
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", 88865);
+		importProperties.put("shop_ids", List.of(88865));
 
         ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "131415", xlsxFile, importProperties);
 
@@ -351,7 +351,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSNewDataTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ExtendedProductDataCount before = countExtendedProductData();
 
@@ -373,7 +373,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSNewUnit() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		long unitsCountBefore = stockUnitRepo.count();
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFileWithUnit, importProperties);
@@ -388,7 +388,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSRemovedVariant() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		long variantsCountBefore = variantRepo.count();
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxRemovedVariant, importProperties);
@@ -404,7 +404,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	public void uploadProductXLSNewDataTestGroupByKey() throws Exception{
 		variantRepo.deleteAll();
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ProductDataCount before = countProductData();
 
@@ -449,7 +449,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductInvalidXLS() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ExtendedProductDataCount before = countExtendedProductData();
 
@@ -481,7 +481,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSNewDataWithMissingFeaturesTest() throws Exception{
         JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 		importProperties.put("update_product", true);
 
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFileMissingFeatures, importProperties);
@@ -503,7 +503,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSNewDataVariantsTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ProductDataCount before = countProductData();
 
@@ -548,7 +548,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSNewDataDryRunTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 		importProperties.put("dryrun", true);
 
 		ProductDataCount before = countProductData();
@@ -576,7 +576,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSUpdateStockDisabledTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stock", false);
 
@@ -598,7 +598,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSUpdateProductsDisabledTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", false);
 		importProperties.put("update_stocks", true);
 
@@ -627,7 +627,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSUpdateBothProductsAndStockDisabledTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", false);
 		importProperties.put("update_stocks", false);
 
@@ -666,7 +666,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSLargeColumnTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ProductDataCount before = countProductData();
 
@@ -705,7 +705,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSUpdateDataEnabledTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 
@@ -729,7 +729,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSUpdateWithInvisibleExtraAttributesTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 
@@ -753,7 +753,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSInsertNewProductsDisabledTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 		importProperties.put("insert_new_products", false);
@@ -780,7 +780,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductXLSUpdateNullFeaturesTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 
@@ -850,7 +850,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 
 	private JSONObject createDataImportPropertiesWithDeleteOldProducts() {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 		importProperties.put("delete_old_products", true);
@@ -938,7 +938,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductXLSUpdateGroupsWithExistingVariantTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 
@@ -1027,7 +1027,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSExistingVariantIdNoVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFileVariantsWithVariantId, importProperties);
 
@@ -1038,7 +1038,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	public void uploadProductXLSExistingVariantIdExistVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("update_product", true);
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFileVariantsWithVariantIdExistingVariant, importProperties);
 
@@ -1058,7 +1058,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSExistingExternalIdNoVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFileVariantsWithExternalId, importProperties);
 
@@ -1078,7 +1078,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSExistingExternalIdExistVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 		importProperties.put("update_product", true);
 
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFileVariantsWithExternalIdExistingMapping, importProperties);
@@ -1092,7 +1092,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSExistingExternalIdAndBarcodeNoVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 		importProperties.put("update_product", true);
 
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFileVariantsWithExternalIdAndBarcode, importProperties);
@@ -1113,7 +1113,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSUpdateProductWithMultipleTagsTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 
@@ -1136,7 +1136,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductXLSUpdateProductWithTagsWithDifferentCaseTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 		importProperties.put("insert_new_products", true);
@@ -1159,7 +1159,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	public void uploadProductXLSWithBarcodesAndNewTagsOnly() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("update_product", true);
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 		ExtendedProductDataCount before = countExtendedProductData();
 
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFileWithBarcodesAndNewTagsOnly, importProperties);
@@ -1180,7 +1180,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductXLSWithNewTagsAndBrand() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ExtendedProductDataCount before = countExtendedProductData();
 
@@ -1203,7 +1203,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductXLSWithResetTagsFlag() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 		importProperties.put("reset_tags", true);
@@ -1229,7 +1229,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductXLSSetWeights() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 
 		Long variantId = 310003L;
@@ -1892,7 +1892,7 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 		json.put("dryrun", false);
 		json.put("update_product", false);
 		json.put("update_stocks", false);
-		json.put("shop_id", 100001L);
+		json.put("shop_ids", List.of(100001L));
 		json.put("encoding", "UTF-8");
 		json.put("currency", 1);
 		return json;
