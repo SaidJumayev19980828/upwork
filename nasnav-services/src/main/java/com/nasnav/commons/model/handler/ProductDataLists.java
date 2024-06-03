@@ -2,7 +2,9 @@ package com.nasnav.commons.model.handler;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -10,12 +12,22 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class ProductDataLists {
+    private List<ProductData> allProductsData = new ArrayList<>();
+    private List<ProductData> newProductsData = new ArrayList<>();
+    private List<ProductData> existingProductsData = new ArrayList<>();
 
-    private List<ProductData> allProductsData;
+    public void addAllProductsData(List<ProductData> products) {
+        allProductsData.addAll(products);
+    }
 
-    private List<ProductData> newProductsData;
+    public void addNewProductsData(List<ProductData> products) {
+        newProductsData.addAll(products);
+    }
 
-    private List<ProductData> existingProductsData;
+    public void addExistingProductsData(List<ProductData> products) {
+        existingProductsData.addAll(products);
+    }
 
 }

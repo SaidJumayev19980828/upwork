@@ -5,9 +5,9 @@ import com.nasnav.commons.model.handler.*;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dto.ProductImportMetadata;
+import com.nasnav.dto.ProductImportMetadataSingleShop;
 import com.nasnav.dto.ProductUpdateDTO;
 import com.nasnav.dto.StockUpdateDTO;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.service.handler.Handler;
@@ -48,9 +48,17 @@ public class ProductDataListConverterHandler implements Handler<ImportDataComman
 
     @Override
     public void handle(final ImportDataCommand importDataCommand, HandlerChainProcessStatus status) throws Exception {
-
-        ProductDataLists productsData = toProductDataList(importDataCommand.getProductsData(), importDataCommand.getImportMetadata(),
-                importDataCommand.getCache());
+        ProductDataLists productsData = new ProductDataLists();
+        ProductImportMetadata productImportMetadata = importDataCommand.getImportMetadata();
+        List<ProductImportMetadataSingleShop> metadata = productImportMetadata.createMetadataSingleShops();
+        metadata.stream()
+                .map(metadataSingleShop -> toProductDataList(importDataCommand.getProductsData(), metadataSingleShop,
+                        importDataCommand.getCache()))
+                .forEach(productData -> {
+                    productsData.addAllProductsData(productData.getAllProductsData());
+                    productsData.addNewProductsData(productData.getNewProductsData());
+                    productsData.addExistingProductsData(productData.getExistingProductsData());
+                });
 
         importDataCommand.setProductsDataLists(productsData);
     }
@@ -63,7 +71,7 @@ public class ProductDataListConverterHandler implements Handler<ImportDataComman
 
     //TODO Check Duplication DataImportServiceImpl
     private ProductDataLists toProductDataList(List<ProductImportDTO> rows
-            , ProductImportMetadata importMetaData, DataImportCachedData cache) throws  RuntimeBusinessException {
+            , ProductImportMetadataSingleShop importMetaData, DataImportCachedData cache) throws RuntimeBusinessException {
 
         List<ProductData> allProductData =
                 IntStream
@@ -92,19 +100,19 @@ public class ProductDataListConverterHandler implements Handler<ImportDataComman
     }
 
     //TODO Check Duplication DataImportServiceImpl
-    private boolean isNewProductsInsertAllowed(ProductImportMetadata importMetaData, ProductData product) {
+    private boolean isNewProductsInsertAllowed(ProductImportMetadataSingleShop importMetaData, ProductData product) {
 
         return importMetaData.isInsertNewProducts() && !product.isExisting();
     }
 
     //TODO Check Duplication DataImportServiceImpl
-    private boolean isUpdateProductsAllowed(ProductImportMetadata importMetaData, ProductData product) {
+    private boolean isUpdateProductsAllowed(ProductImportMetadataSingleShop importMetaData, ProductData product) {
         return (importMetaData.isUpdateProduct() || importMetaData.isUpdateStocks())
                 && product.isExisting();
     }
 
     //TODO Check Duplication DataImportServiceImpl
-    private ProductData toProductData(List<? extends ProductImportDTO> productDataRows, ProductImportMetadata importMetaData, DataImportCachedData cache) {
+    private ProductData toProductData(List<? extends ProductImportDTO> productDataRows, ProductImportMetadataSingleShop importMetaData, DataImportCachedData cache) {
 
         ProductImportDTO pivotProductRow = getPivotProductDataRow(productDataRows, cache);
         ProductUpdateDTO productDto = createProductDto(pivotProductRow, cache);
@@ -200,7 +208,7 @@ public class ProductDataListConverterHandler implements Handler<ImportDataComman
 
     //TODO Check Duplication DataImportServiceImpl
     private List<VariantDTOWithExternalIdAndStock> getVariantsData(List<? extends ProductImportDTO> productDataRows,
-                                                                   ProductImportMetadata importMetaData, DataImportCachedData cache, ProductUpdateDTO product) {
+                                                                   ProductImportMetadataSingleShop importMetaData, DataImportCachedData cache, ProductUpdateDTO product) {
         return productDataRows
                 .stream()
                 .map(row -> createVariantDto(row, importMetaData, cache, product))
@@ -208,7 +216,7 @@ public class ProductDataListConverterHandler implements Handler<ImportDataComman
     }
 
     //TODO Check Duplication DataImportServiceImpl
-    private VariantDTOWithExternalIdAndStock createVariantDto(ProductImportDTO row, ProductImportMetadata importMetaData, DataImportCachedData cache, ProductUpdateDTO product) {
+    private VariantDTOWithExternalIdAndStock createVariantDto(ProductImportDTO row, ProductImportMetadataSingleShop importMetaData, DataImportCachedData cache, ProductUpdateDTO product) {
 
         Map<String, String> featureNameToIdMapping = cache.getFeatureNameToIdMapping();
 
@@ -254,7 +262,7 @@ public class ProductDataListConverterHandler implements Handler<ImportDataComman
     }
 
     //TODO Check Duplication DataImportServiceImpl
-    private StockUpdateDTO createStockDto(ProductImportDTO row, ProductImportMetadata importMetaData) {
+    private StockUpdateDTO createStockDto(ProductImportDTO row, ProductImportMetadataSingleShop importMetaData) {
         StockUpdateDTO stock = new StockUpdateDTO();
         stock.setCurrency(importMetaData.getCurrency());
         stock.setShopId(importMetaData.getShopId());

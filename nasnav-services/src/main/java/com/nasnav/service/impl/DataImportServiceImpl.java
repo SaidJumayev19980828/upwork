@@ -28,6 +28,7 @@ import com.nasnav.service.model.importproduct.context.Product;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import org.jboss.logging.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,10 +120,26 @@ public class DataImportServiceImpl implements DataImportService {
     	DataImportCachedData cache = createRequiredDataCache(productImportDTOS);
     	
     	validateProductData(productImportDTOS, cache, context);
-    	
-        ProductDataLists productsData = toProductDataList(productImportDTOS, productImportMetadata, cache);
 
-        saveToDB(productsData, context);
+		ProductDataLists productDataLists = new ProductDataLists();
+
+		List<ProductImportMetadataSingleShop> metadata = productImportMetadata.createMetadataSingleShops();
+		metadata.stream()
+				.map(metadataSingleShop -> {
+                    try {
+                        return toProductDataList(productImportDTOS, metadataSingleShop, cache);
+                    } catch (BusinessException e) {
+						logger.error(e,e);
+						throw new RuntimeBusinessException(e);
+                    }
+                })
+				.forEach(productsData -> {
+					productDataLists.addAllProductsData(productsData.getAllProductsData());
+					productDataLists.addNewProductsData(productsData.getNewProductsData());
+					productDataLists.addExistingProductsData(productsData.getExistingProductsData());
+				});
+
+        saveToDB(productDataLists, context);
 
         if(productImportMetadata.isDryrun() || !context.isSuccess()) {
         	TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -696,7 +713,7 @@ public class DataImportServiceImpl implements DataImportService {
     
 
     private ProductDataLists toProductDataList(List<ProductImportDTO> rows
-    		, ProductImportMetadata importMetaData, DataImportCachedData cache) throws BusinessException, RuntimeBusinessException {    	
+    		, ProductImportMetadataSingleShop importMetaData, DataImportCachedData cache) throws BusinessException, RuntimeBusinessException {
     	List<ProductData> allProductData = 
     			IntStream
     			.range(0, rows.size())
@@ -726,14 +743,14 @@ public class DataImportServiceImpl implements DataImportService {
     
     
     
-	private boolean isNewProductsInsertAllowed(ProductImportMetadata importMetaData, ProductData product) {
+	private boolean isNewProductsInsertAllowed(ProductImportMetadataSingleShop importMetaData, ProductData product) {
 		return importMetaData.isInsertNewProducts() && !product.isExisting();
 	}
 	
 	
 	
 	
-	private boolean isUpdateProductsAllowed(ProductImportMetadata importMetaData, ProductData product) {
+	private boolean isUpdateProductsAllowed(ProductImportMetadataSingleShop importMetaData, ProductData product) {
 		return (importMetaData.isUpdateProduct() || importMetaData.isUpdateStocks()) 
 					&& product.isExisting();
 	}
@@ -796,7 +813,7 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-    private ProductData toProductData(List<? extends ProductImportDTO> productDataRows, ProductImportMetadata importMetaData, DataImportCachedData cache) {
+    private ProductData toProductData(List<? extends ProductImportDTO> productDataRows, ProductImportMetadataSingleShop importMetaData, DataImportCachedData cache) {
     	ProductImportDTO pivotProductRow = getPivotProductDataRow(productDataRows, cache);
     	ProductUpdateDTO productDto = createProductDto(pivotProductRow, cache);
     	List<VariantDTOWithExternalIdAndStock> productVariantsData =
@@ -816,7 +833,7 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 	private List<VariantDTOWithExternalIdAndStock> getVariantsData(List<? extends ProductImportDTO> productDataRows,
-			ProductImportMetadata importMetaData, DataImportCachedData cache, ProductUpdateDTO product) {
+			ProductImportMetadataSingleShop importMetaData, DataImportCachedData cache, ProductUpdateDTO product) {
 		return productDataRows
 				.stream()
 				.map(row -> createVariantDto(row, importMetaData, cache, product))
@@ -855,7 +872,7 @@ public class DataImportServiceImpl implements DataImportService {
     
     
 
-    private StockUpdateDTO createStockDto(ProductImportDTO row, ProductImportMetadata importMetaData) {
+    private StockUpdateDTO createStockDto(ProductImportDTO row, ProductImportMetadataSingleShop importMetaData) {
         StockUpdateDTO stock = new StockUpdateDTO();
         stock.setCurrency(importMetaData.getCurrency());
         stock.setShopId(importMetaData.getShopId());
@@ -870,7 +887,7 @@ public class DataImportServiceImpl implements DataImportService {
     
     
 
-    private VariantDTOWithExternalIdAndStock createVariantDto(ProductImportDTO row, ProductImportMetadata importMetaData, DataImportCachedData cache, ProductUpdateDTO product) {
+    private VariantDTOWithExternalIdAndStock createVariantDto(ProductImportDTO row, ProductImportMetadataSingleShop importMetaData, DataImportCachedData cache, ProductUpdateDTO product) {
     	Map<String,String> featureNameToIdMapping = cache.getFeatureNameToIdMapping();
 
 		Map<String,String> features = getFeatures(row, featureNameToIdMapping);
@@ -1146,10 +1163,23 @@ class ProductDataImportContext{
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 class ProductDataLists{
-	private List<ProductData> allProductsData;
-	private List<ProductData> newProductsData;
-	private List<ProductData> existingProductsData;
+	private List<ProductData> allProductsData = new ArrayList<>();
+	private List<ProductData> newProductsData = new ArrayList<>();
+	private List<ProductData> existingProductsData = new ArrayList<>();
+
+	public void addAllProductsData(List<ProductData> products) {
+		allProductsData.addAll(products);
+	}
+
+	public void addNewProductsData(List<ProductData> products) {
+		newProductsData.addAll(products);
+	}
+
+	public void addExistingProductsData(List<ProductData> products) {
+		existingProductsData.addAll(products);
+	}
 }
 
 
