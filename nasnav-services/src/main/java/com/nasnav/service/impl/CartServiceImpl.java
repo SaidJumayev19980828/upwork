@@ -3,121 +3,42 @@ package com.nasnav.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
-import com.nasnav.dao.AddonStockRepository;
-import com.nasnav.dao.AddonsRepository;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.CartItemAddonDetailsRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.PromotionRepository;
-import com.nasnav.dao.SettingRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.StoreCheckoutsRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.dao.WishlistItemRepository;
-import com.nasnav.dto.AppliedPromotionsResponse;
-import com.nasnav.dto.CartItemAddonDetailsDTO;
-import com.nasnav.dto.EstimateTokensUsdResponse;
-import com.nasnav.dto.ExchangeRateResponse;
-import com.nasnav.dto.Pair;
-import com.nasnav.dto.ProductImageDTO;
-import com.nasnav.dto.ShopRepresentationObject;
-import com.nasnav.dto.TokenValueRequest;
-import com.nasnav.dto.UserCartInfo;
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.TokenPayment;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.mail.AbandonedCartsMail;
 import com.nasnav.dto.response.TokenPaymentResponse;
-import com.nasnav.dto.response.navbox.Cart;
-import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.*;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AddonEntity;
-import com.nasnav.persistence.AddonStocksEntity;
-import com.nasnav.persistence.BankAccountEntity;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.CartItemAddonDetailsEntity;
-import com.nasnav.persistence.CartItemEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.PromotionsEntity;
-import com.nasnav.persistence.SettingEntity;
-import com.nasnav.persistence.StockUnitEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.StoreCheckoutsEntity;
-import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartItemStock;
-import com.nasnav.service.BankAccountActivityService;
-import com.nasnav.service.CartService;
-import com.nasnav.service.DomainService;
-import com.nasnav.service.LoyaltyPointsService;
-import com.nasnav.service.MailService;
-import com.nasnav.service.OrderEmailServiceHelper;
-import com.nasnav.service.ProductImageService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.PromotionsService;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.StatisticsService;
+import com.nasnav.service.*;
 import com.nasnav.service.helpers.CartServiceHelper;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 import com.nasnav.service.sendpulse.SendPulseService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.apache.logging.log4j.*;
+import org.springframework.beans.factory.annotation.*;
+import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.math.*;
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.MathUtils.nullableBigDecimal;
 import static com.nasnav.constatnts.EmailConstants.ABANDONED_CART_TEMPLATE;
 import static com.nasnav.enumerations.Settings.ORG_EMAIL;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0005;
-import static com.nasnav.exceptions.ErrorCodes.BANK$ACC$0003;
-import static com.nasnav.exceptions.ErrorCodes.BANK$ACC$0009;
-import static com.nasnav.exceptions.ErrorCodes.BC$001;
-import static com.nasnav.exceptions.ErrorCodes.E$USR$0002;
-import static com.nasnav.exceptions.ErrorCodes.GEN$0001;
-import static com.nasnav.exceptions.ErrorCodes.NOTIUSERPARAM$0006;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
-import static com.nasnav.exceptions.ErrorCodes.ORG$ADDON$0002;
-import static com.nasnav.exceptions.ErrorCodes.ORG$ADDON$0003;
-import static com.nasnav.exceptions.ErrorCodes.ORG$SETTING$0001;
-import static com.nasnav.exceptions.ErrorCodes.ORG$SHIP$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$JSON$0001;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0008;
-import static com.nasnav.exceptions.ErrorCodes.U$0001;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_AMOUNT;
 import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_PERCENT;
 import static java.lang.String.format;
@@ -125,15 +46,8 @@ import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.HALF_EVEN;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static java.util.stream.Collectors.*;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 @RequiredArgsConstructor
@@ -214,18 +128,28 @@ public class CartServiceImpl implements CartService {
         if(user instanceof EmployeeUserEntity) {
             user = userRepository.findById(dto.getCustomerId()).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,dto.getCustomerId()));
         }
-        return getUserCart(user.getId(),user.getOrganizationId(), promoCode, points, yeshteryCart);
+        return yeshteryCart ?
+                getYeshteryUserCart(dto, user.getId(), user.getOrganizationId(), promoCode, points) :
+                getUserCart(user.getId(), user.getOrganizationId(), promoCode, points, false);
     }
 
 
     @Override
     public Cart getUserCart(Long userId) {
-        Cart cart = new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
+        return setupCart(new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId))));
+    }
+
+    public Cart getYeshteryUserCart(Long userId, Set<Long> stockIds) {
+        return setupCart(new Cart(toCartItemsDto(cartItemRepo.findCurrentCartSelectedItemsByUserId(userId, stockIds))));
+    }
+
+    private Cart setupCart(Cart cart) {
         cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
         cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
         cart.setSubtotal(calculateCartTotal(cart));
         return cart;
     }
+
     @Override
     public Cart getUserCart(Long userId, Boolean isYeshtery) {
         Long authUserOrgId = securityService.getCurrentUserOrganizationId();
@@ -263,6 +187,11 @@ public class CartServiceImpl implements CartService {
 
     private Cart getUserCart(Long userId, String promoCode, Long orgId, BigDecimal points, boolean yeshteryCart) {
         Cart cart = getUserCart(userId);
+        setupCartPromotionsAndDiscounts(promoCode, orgId, points, yeshteryCart, cart);
+        return cart;
+    }
+
+    private void setupCartPromotionsAndDiscounts(String promoCode, Long orgId, BigDecimal points, boolean yeshteryCart, Cart cart) {
         if (promoCode != null && !promoCode.isEmpty()) {
             if (!promotionRepo.existsByCodeAndOrganization_IdAndActiveNow(promoCode, orgId)) {
                 cart.setPromos(promoService.calcPromoDiscountForCart(null, cart));
@@ -279,6 +208,11 @@ public class CartServiceImpl implements CartService {
         decidePromotionApplied(cart,promoCode);
         cart.setDiscount(cart.getPromos().getTotalDiscount().add(cart.getPoints().getTotalDiscount()));
         cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
+    }
+
+    public Cart getYeshteryUserCart(CartCheckoutDTO dto, Long userId, Long orgId, String promoCode, BigDecimal points) {
+        Cart cart = getYeshteryUserCart(userId, dto.getSelectedStockIds());
+        setupCartPromotionsAndDiscounts(promoCode, orgId, points, true, cart);
         return cart;
     }
 
@@ -482,13 +416,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public List<ShopFulfillingCart> getShopsThatCanProvideCartItems(){
-        BaseUserEntity loggedInUser = securityService.getCurrentUser();
-        Long userId = loggedInUser.getId();
-        if(loggedInUser instanceof  EmployeeUserEntity) {
-            userId = storeCheckoutsRepository.findByEmployeeId(loggedInUser.getId())
-                    .orElseThrow(() ->  new RuntimeBusinessException(FORBIDDEN, O$CRT$0001))
-                    .getUserId();
-        }
+        Long userId = fetchUserId();
         return cartItemRepo
                 .getAllCartStocks(userId)
                 .stream()
@@ -499,6 +427,23 @@ public class CartServiceImpl implements CartService {
                 .collect(toList());
     }
 
+    private List<ShopFulfillingCart> getShopsThatCanProvideSelectedCartItems(List<Long> stockIds){
+        Long userId = fetchUserId();
+        return cartItemRepo.getAllCartSelectedStocks(userId, new HashSet<>(stockIds)).stream()
+                .collect(groupingBy(CartItemStock::getShopId))
+                .entrySet()
+                .stream()
+                .map(this::createShopFulfillingCart)
+                .collect(toList());
+    }
+
+    private Long fetchUserId() {
+        BaseUserEntity loggedInUser = securityService.getCurrentUser();
+        if (loggedInUser instanceof EmployeeUserEntity)
+            return storeCheckoutsRepository.findByEmployeeId(loggedInUser.getId())
+                    .orElseThrow(() -> new RuntimeBusinessException(FORBIDDEN, O$CRT$0001)).getUserId();
+        return loggedInUser.getId();
+    }
 
     @Deprecated
     @Override
@@ -522,16 +467,15 @@ public class CartServiceImpl implements CartService {
 
 
     @Override
-    public List<ShopFulfillingCart> getShopsThatCanProvideWholeCart(){
+    public List<ShopFulfillingCart> getShopsThatCanProvideWholeCart(List<Long> stockIds) {
         //it uses an additional query but gives more insurance than calculating variants from
         //cartItemsStocks
         Set<Long> cartItemVariants =
                 getCart(null, ZERO, false)
-                        .getItems()
-                        .stream()
+                        .getItems().stream().filter(l -> stockIds.contains(l.getStockId()))
                         .map(CartItem::getVariantId)
                         .collect(toSet());
-        return getShopsThatCanProvideCartItems()
+        return getShopsThatCanProvideSelectedCartItems(stockIds)
                 .stream()
                 .filter(shop -> hasAllCartVariants(shop, cartItemVariants))
                 .collect(toList());

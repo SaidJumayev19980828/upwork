@@ -139,7 +139,8 @@ public class PickupFromShop implements ShippingService{
 
 	@Override
 	public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> items) {
-		List<String> possiblePickupShops = getShopsThatCanProvideWholeCart();
+		List<String> possiblePickupShops = getShopsThatCanProvideWholeCart(
+				items.stream().map(ShippingDetails::getItems).flatMap(Collection::stream).map(ShipmentItems::getStockId).toList());
 		
 		ShippingServiceInfo serviceInfo = createServiceInfoWithShopsOptions(possiblePickupShops);
 		
@@ -187,11 +188,9 @@ public class PickupFromShop implements ShippingService{
 		return serviceInfo;
 	}
 
-
-
-	private List<String> getShopsThatCanProvideWholeCart() {
+	private List<String> getShopsThatCanProvideWholeCart(List<Long> stockIds) {
 		return cartService
-				.getShopsThatCanProvideWholeCart()
+				.getShopsThatCanProvideWholeCart(stockIds)
 				.stream()
 				.map(ShopFulfillingCart::getShopId)
 				.filter(allowedShops::contains)

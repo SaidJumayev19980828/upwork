@@ -1,31 +1,25 @@
 package com.nasnav.yeshtery.test.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dao.*;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.response.navbox.*;
-import com.nasnav.exceptions.ErrorResponseDTO;
-import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.exceptions.*;
 import com.nasnav.persistence.*;
-import com.nasnav.service.CartService;
-import com.nasnav.service.MailService;
-import com.nasnav.service.OrderService;
+import com.nasnav.service.*;
 import com.nasnav.yeshtery.controller.v1.YeshteryCartController;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
-import com.nasnav.commons.YeshteryConstants;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -44,11 +38,11 @@ import static com.nasnav.yeshtery.test.commons.TestCommons.json;
 import static com.nasnav.yeshtery.test.controllers.YeshteryOrdersControllerTest.USELESS_NOTE;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
-import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -461,6 +455,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void checkoutCartWithDiscounts() {
         JSONObject requestBody = createCartCheckoutBody();
+        requestBody.put("selectedStockIds", Set.of(602L, 604L, 606L));
 
         checkOutCart(requestBody, new BigDecimal("5891"), new BigDecimal("5840"), new BigDecimal("51"));
     }
@@ -472,6 +467,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     public void checkoutCartWithUsedPromotions() {
         JSONObject requestBody = createCartCheckoutBody();
         requestBody.put("promo_code", "GREEEEEED_HEARt");
+        requestBody.put("selectedStockIds", Set.of(602L, 604L, 606L));
 
         HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
         ResponseEntity<Order> res = template.postForEntity(YESHTERY_CART_CHECKOUT_API_PATH, request, Order.class);
@@ -485,6 +481,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     public void checkoutCartWithPromotionsWithDifferentCase() {
         JSONObject requestBody = createCartCheckoutBody();
         requestBody.put("promo_code", "gReEeEeED");
+        requestBody.put("selectedStockIds", Set.of(602L, 604L, 606L));
 
         Order order = checkOutCart(requestBody, new BigDecimal("5790.45"), new BigDecimal("5840"), new BigDecimal("51"));
 
@@ -500,6 +497,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     public void checkoutCartWithPromotionsWithPercentage() {
         JSONObject requestBody = createCartCheckoutBody();
         requestBody.put("promo_code", "MORE_GREEEEEEED");
+        requestBody.put("selectedStockIds", Set.of(602L, 604L, 606L));
 
         Order order = checkOutCart(requestBody, new BigDecimal("5249.18"), new BigDecimal("5840"), new BigDecimal("51"));
 
@@ -515,6 +513,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     public void checkoutCartWithPromotionsWithPercentageButBelowMinCartValue() {
         JSONObject requestBody = createCartCheckoutBody();
         requestBody.put("promo_code", "SCAM_GREEEEEEED");
+        requestBody.put("selectedStockIds", Set.of(602L, 604L, 606L));
 
         HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
         ResponseEntity<Order> res = template.postForEntity(YESHTERY_CART_CHECKOUT_API_PATH, request, Order.class);
@@ -527,6 +526,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     public void checkoutCartWithPromotionsWithPercentageButWithTooHighDiscount() {
         JSONObject requestBody = createCartCheckoutBody();
         requestBody.put("promo_code", "kafa");
+        requestBody.put("selectedStockIds", Set.of(602L, 604L, 606L));
 
         Order order = checkOutCart(requestBody, new BigDecimal("5881"), new BigDecimal("5840"), new BigDecimal("51"));
 
@@ -541,6 +541,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void checkoutCartWithFailedOptimization() {
         JSONObject requestBody = createCartCheckoutBody();
+        requestBody.put("selectedStockIds", Set.of(601L, 602L, 603L));
         HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
         ResponseEntity<Order> res = template.postForEntity(YESHTERY_CART_CHECKOUT_API_PATH, request, Order.class);
 
@@ -549,6 +550,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
 
     private Order checkoutCart() {
         JSONObject requestBody = createCartCheckoutBody();
+        requestBody.put("selectedStockIds", Set.of(602L, 604L));
 
         Order body = checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100"), new BigDecimal("51"));
 
@@ -634,8 +636,9 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     public void completeStoreCheckout(){
         String employeeToken = "101112";
         storeCheckout(employeeToken);
-        String requestBody = createCartStoreCheckoutBodyWithPickup().toString();
-        HttpEntity request = getHttpEntity(requestBody, employeeToken);
+        JSONObject requestBody = createCartStoreCheckoutBodyWithPickup();
+        requestBody.put("selectedStockIds", Set.of(602L, 603L));
+        HttpEntity request = getHttpEntity(requestBody.toString(), employeeToken);
         ResponseEntity<Order> response = template.postForEntity("/v1/cart/store-checkout/complete", request, Order.class);
 
         assertEquals(200, response.getStatusCodeValue());
@@ -645,13 +648,43 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
-    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Complete_Store_Checkout_1.sql"})
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Complete_Store_Checkout.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-    public void completeStoreCheckoutNotCompleteBecauseOfDifferentShops(){
+    public void completeStoreCheckoutNoSelectedStocks() {
         String employeeToken = "101112";
         storeCheckout(employeeToken);
         String requestBody = createCartStoreCheckoutBodyWithPickup().toString();
         HttpEntity request = getHttpEntity(requestBody, employeeToken);
+        ResponseEntity<ErrorResponseDTO> response = template.postForEntity("/v1/cart/store-checkout/complete", request, ErrorResponseDTO.class);
+
+        assertEquals(406, response.getStatusCodeValue());
+        assertEquals("We can not find selected stock ids With Body Request (provide selectedStockIds property)", response.getBody().getMessage());
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Complete_Store_Checkout.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void completeStoreCheckoutEmptySelectedStocks() {
+        String employeeToken = "101112";
+        storeCheckout(employeeToken);
+        JSONObject requestBody = createCartStoreCheckoutBodyWithPickup();
+        requestBody.put("selectedStockIds", Set.of());
+        HttpEntity request = getHttpEntity(requestBody.toString(), employeeToken);
+        ResponseEntity<ErrorResponseDTO> response = template.postForEntity("/v1/cart/store-checkout/complete", request, ErrorResponseDTO.class);
+
+        assertEquals(406, response.getStatusCodeValue());
+        assertEquals("We can not find selected stock ids With Body Request (provide selectedStockIds property)", response.getBody().getMessage());
+    }
+
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = { "/sql/Complete_Store_Checkout_1.sql" })
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
+    public void completeStoreCheckoutNotCompleteBecauseOfDifferentShops() {
+        String employeeToken = "101112";
+        storeCheckout(employeeToken);
+        JSONObject requestBody = createCartStoreCheckoutBodyWithPickup();
+        requestBody.put("selectedStockIds", Set.of(602L, 604L));
+        HttpEntity request = getHttpEntity(requestBody.toString(), employeeToken);
         ResponseEntity<ErrorResponseDTO> response = template.postForEntity("/v1/cart/store-checkout/complete", request, ErrorResponseDTO.class);
 
         assertEquals(406, response.getStatusCodeValue());
@@ -771,6 +804,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     public void checkoutCartNoAddressId() {
         JSONObject body = createCartCheckoutBody();
         body.put("customer_address", -1);
+        body.put("selectedStockIds", Set.of(602L, 604L));
 
         HttpEntity<?> request = getHttpEntity(body.toString(), "123");
         ResponseEntity<String> response = template.postForEntity(YESHTERY_CART_CHECKOUT_API_PATH, request, String.class);
@@ -802,6 +836,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
 
         //then try to checkout cart
         JSONObject body = createCartCheckoutBody();
+        body.put("selectedStockIds", Set.of(602L, 604L, 606L));
 
         request = getHttpEntity(body.toString(), "123");
         ResponseEntity<String> res = template.postForEntity(YESHTERY_CART_CHECKOUT_API_PATH, request, String.class);
@@ -813,6 +848,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void checkoutCartZeroStock() {
         JSONObject body = createCartCheckoutBody();
+        body.put("selectedStockIds", Set.of(602L, 604L));
 
         HttpEntity<?> request = getHttpEntity(body.toString(), "123");
         ResponseEntity<String> res = template.postForEntity(YESHTERY_CART_CHECKOUT_API_PATH, request, String.class);
@@ -859,6 +895,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
         assertOrdersStatusBeforeCheckout(unpaidOrderId, cancelPaymentOrderId, paidOrderId, errorPaymentOrderId);
 
         JSONObject requestBody = createCartCheckoutBody();
+        requestBody.put("selectedStockIds", Set.of(602L, 604L));
         checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100"), new BigDecimal("51"));
 
         assertOrdersStatusAfterCheckout(unpaidOrderId, cancelPaymentOrderId, paidOrderId, errorPaymentOrderId);
@@ -926,6 +963,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void checkoutWithWareHouseOptimizationStrategyWithInsuffecientStock() {
         JSONObject requestBody = createCartCheckoutBody();
+        requestBody.put("selectedStockIds", Set.of(601L, 602L, 603L));
 
         HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
         ResponseEntity<Order> res = template.postForEntity(YESHTERY_CART_CHECKOUT_API_PATH, request, Order.class);

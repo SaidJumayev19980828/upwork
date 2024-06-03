@@ -26,8 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 @RequiredArgsConstructor
@@ -113,6 +112,7 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 
 	@Override
 	public Order completeYeshteryCheckout(CartCheckoutDTO dto) throws BusinessException {
+		validateCartCheckoutDTO(dto);
 		Order checkoutedOutOrder = checkoutYeshteryCart(dto);
 		storeCashPaymentService.finalize(
 				storeCashPaymentService.createPaymentForOrder(checkoutedOutOrder.getOrderId(),
@@ -121,6 +121,10 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 		return orderService.getMetaOrder(checkoutedOutOrder.getOrderId(), false);
 	}
 
+	private void validateCartCheckoutDTO(CartCheckoutDTO dto) {
+		if (dto.getSelectedStockIds() == null || dto.getSelectedStockIds().isEmpty())
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, NOTSELECTEDSTOCKIDS);
+	}
 
 	@Override
 	public Order checkoutYeshteryCart(CartCheckoutDTO dto) {

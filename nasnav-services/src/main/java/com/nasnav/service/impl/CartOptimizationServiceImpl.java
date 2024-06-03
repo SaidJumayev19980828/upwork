@@ -7,20 +7,15 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.response.CartOptimizationStrategyDTO;
-import com.nasnav.dto.response.navbox.Cart;
-import com.nasnav.dto.response.navbox.CartItem;
-import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
+import com.nasnav.dto.response.navbox.*;
 import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.service.*;
 import com.nasnav.service.cart.optimizers.*;
-import com.nasnav.shipping.services.mylerz.webclient.dto.Zone;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.*;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
@@ -39,10 +34,9 @@ import static java.util.Arrays.stream;
 import static java.util.Collections.*;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.*;
 
 
 @Service
@@ -93,26 +87,27 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	@Override
 	public CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
 		validateAndAssignUserAddress(dto);
-		checkCartItemsFromCheckoutStore(dto);
-		checkIfCartHasEmptyStock(dto.getCustomerId());
+		checkCartItemsFromCheckoutStore(dto, yeshteryCart);
+		checkIfCartHasEmptyStock(dto, yeshteryCart);
 		return optimizeCart(dto, yeshteryCart);
 	}
 
-	private void checkCartItemsFromCheckoutStore(CartCheckoutDTO dto) {
+	private void checkCartItemsFromCheckoutStore(CartCheckoutDTO dto, boolean yeshteryCart) {
 		if(!dto.isTwoStepVerified()) {
 			return;
 		}
-
-		if(cartItemRepo.countByUser_IdAndStock_ShopsEntity_IdNot(dto.getCustomerId(), securityService.getCurrentUserShopId()) > 0) {
+		if ((yeshteryCart &&
+				cartItemRepo.countByUserIdAndStockShopsEntityIdNotAndStockIdIn(dto.getCustomerId(), securityService.getCurrentUserShopId(),
+						dto.getSelectedStockIds()) > 0) || (!yeshteryCart
+				&& cartItemRepo.countByUser_IdAndStock_ShopsEntity_IdNot(dto.getCustomerId(), securityService.getCurrentUserShopId()) > 0))
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0020);
-		}
 	}
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
-		var optimizedCart = createOptimizedCart(dto);
-		boolean itemsRemoved = isItemsRemoved(optimizedCart, dto.getPromoCode(),dto);
+		var optimizedCart = createOptimizedCart(dto, yeshteryCart);
+		boolean itemsRemoved = isItemsRemoved(optimizedCart, dto, yeshteryCart);
 		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart) || itemsRemoved;
 		var anyItemChanged = isAnyItemChangedAfterOptimization(optimizedCart) || itemsRemoved;
 		var returnedCart = getCartObject(optimizedCart, dto, yeshteryCart);
@@ -145,8 +140,9 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		return optimizedCart.get().getCartItems().size() != cartService.getCart(promoCode, emptySet(), false).getItems().size();
 	}
 
-	private boolean isItemsRemoved(Optional<OptimizedCart> optimizedCart, String promoCode , CartCheckoutDTO dto) {
-		return optimizedCart.get().getCartItems().size() != cartService.getCart(dto,promoCode, BigDecimal.ZERO, false).getItems().size();
+	private boolean isItemsRemoved(Optional<OptimizedCart> optimizedCart, CartCheckoutDTO dto, boolean yeshteryCart) {
+		return (optimizedCart.map(cart -> cart.getCartItems().size()).orElse(0)) != cartService.getCart(dto, dto.getPromoCode(), BigDecimal.ZERO,
+				yeshteryCart).getItems().size();
 	}
 
 	private Cart getCartObject(Optional<OptimizedCart> optimizedCart, CartCheckoutDTO dto, boolean yeshteryCart) {
@@ -195,17 +191,15 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				.anyMatch(OptimizedCartItem::getItemChanged);
 	}
 
-
-	
-	private <T, Config> Optional<OptimizedCart> createOptimizedCart(CartCheckoutDTO dto) {
+	private <T, C> Optional<OptimizedCart> createOptimizedCart(CartCheckoutDTO dto, boolean yeshteryCart) {
 		var optimizerData = getOptimizerData(dto);
 		var strategy = optimizerData.getStrategy();
 
-		CartOptimizer<T, Config> optimizer = getCartOptimizer(strategy.getValue());
-		Config config = null;
+		CartOptimizer<T, C> optimizer = getCartOptimizer(strategy.getValue());
+		C config = null;
 
 		var parameters = optimizer.createCartOptimizationParameters(dto);
-		var cart = cartService.getCart(dto,dto.getPromoCode(), BigDecimal.ZERO, false);
+		var cart = cartService.getCart(dto, dto.getPromoCode(), BigDecimal.ZERO, yeshteryCart);
 
 		if(dto.isTwoStepVerified()) {
 			cart.setCustomerId(dto.getCustomerId());
@@ -247,10 +241,13 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		}
 	}
 
-	private void checkIfCartHasEmptyStock(Long customerId) {
-		Long userId = customerId != null? customerId :securityService.getCurrentUser().getId();
-		int cartItemsCount = cartItemRepo.findCurrentCartItemsByUser_Id(userId).size();
-		List<CartItemEntity> outOfStockCartItems = cartItemRepo.findUserOutOfStockCartItems(userId);
+	private void checkIfCartHasEmptyStock(CartCheckoutDTO dto, boolean yeshteryCart) {
+		Long userId = dto.getCustomerId() != null ? dto.getCustomerId() : securityService.getCurrentUser().getId();
+		int cartItemsCount = (yeshteryCart ? cartItemRepo.findCurrentCartSelectedItemsByUserId(userId, dto.getSelectedStockIds()) :
+				cartItemRepo.findCurrentCartItemsByUser_Id(userId)).size();
+		List<CartItemEntity> outOfStockCartItems = yeshteryCart ?
+				cartItemRepo.findUserOutOfStockSelectedCartItems(userId, dto.getSelectedStockIds()) :
+				cartItemRepo.findUserOutOfStockCartItems(userId);
 		List<CartItemEntity> movedItems = new ArrayList<>();
 		if (!outOfStockCartItems.isEmpty()) {
 			for (CartItemEntity item : outOfStockCartItems) {

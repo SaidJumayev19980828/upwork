@@ -41,7 +41,7 @@ public interface CartService {
 
     List<ShopFulfillingCart> getShopsThatCanProvideCartItems();
 
-    List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
+    List<ShopFulfillingCart> getShopsThatCanProvideWholeCart(List<Long> stockIds);
     List<CartItem> toCartItemsDto(List<CartItemEntity> cartItems);
     void sendAbandonedCartEmails(AbandonedCartsMail dto);
     List<ShopRepresentationObject> getShopsThatCanProvideEachItem();

@@ -1,20 +1,15 @@
 package com.nasnav.dao;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Set;
-
+import com.nasnav.dto.Pair;
+import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.*;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
-import com.nasnav.dto.Pair;
 
-import com.nasnav.persistence.CartItemEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
+import java.math.BigDecimal;
+import java.util.*;
 
 public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long> {
 	@Query("SELECT distinct item "
@@ -30,6 +25,19 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " LEFT JOIN FETCH item.addons addons "
 			+ " WHERE user.id = :user_id and product.removed = 0 and variant.removed = 0")
 	List<CartItemEntity> findCurrentCartItemsByUser_Id(@Param("user_id") Long userId);
+
+	@Query("SELECT distinct item FROM CartItemEntity item "
+			+ "LEFT JOIN FETCH item.user user "
+			+ "LEFT JOIN FETCH item.stock stock "
+			+ "LEFT JOIN FETCH stock.unit unit "
+			+ "LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ "LEFT JOIN FETCH variant.featureValues featureValues "
+			+ "LEFT JOIN FETCH featureValues.feature feature "
+			+ "LEFT JOIN FETCH variant.productEntity product "
+			+ "LEFT JOIN FETCH product.brand brand "
+			+ "LEFT JOIN FETCH item.addons addons "
+			+ "WHERE user.id = :user_id and stock.id in :stockIds and product.removed = 0 and variant.removed = 0 ")
+	List<CartItemEntity> findCurrentCartSelectedItemsByUserId(@Param("user_id") Long userId, Set<Long> stockIds);
 	@Query("SELECT distinct item "
 			+ " FROM CartItemEntity item "
 			+ "	LEFT JOIN FETCH item.user user"
@@ -97,6 +105,15 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			" where s.quantity = 0 and c.quantity > 0 and u.id = :userId" +
 			" order by s.price, s.discount")
 	List<CartItemEntity> findUserOutOfStockCartItems(@Param("userId") Long userId);
+
+	@Query("select c from CartItemEntity c" +
+			" left join fetch c.stock s" +
+			" left join fetch c.user u" +
+			" left join fetch s.productVariantsEntity v" +
+			" left join fetch v.productEntity p" +
+			" where s.quantity = 0 and s.id in :stockIds and c.quantity > 0 and u.id = :userId" +
+			" order by s.price, s.discount")
+	List<CartItemEntity> findUserOutOfStockSelectedCartItems(@Param("userId") Long userId, Set<Long> stockIds);
 
 	@Transactional
 	@Modifying
@@ -240,6 +257,24 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " LEFT JOIN area.citiesEntity city "
 			+ " WHERE user.id = :userId "
 			+ " AND allStocks.quantity >= item.quantity "
+			+ " AND stock.id in :stockIds "
+			+ " AND shop.removed = 0")
+	List<CartItemStock> getAllCartSelectedStocks(@Param("userId") Long userId, Set<Long> stockIds);
+
+	@Query("SELECT new com.nasnav.persistence.dto.query.result.CartItemStock("
+			+ " shop.organizationEntity.id, variant.id, allStocks.id, shop.id, city.id"
+			+ ", allStocks.quantity, allStocks.price , allStocks.discount)"
+			+ " FROM CartItemEntity item"
+			+ " LEFT JOIN item.stock stock "
+			+ " LEFT JOIN item.user user "
+			+ " LEFT JOIN stock.productVariantsEntity variant "
+			+ " LEFT JOIN variant.stocks  allStocks "
+			+ " LEFT JOIN allStocks.shopsEntity shop "
+			+ " LEFT JOIN shop.addressesEntity address "
+			+ " LEFT JOIN address.areasEntity area "
+			+ " LEFT JOIN area.citiesEntity city "
+			+ " WHERE user.id = :userId "
+			+ " AND allStocks.quantity >= item.quantity "
 			+ " AND shop.removed = 0 AND shop.id in :shopIds")
 	List<CartItemStock> getAllCartStocks(@Param("userId") Long userId, @Param("shopIds") List<Long> shopIds);
 
@@ -284,4 +319,6 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 
 
 	long countByUser_IdAndStock_ShopsEntity_IdNot(Long userId, Long storeId);
+
+	long countByUserIdAndStockShopsEntityIdNotAndStockIdIn(Long userId, Long storeId, Set<Long> stockIds);
 }

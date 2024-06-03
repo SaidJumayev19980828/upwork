@@ -32,5 +32,6 @@ public class CartCheckoutDTO {
     private Long createdByEmployeeId;
     @JsonIgnore
     private boolean isTwoStepVerified;
+    private Set<Long> selectedStockIds;
 
 }

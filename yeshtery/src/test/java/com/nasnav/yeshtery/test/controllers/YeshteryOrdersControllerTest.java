@@ -1702,6 +1702,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
 
         //checkout
         JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest(null);
+        requestBody.put("selectedStockIds", Set.of(602L, 604L));
 
         Order order = checkOutCart("789", requestBody, new BigDecimal("3125.00"), new BigDecimal("3100.00"), new BigDecimal("25.00"));
         Long metaOrderId = order.getOrderId();
@@ -1724,6 +1725,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         addCartItems(90L, 602L, 1, 99002L);
 
         JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest(null);
+        requestBody.put("selectedStockIds", Set.of(601L, 602L));
 
         Order order = checkOutCart("789", requestBody, new BigDecimal("850.00"), new BigDecimal("800.00"), new BigDecimal("50.00"));
         List<Long> orderIds = order.getSubOrders().stream().map(SubOrder::getSubOrderId).sorted().collect(toList());
@@ -1751,6 +1753,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
                 .collect(toSet());
 
         JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest(transIds);
+        requestBody.put("selectedStockIds", Set.of(601L, 602L));
 
         Order order = checkOutCart("789", requestBody, new BigDecimal("850.00"), new BigDecimal("800.00"), new BigDecimal("50.00"));
     }
@@ -1770,6 +1773,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
                 .collect(toSet());
 
         JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest(transIds);
+        requestBody.put("selectedStockIds", Set.of(601L, 602L));
         // paying using both yeshtery points and organization points gives double discount for current config
         Order order = checkOutCart("789", requestBody, new BigDecimal("850.00"), new BigDecimal("800.00"), new BigDecimal("50.00"));
     }
@@ -1812,8 +1816,9 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
 
     private Long createAndConfirmOrder(Long userId, String token) {
         addCartItems(userId, 601L, 1, 99001L, token);
-        String requestBody = createCartCheckoutBodyWithPickup().toString();
-        HttpEntity request = getHttpEntity(requestBody, token);
+        JSONObject body = createCartCheckoutBodyWithPickup();
+        body.put("selectedStockIds", Set.of(601L));
+        HttpEntity request = getHttpEntity(body.toString(), token);
         ResponseEntity<Order> response2 = template.postForEntity("/v1/cart/checkout/", request, Order.class);
         assertEquals(200, response2.getStatusCodeValue());
 

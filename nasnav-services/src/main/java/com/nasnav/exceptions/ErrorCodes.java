@@ -546,6 +546,7 @@ public enum ErrorCodes {
 
 	,G$CONTACT$0001("No Contact-Us form exists with id[%d]!")
 	,NOTIUSER$0006("We can not find customer Id With Body Request")
+	,NOTSELECTEDSTOCKIDS("We can not find selected stock ids With Body Request (provide selectedStockIds property)")
 	,NOTIUSERPARAM$0006("We can not find customer Id With Request Param")
 	,PROMO$EXCEPTION("Discount is bigger than the min price")
 	,$001$PROMO$("Promo not found")
