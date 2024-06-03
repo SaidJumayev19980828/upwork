@@ -9,6 +9,7 @@ import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.response.CartOptimizationStrategyDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.enumerations.ReferralCodeType;
+import com.nasnav.enumerations.ReferralType;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.service.*;
@@ -83,6 +84,11 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Autowired
 	private ShopsRepository shopsRepository;
+	@Autowired
+	private ReferralCodeRepo referralCodeRepo;
+
+	@Autowired
+	private InfluencerReferralService influencerReferralService;
 
 	@Override
 	public CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
@@ -156,7 +162,11 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		checkIfCartIsEmpty(returnedCart);
 
 		returnedCart.setSubtotal(cartService.calculateCartTotal(returnedCart));
-		returnedCart.setPromos(promoService.calcPromoDiscountForCart(dto.getPromoCode(), returnedCart));
+		if(!referralCodeRepo.existsByReferralCodeAndReferralType(dto.getPromoCode(), ReferralType.INFLUENCER)) {
+			returnedCart.setPromos(promoService.calcPromoDiscountForCart(dto.getPromoCode(), returnedCart));
+		} else {
+			returnedCart.setDiscount(influencerReferralService.calculateDiscountForCart(dto.getPromoCode(), returnedCart));
+		}
 		returnedCart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(returnedCart.getItems(), dto.getRequestedPoints(), yeshteryCart));
 		returnedCart.setDiscount(returnedCart.getPromos().getTotalDiscount().add(returnedCart.getPoints().getTotalDiscount()));
 		if(StringUtils.isNotEmpty(dto.getReferralCode()) && !dto.isPayFromReferralBalance()) {

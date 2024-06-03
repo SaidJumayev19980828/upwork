@@ -179,5 +179,5 @@ INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(602, '99001/img2.jpg', '{"Color":"Blue"}', 2, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(603, '99001/cover_img.jpg', '{"Color":"Yellow"}', 4, 88);
 
-INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (500, 20.00, 1, 88);
+INSERT INTO public.referral_wallet(id, balance, version, user_id, referral_type) VALUES (500, 20.00, 1, 88, 'USER');
 

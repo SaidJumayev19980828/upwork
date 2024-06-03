@@ -124,7 +124,7 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 -- insert order items
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 601, 2, 200.0, 1);
 
-INSERT INTO public.referral_settings(id, org_id, constraints, created_at)
+INSERT INTO public.referral_settings(id, org_id, constraints, referral_type, created_at)
 VALUES (
            200,
            99001,
@@ -135,6 +135,7 @@ VALUES (
                    '"PARENT_REGISTRATION":{"value":0.0,"valid_from":"', DATE(NOW()), '","valid_to":"', DATE(NOW() + INTERVAL '3' DAY), '"},',
                    '"CHILD_REGISTRATION":{"value":0.0,"valid_from":"', DATE(NOW()), '","valid_to":"', DATE(NOW() + INTERVAL '3' DAY), '"}}'
                ),
+           'USER',
            NOW()
        );
 
@@ -142,12 +143,12 @@ VALUES (
 
 
 -- inserting a wallet for user for referral Codes
-INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (500, 20, 1, 88);
+INSERT INTO public.referral_wallet(id, balance, version, user_id, referral_type) VALUES (500, 20, 1, 88, 'USER');
 
 -- insert referral code that is valid
-INSERT INTO public.referral_codes(id, referral_code, org_id, user_id, settings_id, status, created_at, accept_token)
-VALUES (500, 'abcdfg', 99001, 88, 200, 2, now(), 'qwerty');
+INSERT INTO public.referral_codes(id, referral_code, org_id, user_id, settings_id, status, referral_type, created_at, accept_token)
+VALUES (500, 'abcdfg', 99001, 88, 200, 2, 'USER', now(), 'qwerty');
 
-INSERT INTO public.referral_codes(id, referral_code, parent_referral_code, org_id, user_id, settings_id, status, created_at, accept_token)
-VALUES (501, 'asdfgh', 'abcdfg', 99001, 89, 200, 2, now(), 'rtyuiu');
+INSERT INTO public.referral_codes(id, referral_code, parent_referral_code, org_id, user_id, settings_id, status, referral_type, created_at, accept_token)
+VALUES (501, 'asdfgh', 'abcdfg', 99001, 89, 200, 2, 'USER', now(), 'rtyuiu');
 

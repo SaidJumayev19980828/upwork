@@ -1,10 +1,12 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.dao.ReferralCodeRepo;
 import com.nasnav.dao.StoreCheckoutsRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.cart.StoreCheckoutDto;
 import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.enumerations.ReferralType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.cash.PaymentService;
@@ -52,6 +54,8 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 	public static final String OTP_TEMPLATE = "mail_templates/otp_template.html";
 	public static final String OTP_PARAMETER = "#OTP#";
 	private final StoreCheckoutsRepository storeCheckoutsRepository;
+	@Autowired
+	private ReferralCodeRepo referralCodeRepo;
 
 
 	@Override
@@ -85,7 +89,7 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 		}
 
 		Order order = orderService.createOrder(dto,userEntity);
-		if(dto.getPromoCode() != null ){
+		if(dto.getPromoCode() != null && !referralCodeRepo.existsByReferralCodeAndReferralType(dto.getPromoCode(), ReferralType.INFLUENCER)){
 			promotionsService.updatePromoUsageAndCheckLimit(dto.getPromoCode());
 		}
 		return order;

@@ -12,6 +12,7 @@ import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
+import com.nasnav.enumerations.ReferralType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrdersListResponse;
@@ -1444,7 +1445,7 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id="+metaOrderId, request, String.class);
 		assertEquals(OK, res.getStatusCode());
 
-		ReferralWallet referralWallet = referralWalletRepository.findByUserId(88L).get();
+		ReferralWallet referralWallet = referralWalletRepository.findByUserIdAndReferralType(88L, ReferralType.USER).get();
 		assertEquals(new BigDecimal("70.00"), referralWallet.getBalance());
 
 	}

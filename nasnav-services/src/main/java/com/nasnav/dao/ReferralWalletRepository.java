@@ -1,7 +1,7 @@
 package com.nasnav.dao;
 
+import com.nasnav.enumerations.ReferralType;
 import com.nasnav.persistence.ReferralWallet;
-import com.nasnav.persistence.UserEntity;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,8 +11,8 @@ import java.util.Optional;
 
 @Repository
 public interface ReferralWalletRepository extends JpaRepository<ReferralWallet, Long> {
-    Optional<ReferralWallet> findByUserId(Long userId);
+    Optional<ReferralWallet> findByUserIdAndReferralType(Long userId, ReferralType referralType);
 
-    PageImpl<ReferralWallet> findAll(Pageable page);
+    PageImpl<ReferralWallet> findAllByReferralType(ReferralType referralType, Pageable page);
 
 }

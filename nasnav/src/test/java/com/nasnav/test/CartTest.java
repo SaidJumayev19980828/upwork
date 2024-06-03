@@ -46,6 +46,8 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.BeanUtils;
@@ -537,16 +539,17 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		checkOutCart(requestBody, new BigDecimal("5891"), new BigDecimal("5840") ,new BigDecimal("51"));
 	}
 
-	@Test
+	@ParameterizedTest
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Referral_Code.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-	public void checkoutCartWithReferralCodeDiscount() {
+	@CsvSource({"abcdfg, 93.00, 3058"})
+	void checkoutCartWithReferralCodeDiscount(String code, BigDecimal expectedDiscount, BigDecimal expectedTotal) {
 		JSONObject requestBody = createCartCheckoutBody();
-		requestBody.put("referralCode", "abcdfg");
+		requestBody.put("referralCode", code);
 
-		BigDecimal exceptedDiscount = new BigDecimal("93.00");
+		BigDecimal exceptedDiscount = expectedDiscount;
 
-		Order order = checkOutCart(requestBody, new BigDecimal("3058"), new BigDecimal("3100") ,new BigDecimal("51"));
+		Order order = checkOutCart(requestBody,expectedTotal, new BigDecimal("3100") ,new BigDecimal("51"));
 
 		assertEquals(0, exceptedDiscount.compareTo(order.getDiscount()));
 	}
@@ -555,6 +558,20 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Referral_Code_1.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void checkoutCartWithReferralCodeDiscountNotAppliedOutOfRangeDate() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("referralCode", "abcdfg");
+
+		BigDecimal exceptedDiscount = BigDecimal.ZERO;
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("51"));
+
+		assertEquals(0, exceptedDiscount.compareTo(order.getDiscount()));
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Referral_Code_3.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithReferralCodeDiscountNotAppliedAsNotTheUserReferralCode() {
 		JSONObject requestBody = createCartCheckoutBody();
 		requestBody.put("referralCode", "abcdfg");
 
@@ -604,6 +621,27 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Referral_Code_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void withdrawDiscountNotAppliedWhenThereIsNoReferralSettingsForAnOrganization() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("payFromReferralBalance", true);
+
+		BigDecimal exceptedDiscount = ZERO;
+
+		Order order = checkOutCartForPayFromReferralBalance(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("51"));
+
+		BigDecimal subOrdersDiscounts = order.getSubOrders().stream()
+				.map(SubOrder::getDiscount)
+				.reduce(ZERO, BigDecimal::add);
+
+
+		assertEquals(0, exceptedDiscount.compareTo(order.getDiscount()));
+		assertEquals(0, exceptedDiscount.compareTo(subOrdersDiscounts));
+
+	}
+
+	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Referral_Code_2.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void discountAppliedAndWithdrawValueOnOrderWhenCheckingOutAndApplyPayFromReferralOutDateOfRange() {
@@ -622,6 +660,73 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		List<ReferralTransactions> referralTransactions = referralTransactionRepository.findByOrderId(metaOrderEntity.getId());
 		assertEquals(0, referralTransactions.size());
 	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Influencer_Referral_Code.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithInfluencerReferralCodeDiscount() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "abcdfg");
+
+		BigDecimal exceptedDiscount = new BigDecimal("20.00");
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3131"), new BigDecimal("3100") ,new BigDecimal("51"));
+
+		assertEquals(0, exceptedDiscount.compareTo(order.getDiscount()));
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Influencer_Referral_Code_1.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithInfluencerReferralCodeDiscountPercentage() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "abcdfg");
+
+		BigDecimal exceptedDiscount = new BigDecimal("62.00");
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3089"), new BigDecimal("3100") ,new BigDecimal("51"));
+
+		assertEquals(0, exceptedDiscount.compareTo(order.getDiscount()));
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Influencer_Referral_Code_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithInfluencerReferralCodeDiscountZeroDateOutOfRange() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "abcdfg");
+
+		BigDecimal exceptedDiscount = ZERO;
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("51"));
+
+		assertEquals(0, exceptedDiscount.compareTo(order.getDiscount()));
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Influencer_Referral_Code_2.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithInfluencerReferralCodeThatDoesNotExist() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "abcdfg");
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("51"));
+
+		assertEquals(ZERO, order.getDiscount());
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Influencer_Referral_Code_3.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithNoInfluencerReferralDiscountSettings() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "abcdfg");
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("51"));
+
+		assertEquals(ZERO, order.getDiscount().stripTrailingZeros());
+	}
+
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
@@ -872,8 +977,8 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		BigDecimal subOrderSubtTotalSum = getSubOrderSubTotalSum(order);
 		BigDecimal subOrderTotalSum = getSubOrderTotalSum(order);
 		BigDecimal subOrderShippingSum = getSubOrderShippingSum(order);
-		
-		assertTrue(order.getOrderId() != null);
+
+        assertNotNull(order.getOrderId());
 		assertEquals(0 ,shippingFee.compareTo(order.getShipping()));
 		assertEquals(0 ,subTotal.compareTo(order.getSubtotal()));
 		assertEquals(0 ,total.compareTo(order.getTotal()));
@@ -893,7 +998,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		BigDecimal subOrderSubTotalSum = getSubOrderSubTotalSum(order);
 		BigDecimal subOrderShippingSum = getSubOrderShippingSum(order);
 
-		assertTrue(order.getOrderId() != null);
+        assertNotNull(order.getOrderId());
 		assertEquals(0 ,shippingFee.compareTo(order.getShipping()));
 		assertEquals(0 ,subTotal.compareTo(order.getSubtotal()));
 		assertEquals(0 ,total.compareTo(order.getTotal()));
@@ -1081,7 +1186,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	//staging server + mail.nasnav.org mail server
 	//or make it work on mock bosta server + mock mail service
 	@Test
-	@Ignore			//this test make calls to bosta test server, so it is ignored by default
+	@Ignore("this test make calls to bosta test server")
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_4.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void orderCompleteCycle() throws BusinessException {

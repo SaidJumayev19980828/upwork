@@ -19,7 +19,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Setter
 @Getter
-public class ReferralWallet {
+public class ReferralWallet extends BaseReferralEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,16 +28,8 @@ public class ReferralWallet {
     @Column(nullable = false)
     private BigDecimal balance = new BigDecimal("0.00");
 
-    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-
     @Version
     private Integer version;
-
-    @OneToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private UserEntity user;
 
 
     public void depositBalance(BigDecimal amount) {

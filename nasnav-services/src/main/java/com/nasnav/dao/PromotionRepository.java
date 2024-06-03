@@ -136,4 +136,6 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 
 
 	Optional<PromotionsEntity> findByCode(String promoCode);
+
+	boolean existsByCode(String promoCode);
 }

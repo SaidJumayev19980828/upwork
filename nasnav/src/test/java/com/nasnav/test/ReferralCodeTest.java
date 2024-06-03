@@ -4,10 +4,8 @@ package com.nasnav.test;
 import com.nasnav.dao.*;
 import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.referral_code.*;
-import com.nasnav.enumerations.OrderStatus;
-import com.nasnav.enumerations.ReferralCodeStatus;
-import com.nasnav.enumerations.ReferralCodeType;
-import com.nasnav.enumerations.ReferralTransactionsType;
+import com.nasnav.enumerations.*;
+import com.nasnav.exceptions.ErrorResponseDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.MobileOTPService;
 import com.nasnav.integration.smsmisr.dto.OTPDto;
@@ -15,6 +13,7 @@ import com.nasnav.mappers.ReferralSettingsMapper;
 import com.nasnav.persistence.*;
 import com.nasnav.service.ReferralCodeService;
 import com.nasnav.service.ReferralWalletService;
+import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import org.json.JSONObject;
@@ -35,12 +34,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -104,9 +104,10 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
                 request, String.class);
         assertEquals(200, res.getStatusCodeValue());
 
-        ReferralSettings referralSettings = referralSettingsRepo.findByOrganization_Id(99001L).get();
+        ReferralSettings referralSettings = referralSettingsRepo.findByReferralTypeAndOrganizationId(ReferralType.USER, 99001L).get();
         assertNotNull(referralSettings);
     }
+
     @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Settings_Update.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -125,6 +126,43 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    public void getReferralCode(){
+        HttpEntity<?> request = getHttpEntity("131415");
+
+        ResponseEntity<ReferralCodeDto> res = template.exchange("/referral/code/abcdfg",HttpMethod.GET
+                ,request, ReferralCodeDto.class);
+        assertEquals(200, res.getStatusCodeValue());
+        assertEquals("user1", res.getBody().getUsername());
+        assertEquals(ReferralCodeStatus.ACTIVE, res.getBody().getStatus());
+    }
+
+    @Test
+    public void getReferralCodeNotFound(){
+        HttpEntity<?> request = getHttpEntity("131415");
+
+        ResponseEntity<ErrorResponseDTO> res = template.exchange("/referral/code/zxyzz",HttpMethod.GET
+                ,request, ErrorResponseDTO.class);
+        assertEquals(404, res.getStatusCodeValue());
+        assertEquals("Couldn't find referral code [zxyzz] for user!", res.getBody().getMessage());
+    }
+
+    @Test
+    public void getReferralCodes(){
+        HttpEntity<?> request = getHttpEntity("123");
+
+        ResponseEntity<PaginatedResponse<ReferralCodeDto>> res = template.exchange("/referral/list?pageNo=0&pageSize=10"
+                , HttpMethod.GET
+                ,  request
+                ,new ParameterizedTypeReference<PaginatedResponse<ReferralCodeDto>>() {
+                });
+
+        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(Long.valueOf(2), res.getBody().getTotalRecords());
+    }
+
+
+
+    @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Settings_Update.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
     public void updateReferralOrganizationSettings(){
@@ -139,7 +177,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
                 request, Void.class);
         assertEquals(200, res.getStatusCodeValue());
 
-        ReferralSettings referralSettings = referralSettingsRepo.findByOrganization_Id(99001L).get();
+        ReferralSettings referralSettings = referralSettingsRepo.findByReferralTypeAndOrganizationId(ReferralType.USER, 99001L).get();
         assertNotNull(referralSettings);
 
         ReferralSettingsDto referralSettingsDto = referralSettingsMapper.map(referralSettings);
@@ -281,12 +319,40 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
                  request, String.class);
         assertEquals(200, res.getStatusCodeValue());
 
-        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByUser_IdAndOrganization_Id(89L, 99001L).get();
+        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByUserIdAndReferralTypeAndOrganizationId(89L, ReferralType.USER, 99001L).get();
 
         assertNotNull(referralCodeEntity.getAcceptReferralToken());
         assertNotNull(referralCodeEntity.getParentReferralCode());
         assertNotNull(referralCodeEntity.getReferralCode());
         assertEquals(Integer.valueOf(ReferralCodeStatus.IN_ACTIVE.getValue()), referralCodeEntity.getStatus());
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_9.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void sendOtpFailForAlreadyExistingPhoneNumber(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Success");
+
+        HttpEntity<?> request = getHttpEntity("456");
+
+        ResponseEntity<ErrorResponseDTO> res = template.postForEntity("/referral/sendOtp/?phoneNumber=01234567891&parentReferralCode=abcdfg",
+                request, ErrorResponseDTO.class);
+        assertEquals(406, res.getStatusCodeValue());
+        assertEquals("Can't Register With phone number!", res.getBody().getMessage());
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_1.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void sendOtpFail(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Failed");
+
+        HttpEntity<?> request = getHttpEntity("456");
+
+        ResponseEntity<ErrorResponseDTO> res = template.postForEntity("/referral/sendOtp/?phoneNumber=01234567891&parentReferralCode=abcdfg",
+                request, ErrorResponseDTO.class);
+        assertEquals(406, res.getStatusCodeValue());
+        assertEquals("the OTP not sent successfully!", res.getBody().getMessage());
     }
 
     @Test
@@ -388,7 +454,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
 
         assertEquals(200, res.getStatusCodeValue());
 
-        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByUser_IdAndOrganization_Id(89L, 99001L).get();
+        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByUserIdAndReferralTypeAndOrganizationId(89L, ReferralType.USER, 99001L).get();
 
         assertEquals("01234567889", referralCodeEntity.getPhoneNumber());
         assertNotNull(referralCodeEntity.getAcceptReferralToken());
@@ -425,10 +491,10 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
                 request, String.class);
         assertEquals(200, res.getStatusCodeValue());
 
-        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByUser_IdAndOrganization_Id(89L, 99001L).get();
+        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByUserIdAndReferralTypeAndOrganizationId(89L, ReferralType.USER, 99001L).get();
         assertEquals(Integer.valueOf(ReferralCodeStatus.ACTIVE.getValue()), referralCodeEntity.getStatus());
 
-        ReferralWallet referralWallet = referralWalletRepo.findByUserId(89L).get();
+        ReferralWallet referralWallet = referralWalletRepo.findByUserIdAndReferralType(89L, ReferralType.USER).get();
         assertNotNull(referralWallet);
         assertEquals(new BigDecimal("20.00"), referralWallet.getBalance());
 
@@ -529,7 +595,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
                 ReferralCodeDto.class);
         assertEquals(200, res.getStatusCodeValue());
 
-        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByReferralCode("abcdfg").get();
+        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByReferralCodeAndReferralType("abcdfg", ReferralType.USER).get();
         assertNotNull(referralCodeEntity);
         assertEquals(Integer.valueOf(ReferralCodeStatus.ACTIVE.getValue()), referralCodeEntity.getStatus());
 
@@ -546,7 +612,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
 
         assertEquals(200, res.getStatusCodeValue());
 
-        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByReferralCode("asdfgh").get();
+        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByReferralCodeAndReferralType("asdfgh", ReferralType.USER).get();
         assertNotNull(referralCodeEntity);
         assertEquals(Integer.valueOf(ReferralCodeStatus.IN_ACTIVE.getValue()), referralCodeEntity.getStatus());
     }
@@ -584,7 +650,6 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         assertEquals(Long.valueOf(2L), res.getBody().getTotalRecords());
         assertEquals(2, res.getBody().getContent().size());
         assertEquals(Integer.valueOf(1), res.getBody().getTotalPages());
-
     }
 
     @Test
@@ -604,7 +669,6 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         assertEquals(Long.valueOf(2L) , res.getBody().getTotalRecords());
         assertEquals(2 , res.getBody().getContent().size());
         assertEquals(Integer.valueOf(1) , res.getBody().getTotalPages());
-
     }
 
     @Test
@@ -650,4 +714,5 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         assertEquals(Integer.valueOf(1), res.getBody().getTotalPages());
 
     }
+
 }

@@ -122,7 +122,7 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 -- insert order items
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 601, 2, 200.0, 1);
 
-INSERT INTO public.referral_settings(id, org_id, constraints, created_at)
+INSERT INTO public.referral_settings(id, org_id, constraints, referral_type, created_at)
 VALUES (
            200,
            99001,
@@ -133,5 +133,6 @@ VALUES (
                    '"PARENT_REGISTRATION":{"value":0.0,"valid_from":"', DATE(NOW()), '","valid_to":"', DATE(NOW() + INTERVAL '3' DAY), '"},',
                    '"CHILD_REGISTRATION":{"value":0.0,"valid_from":"', DATE(NOW()), '","valid_to":"', DATE(NOW() + INTERVAL '3' DAY), '"}}'
            ),
+           'USER',
            NOW()
        );

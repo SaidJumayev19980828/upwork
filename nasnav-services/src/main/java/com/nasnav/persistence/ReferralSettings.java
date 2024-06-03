@@ -2,6 +2,7 @@ package com.nasnav.persistence;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nasnav.enumerations.ReferralType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -38,5 +39,9 @@ public class ReferralSettings {
     @Column(name = "created_at")
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    @Column(name = "referral_type")
+    @Enumerated(EnumType.STRING)
+    private ReferralType referralType;
 
 }

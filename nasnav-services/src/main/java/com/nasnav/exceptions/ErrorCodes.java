@@ -272,6 +272,7 @@ public enum ErrorCodes {
 
 	,G$USR$0001("User is not an employee!")
 	,G$JSON$0001("Failed to read json into an object!")
+	,G$JSON$0002("Failed to write json from an object!")
 	,G$PRAM$0001("Missing required parameters in object[%s]!")
 	,G$PRAM$0002("Invalid Parameter value[%s]!")
 	,G$ORG$0001("No organization exists with id[%d]!")
@@ -571,8 +572,15 @@ public enum ErrorCodes {
 
 	BC$001("An error occurred while processing that request du to %s"),
 
-	STORE_CHECKOUT$001("There is no user for this employee to do checkout");
-			;
+	STORE_CHECKOUT$001("There is no user for this employee to do checkout"),
+	INFREF$001("User name already exists!"),
+	INFREF$002("Passwords Doesn't match!"),
+	INFREF$003("User name or password incorrect!"),
+	INFREF$004("No influencer username found!"),
+	INFREF$005("There is already promotion code with same code!"),
+	INFREF$006("Choose only one of cashback strategy!"),
+
+	;
 
 	@Getter
 	@JsonValue

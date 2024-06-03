@@ -10,6 +10,7 @@ import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.mail.AbandonedCartsMail;
 import com.nasnav.dto.response.TokenPaymentResponse;
 import com.nasnav.dto.response.navbox.*;
+import com.nasnav.enumerations.ReferralType;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartItemStock;
@@ -78,6 +79,9 @@ public class CartServiceImpl implements CartService {
     private final BrandsRepository brandsRepository;
     private final  AddonsRepository addonsRepository;
     private final BankAccountActivityService  bankAccountActivityService;
+
+    private final InfluencerReferralService influencerReferralService;
+
     private final StoreCheckoutsRepository storeCheckoutsRepository;
     @Autowired
     private UserRepository userRepo;
@@ -86,6 +90,9 @@ public class CartServiceImpl implements CartService {
     private String currenyRate ;
     @Value("${bc-endpoint}")
     private String bCEndpoint;
+    @Autowired
+    private ReferralCodeRepo referralCodeRepo;
+
     @Override
     public AppliedPromotionsResponse getCartPromotions(String promoCode) {
         BaseUserEntity user = securityService.getCurrentUser();
@@ -192,21 +199,27 @@ public class CartServiceImpl implements CartService {
     }
 
     private void setupCartPromotionsAndDiscounts(String promoCode, Long orgId, BigDecimal points, boolean yeshteryCart, Cart cart) {
-        if (promoCode != null && !promoCode.isEmpty()) {
-            if (!promotionRepo.existsByCodeAndOrganization_IdAndActiveNow(promoCode, orgId)) {
-                cart.setPromos(promoService.calcPromoDiscountForCart(null, cart));
-                cart.getPromos().setError("Failed to apply promo code ["+ promoCode+"]");
-            } else {
-                applyPromoCodeToCart(promoCode, cart);
-            }
+        BigDecimal influencerReferralDiscount = ZERO;
+        if(referralCodeRepo.existsByReferralCodeAndReferralType(promoCode, ReferralType.INFLUENCER)) {
+            influencerReferralDiscount = influencerReferralService.calculateDiscountForCart(promoCode, cart);
         } else {
-            cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
-        }
-        if (points != null && points.compareTo(ZERO) > 0) {
-            cart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(cart.getItems(), points, yeshteryCart));
+            if (promoCode != null && !promoCode.isEmpty()) {
+                if (!promotionRepo.existsByCodeAndOrganization_IdAndActiveNow(promoCode, orgId)) {
+                    cart.setPromos(promoService.calcPromoDiscountForCart(null, cart));
+                    cart.getPromos().setError("Failed to apply promo code [" + promoCode + "]");
+                } else {
+                    applyPromoCodeToCart(promoCode, cart);
+                }
+            } else {
+                cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
+            }
+            if (points != null && points.compareTo(ZERO) > 0) {
+                cart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(cart.getItems(), points, yeshteryCart));
+            }
         }
         decidePromotionApplied(cart,promoCode);
         cart.setDiscount(cart.getPromos().getTotalDiscount().add(cart.getPoints().getTotalDiscount()));
+        cart.setDiscount(cart.getDiscount().add(influencerReferralDiscount));
         cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
     }
 

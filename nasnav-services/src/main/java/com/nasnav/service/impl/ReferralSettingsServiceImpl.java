@@ -3,6 +3,7 @@ package com.nasnav.service.impl;
 import com.nasnav.dao.ReferralSettingsRepo;
 import com.nasnav.dto.referral_code.ReferralSettingsDto;
 import com.nasnav.enumerations.ReferralCodeType;
+import com.nasnav.enumerations.ReferralType;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.mappers.ReferralSettingsMapper;
 import com.nasnav.persistence.OrganizationEntity;
@@ -38,7 +39,7 @@ public class ReferralSettingsServiceImpl implements ReferralSettingsService {
     @Override
     public ReferralSettingsDto get() {
         Long currentOrganizationId = securityService.getCurrentUserOrganizationId();
-        ReferralSettings existingReferralSettings = referralSettingsRepo.findByOrganization_Id(currentOrganizationId)
+        ReferralSettings existingReferralSettings = referralSettingsRepo.findByReferralTypeAndOrganizationId(ReferralType.USER, currentOrganizationId)
                 .orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0010));
         return referralSettingsMapper.map(existingReferralSettings);
     }
@@ -51,6 +52,7 @@ public class ReferralSettingsServiceImpl implements ReferralSettingsService {
         OrganizationEntity organization = organizationService.getOrganizationById(currentOrganizationId);
 
         referralSettings.setOrganization(organization);
+        referralSettings.setReferralType(ReferralType.USER);
         referralSettingsRepo.save(referralSettings);
 
         return ReferralSettingsDto.builder()
@@ -61,7 +63,7 @@ public class ReferralSettingsServiceImpl implements ReferralSettingsService {
     @Override
     public void update(ReferralSettingsDto referralSettingsDto) {
         Long currentOrganizationId = securityService.getCurrentUserOrganizationId();
-        ReferralSettings existingReferralSettings = referralSettingsRepo.findByOrganization_Id(currentOrganizationId)
+        ReferralSettings existingReferralSettings = referralSettingsRepo.findByReferralTypeAndOrganizationId(ReferralType.USER, currentOrganizationId)
                 .orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0010));
 
         ReferralSettings updatedReferralSettings = referralSettingsMapper.map(referralSettingsDto, existingReferralSettings);
@@ -74,7 +76,7 @@ public class ReferralSettingsServiceImpl implements ReferralSettingsService {
         Long currentOrganizationId= securityService.getCurrentUserOrganizationId();
 
         ReferralSettings referralSettings =
-                referralSettingsRepo.findByOrganization_Id(currentOrganizationId)
+                referralSettingsRepo.findByReferralTypeAndOrganizationId(ReferralType.USER, currentOrganizationId)
                         .orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0010));
 
 

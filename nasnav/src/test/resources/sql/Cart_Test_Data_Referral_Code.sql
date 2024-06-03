@@ -132,7 +132,7 @@ INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name"
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 
-INSERT INTO public.referral_settings(id, org_id, constraints, created_at)
+INSERT INTO public.referral_settings(id, org_id, constraints, referral_type, created_at)
 VALUES (
            200,
            99001,
@@ -145,11 +145,12 @@ VALUES (
                    '"PAY_WITH_REFERRAL_WALLET":{"value":0.0,"valid_from":"', DATE(NOW()), '","valid_to":"', DATE(NOW() + INTERVAL '3' DAY), '"}}'
 
                ),
+           'USER',
            NOW()
        );
 -- inserting a wallet for user for referral Codes
-INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (500, 4000.00, 1, 88);
+INSERT INTO public.referral_wallet(id, balance, version, user_id, referral_type) VALUES (500, 4000.00, 1, 88, 'USER');
 
 -- insert referral code that is valid
-INSERT INTO public.referral_codes(id, referral_code, org_id, user_id, settings_id, status, created_at, accept_token)
-                    VALUES (500, 'abcdfg', 99001, 88, 200, 2, now(), '12345');
+INSERT INTO public.referral_codes(id, referral_code, org_id, user_id, settings_id, status, referral_type, created_at, accept_token)
+                    VALUES (500, 'abcdfg', 99001, 88, 200, 2, 'USER', now(), '12345');

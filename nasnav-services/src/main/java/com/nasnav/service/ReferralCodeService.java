@@ -7,6 +7,7 @@ import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.enumerations.ReferralTransactionsType;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.ReferralTransactions;
 
 
 import java.math.BigDecimal;
@@ -26,6 +27,8 @@ public interface ReferralCodeService {
 
     PaginatedResponse<ReferralTransactionsDto> getChilds(ReferralTransactionsType type, String dateFrom, String dateTo, int pageNo, int pageSize);
 
+    String  getActivityMessageByType(ReferralTransactions referralTransactions, ReferralTransactionsType type);
+
     void send(String phoneNumber, String parentReferralCode);
 
     void resend();
@@ -33,13 +36,15 @@ public interface ReferralCodeService {
     void activate(String referralCode);
     void deActivate(String referralCode);
 
+    String generateReferralCodeToken();
+
     ReferralCodeDto validateReferralOtp(String referralOtpToken);
 
     BigDecimal shareRevenueForOrder(OrdersEntity ordersEntity);
 
     BigDecimal calculateTheWithdrawValueFromReferralBalance(Long userId, BigDecimal orderAmount);
 
-    void withDrawFromReferralWallet(MetaOrderEntity order);
+    boolean withDrawFromReferralWallet(MetaOrderEntity order);
 
     ReferralConstraints getReferralConfigValue(String referralCode, ReferralCodeType type);
 

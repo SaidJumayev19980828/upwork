@@ -1,7 +1,6 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.nasnav.enumerations.ReferralCodeStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -10,7 +9,6 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static javax.persistence.FetchType.LAZY;
 
@@ -20,7 +18,7 @@ import static javax.persistence.FetchType.LAZY;
 @AllArgsConstructor
 @Table(name = "referral_codes")
 @EqualsAndHashCode(callSuper=false)
-public class ReferralCodeEntity {
+public class ReferralCodeEntity  extends BaseReferralEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,13 +37,6 @@ public class ReferralCodeEntity {
     @lombok.ToString.Exclude
     private OrganizationEntity organization;
 
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "user_id")
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    private UserEntity user;
-
     @Column(name = "status")
     private Integer status;
 
@@ -58,7 +49,6 @@ public class ReferralCodeEntity {
 
     @Column(name = "accept_token")
     private String acceptReferralToken;
-
 
     @Column(name = "created_at")
     @CreationTimestamp

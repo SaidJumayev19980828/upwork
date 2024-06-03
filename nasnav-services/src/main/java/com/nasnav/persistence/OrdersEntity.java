@@ -121,13 +121,15 @@ public class OrdersEntity implements BaseEntity{
 	@ToString.Exclude
 	private ShipmentEntity shipment;
 
-
 	private BigDecimal total;
 
 	private BigDecimal discounts;
 
 	@Column(name = "applied_referral_code")
 	private String appliedReferralCode;
+
+	@Column(name = "applied_influencer_referral_code")
+	private String appliedInfluencerReferralCode;
 
 	@Column(name = "referral_withdraw_amount")
 	private BigDecimal referralWithdrawAmount;

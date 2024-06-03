@@ -196,9 +196,10 @@ delete from public.loyalty_point_types where id between  31001 and 31999;
 DELETE FROM public.stripe_customer;
 
 delete from public.referral_transactions where user_Id in (select id from public.users WHERE organization_id BETWEEN 99000 AND 99999);
-delete from public.referral_wallet where user_Id in (select id from public.users WHERE organization_id BETWEEN 99000 AND 99999);
+delete from public.referral_wallet;
 delete from public.referral_codes where org_id between 99000 AND 99999;
 delete from public.referral_settings where org_id between 99000 AND 99999;
+delete from public.influencer_referral;
 
 
 

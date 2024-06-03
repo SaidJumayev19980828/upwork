@@ -1027,5 +1027,11 @@ public class UserServiceImpl implements UserService {
 				.stream().map(UserEntity::getRepresentation).toList();
 	}
 
+	@Override
+	public String getUsernameById(Long id) {
+		return userRepository.findById(id).
+				orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,  U$0001, id)).getName();
+	}
+
 
 }

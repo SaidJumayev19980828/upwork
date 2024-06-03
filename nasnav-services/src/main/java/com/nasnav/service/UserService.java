@@ -67,4 +67,6 @@ public interface UserService extends CommonUserServiceInterface {
 
     List<UserRepresentationObject> getUserData(String anonymous) ;
 
+    String  getUsernameById(Long id);
+
 }
