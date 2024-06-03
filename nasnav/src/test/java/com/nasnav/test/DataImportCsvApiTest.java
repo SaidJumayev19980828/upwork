@@ -223,7 +223,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
     public void uploadProductsCSVMissingShopIdTest() throws Exception, Throwable {
 
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.remove("shop_id");
+		importProperties.remove("shop_ids");
 
         ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
 
@@ -259,7 +259,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
     public void uploadProductsCSVNonExistingShopIdTest() throws IOException, Exception {
 
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", 88865);
+		importProperties.put("shop_ids", List.of(88865));
 
         ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
 
@@ -339,7 +339,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVNewDataTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ExtendedProductDataCount before = countExtendedProductData();
 
@@ -361,7 +361,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVNewUnit() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ExtendedProductDataCount before = countExtendedProductData();
 
@@ -379,7 +379,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVRemovedVariant() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids",List.of(TEST_IMPORT_SHOP));
 
 		long variantsCountBefore = variantRepo.count();
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvRemovedVariant, importProperties);
@@ -395,7 +395,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	public void uploadProductCSVNewDataTestGroupByKey() throws IOException, Exception {
 		variantRepo.deleteAll();
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ProductDataCount before = countProductData();
 
@@ -440,7 +440,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductInvalidCSV() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ExtendedProductDataCount before = countExtendedProductData();
 
@@ -482,7 +482,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVNewDataWithMissingFeaturesTest() throws IOException, Exception {
         JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 		importProperties.put("update_product", true);
 
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileMissingFeatures, importProperties);
@@ -508,7 +508,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVNewDataVariantsTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ProductDataCount before = countProductData();
 
@@ -567,7 +567,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVNewDataDryRunTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 		importProperties.put("dryrun", true);
 
 		ProductDataCount before = countProductData();
@@ -603,7 +603,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVUpdateStockDisabledTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stock", false);
 
@@ -631,7 +631,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVUpdateProductsDisabledTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", false);
 		importProperties.put("update_stocks", true);
 
@@ -663,7 +663,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVUpdateBothProductsAndStockDisabledTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", false);
 		importProperties.put("update_stocks", false);
 
@@ -710,7 +710,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVLargeColumnTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ProductDataCount before = countProductData();
 
@@ -761,7 +761,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVUpdateDataEnabledTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 
@@ -788,7 +788,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVUpdateWithInvisibleExtraAttributesTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 
@@ -816,7 +816,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVInsertNewProductsDisabledTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 		importProperties.put("insert_new_products", false);
@@ -849,7 +849,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductCSVUpdateNullFeaturesTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 
@@ -942,7 +942,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 
 	private JSONObject createDataImportPropertiesWithDeleteOldProducts() {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 		importProperties.put("delete_old_products", true);
@@ -1063,7 +1063,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductCSVUpdateGroupsWithExistingVariantTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 
@@ -1166,7 +1166,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVExistingVariantIdNoVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantId, importProperties);
 
@@ -1180,7 +1180,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	public void uploadProductCSVExistingVariantIdExistVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("update_product", true);
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantIdExistingVariant, importProperties);
 
@@ -1200,7 +1200,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVExistingExternalIdNoVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalId, importProperties);
 
@@ -1224,7 +1224,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVExistingExternalIdExistVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 		importProperties.put("update_product", true);
 
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalIdExistingMapping, importProperties);
@@ -1240,7 +1240,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVExistingExternalIdAndBarcodeNoVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 		importProperties.put("update_product", true);
 
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalIdAndBarcode, importProperties);
@@ -1265,7 +1265,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVUpdateProductWithMultipleTagsTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 
@@ -1290,7 +1290,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductCSVUpdateProductWithTagsWithDifferentCaseTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 		importProperties.put("insert_new_products", true);
@@ -1315,7 +1315,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	public void uploadProductCSVWithBarcodesAndNewTagsOnly() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("update_product", true);
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 		ExtendedProductDataCount before = countExtendedProductData();
 
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithBarcodesAndNewTagsOnly, importProperties);
@@ -1338,7 +1338,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void uploadProductCSVWithNewTagsAndBrand() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_IMPORT_SHOP));
 
 		ExtendedProductDataCount before = countExtendedProductData();
 
@@ -1365,7 +1365,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductCSVWithResetTagsFlag() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 		importProperties.put("reset_tags", true);
@@ -1392,7 +1392,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductCSVSetWeights() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("shop_ids", List.of(TEST_UPDATE_SHOP));
 		importProperties.put("update_product", true);
 
 		Long variantId = 310003L;
@@ -2226,7 +2226,7 @@ public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 		json.put("dryrun", false);
 		json.put("update_product", false);
 		json.put("update_stocks", false);
-		json.put("shop_id", 100001L);
+		json.put("shop_ids", List.of(100001L));
 		json.put("encoding", "UTF-8");
 		json.put("currency", 1);
 		return json;
