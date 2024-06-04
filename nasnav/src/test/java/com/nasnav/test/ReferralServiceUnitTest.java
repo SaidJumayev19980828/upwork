@@ -9,6 +9,8 @@ import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.enumerations.ReferralTransactionsType;
 import com.nasnav.enumerations.ReferralType;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.ReferralCodeEntity;
+import com.nasnav.persistence.ReferralTransactions;
 import com.nasnav.service.InfluencerReferralrWalletServiceImpl;
 import com.nasnav.service.ReferralCodeService;
 import com.nasnav.service.SecurityService;
@@ -95,6 +97,24 @@ public class ReferralServiceUnitTest extends AbstractTestWithTempBaseDir {
     public void getEmptyMessageStringForNonSupportedActivity() {
         assertEquals("", referralCodeService.getActivityMessageByType(null,
                 ReferralTransactionsType.ORDER_DISCOUNT));
+    }
+
+    @Test
+    public void getExceptionWhenThereIsNoReferralWithCode() {
+        String code = "abcdef";
+        when(referralCodeRepo.findByReferralCodeAndReferralType(anyString(), any(ReferralType.class)))
+                .thenThrow(new RuntimeException("There is no existing referral code with code " + code));
+
+        ReferralTransactions referralTransactions = new ReferralTransactions();
+        ReferralCodeEntity referralCodeEntity = new ReferralCodeEntity();
+        referralCodeEntity.setReferralCode(code);
+        referralTransactions.setReferralCodeEntity(referralCodeEntity);
+
+        assertThatThrownBy(() -> referralCodeService.getActivityMessageByType(referralTransactions,
+                ReferralTransactionsType.ORDER_SHARE_REVENUE))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("There is no existing referral code with code " + code);
+
     }
 
 //    @Test

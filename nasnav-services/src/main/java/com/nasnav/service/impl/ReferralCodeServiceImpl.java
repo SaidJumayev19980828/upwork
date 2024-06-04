@@ -42,7 +42,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.math.BigDecimal.ZERO;
@@ -129,21 +128,23 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
                                 .createdAt(ref.getCreatedAt())
                                 .amount(ref.getAmount())
                                 .build())
-                        .collect(Collectors.toList())
+                        .toList()
                 )
                 .build();
 
     }
 
     @Override
-    public String  getActivityMessageByType(ReferralTransactions referralTransactions, ReferralTransactionsType type) {
+    public String getActivityMessageByType(ReferralTransactions referralTransactions, ReferralTransactionsType type) {
         if(type.equals(ReferralTransactionsType.ACCEPT_REFERRAL_CODE)) {
             return userService.getUsernameById(referralTransactions.getUserId())+ " User Registered with your referral";
         }
         if(type.equals(ReferralTransactionsType.ORDER_SHARE_REVENUE)) {
-            Long userId = referralCodeRepo.findByReferralCodeAndReferralType(referralTransactions.getReferralCodeEntity().getReferralCode(), ReferralType.USER).get()
-                    .getUserId();
-            return "You award share revenue from " + userService.getUsernameById(userId) + " order" ;
+            ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByReferralCodeAndReferralType(referralTransactions.getReferralCodeEntity().getReferralCode(), ReferralType.USER)
+                    .orElseThrow(() ->
+                            new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0016, referralTransactions.getReferralCodeEntity().getReferralCode()));
+
+            return "You award share revenue from " + userService.getUsernameById(referralCodeEntity.getUserId()) + " order" ;
         }
         return "";
     }
@@ -361,7 +362,7 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
                     item.setDiscount(referralDiscount);
                     return referralDiscount;
                 })
-                .reduce(BigDecimal.ZERO, (init, aggregated) ->  init.add(aggregated));
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public BigDecimal shareRevenueForOrder(OrdersEntity ordersEntity){

@@ -466,6 +466,7 @@ public enum ErrorCodes {
 	,REF$PARAM$0013("Can't Register With phone number!")
 	,REF$PARAM$0014("User Already has Referral Code!")
 	,REF$PARAM$0015("Insufficient Referral Wallet Balance! Wallet Balance must cover the total price.")
+	,REF$PARAM$0016("There is no existing referral code with code [%s]")
 
 	,VIDEO$PARAM$0001("Video chat is not enabled for organization with id[%d]!")
 	,VIDEO$PARAM$0002("Invalid user type!")
