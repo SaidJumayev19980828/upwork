@@ -51,6 +51,8 @@ import com.nasnav.response.ImportProcessStatusResponse;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -249,40 +251,20 @@ public class AsyncDataImportCsvApiTest extends AbstractTestWithTempBaseDir {
         result.andExpect(status().is(403));
     }
 
-	@Test
-    public void uploadProductsCSVMissingShopIdTest() throws Exception, Throwable {
+	@ParameterizedTest
+	@CsvSource({
+			"shop_ids",
+			"encoding",
+			"currency"
+	})
+	public void uploadProductsCSVMissingRequiredFieldTest(String missingField) throws IOException, Exception {
+		var importProperties = createDataImportProperties();
+		importProperties.remove(missingField);
 
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.remove("shop_ids");
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST, "131415", csvFile, importProperties);
 
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-
-        result.andExpect(content().json("{'success':false}"));
-    }
-
-
-	@Test
-    public void uploadProductsCSVMissingEncodingTest() throws IOException, Exception {
-
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.remove("encoding");
-
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-
-        result.andExpect(content().json("{'success':false}"));
-    }
-
-	@Test
-    public void uploadProductsCSVMissingCurrencyTest() throws IOException, Exception {
-
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.remove("currency");
-
-
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-
-        result.andExpect(content().json("{'success':false}"));
-    }
+		result.andExpect(content().json("{'success':false}"));
+	}
 
 
 	@Test

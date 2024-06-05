@@ -12,6 +12,8 @@ import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +32,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import javax.servlet.http.Cookie;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Function;
@@ -203,40 +206,21 @@ public class DataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
         result.andExpect(status().is(403));
     }
 
-	@Test
-    public void uploadProductsXLSMissingShopIdTest() throws Throwable {
 
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.remove("shop_ids");
+	@ParameterizedTest
+	@CsvSource({
+			"shop_ids",
+			"encoding",
+			"currency"
+	})
+	public void uploadProductsXlsxMissingRequiredFieldTest(String missingField) throws Exception {
+		var importProperties = createDataImportProperties();
+		importProperties.remove(missingField);
 
-        ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "131415", xlsxFile, importProperties);
+		var result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "131415", xlsxFile, importProperties);
 
-        result.andExpect(status().is(406));
-    }
-
-
-	@Test
-    public void uploadProductsXLSMissingEncodingTest() throws Exception{
-
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.remove("encoding");
-
-        ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "131415", xlsxFile, importProperties);
-
-        result.andExpect(status().is(406));
-    }
-
-	@Test
-    public void uploadProductsXLSMissingCurrencyTest() throws Exception{
-
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.remove("currency");
-
-
-        ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "131415", xlsxFile, importProperties);
-
-        result.andExpect(status().is(406));
-    }
+		result.andExpect(status().is(406));
+	}
 
 	@Test
     public void uploadProductsXLSNonExistingShopIdTest() throws Exception{

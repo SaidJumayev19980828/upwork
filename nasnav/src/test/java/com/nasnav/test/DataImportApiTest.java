@@ -14,6 +14,8 @@ import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -205,73 +207,41 @@ public class DataImportApiTest extends AbstractTestWithTempBaseDir {
         result.andExpect(status().is(403));
     }
 
-	
-	
-	@Test
-    public void uploadProductsCSVMissingShopIdTest() throws Exception, Throwable {
 
+
+	@ParameterizedTest
+	@CsvSource({
+			"shop_ids",
+			"encoding",
+			"currency"
+	})
+	public void uploadProductsCSVMissingRequiredFieldTest(String missingField) throws IOException, Exception {
 		var importProperties = createDataImportProperties();
-		importProperties.remove("shop_ids");
+		importProperties.remove(missingField);
 
-		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-        
-        result.andExpect(status().is(406));
-    }
-	
-	
-	
-	
-	
-	
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST, "131415", csvFile, importProperties);
+
+		result.andExpect(status().is(406));
+	}
+
+
+
 	@Test
-    public void uploadProductsCSVMissingEncodingTest() throws IOException, Exception {
-
-		var importProperties = createDataImportProperties();
-		importProperties.remove("encoding");
-
-		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-        
-        result.andExpect(status().is(406));
-    }
-	
-	
-	
-	
-	
-	
-	@Test
-    public void uploadProductsCSVMissingCurrencyTest() throws IOException, Exception {
-
-		var importProperties = createDataImportProperties();
-		importProperties.remove("currency");
-
-
-		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-        
-        result.andExpect(status().is(406));
-    }
-	
-	
-	
-	
-	
-	
-	@Test
-    public void uploadProductsCSVNonExistingShopIdTest() throws IOException, Exception {
+	public void uploadProductsCSVNonExistingShopIdTest() throws Exception {
 
 		var importProperties = createDataImportProperties();
 		importProperties.put("shop_ids", List.of(88865));
 
 		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-        
-        result.andExpect(status().is(406));
-    }
-	
-	
-	
-	
-	
-	
+
+		result.andExpect(status().is(406));
+	}
+
+
+
+
+
+
 	@Test
     public void uploadProductsCSVUserFromAnotherOrgTest() throws IOException, Exception {
 

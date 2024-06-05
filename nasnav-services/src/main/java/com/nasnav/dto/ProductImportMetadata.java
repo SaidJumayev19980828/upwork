@@ -5,7 +5,6 @@ import lombok.EqualsAndHashCode;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
@@ -34,6 +33,6 @@ public class ProductImportMetadata {
         return shopIds.stream()
                 .map(shopId -> new ProductImportMetadataSingleShop(dryrun, updateProduct, updateStocks, deleteOldProducts,
                         resetTags, insertNewProducts, shopId, currency, encoding))
-                .collect(Collectors.toList());
+                .toList();
     }
 }

@@ -13,8 +13,9 @@ import com.nasnav.test.helpers.TestHelper;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -232,40 +233,20 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
         result.andExpect(status().is(403));
     }
 
-	@Test
-    public void uploadProductsXLSMissingShopIdTest() throws Throwable {
+	@ParameterizedTest
+	@CsvSource({
+			"shop_ids",
+			"encoding",
+			"currency"
+	})
+	public void uploadProductsXlsxMissingRequiredFieldTest(String missingField) throws  Exception {
+		var importProperties = createDataImportProperties();
+		importProperties.remove(missingField);
 
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.remove("shop_ids");
+		var result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "131415", xlsxFile, importProperties);
 
-        ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "131415", xlsxFile, importProperties);
-
-        result.andExpect(content().json("{'success':false}"));
-    }
-
-
-	@Test
-    public void uploadProductsXLSMissingEncodingTest() throws Exception{
-
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.remove("encoding");
-
-        ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "131415", xlsxFile, importProperties);
-
-        result.andExpect(content().json("{'success':false}"));
-    }
-
-	@Test
-    public void uploadProductsXLSMissingCurrencyTest() throws Exception{
-
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.remove("currency");
-
-
-        ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "131415", xlsxFile, importProperties);
-
-        result.andExpect(content().json("{'success':false}"));
-    }
+		result.andExpect(content().json("{'success':false}"));
+	}
 
 	@Test
     public void uploadProductsXLSNonExistingShopIdTest() throws Exception{

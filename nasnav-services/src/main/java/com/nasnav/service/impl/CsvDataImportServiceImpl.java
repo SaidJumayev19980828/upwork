@@ -76,9 +76,7 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 
 	private List<CsvRow> parseCsvFile(MultipartFile file, ProductListImportDTO metaData, ImportProductContext context) throws ImportProductException {
 		List<ProductFeaturesEntity> orgFeatures = new ArrayList<>();
-		metaData.getShopIds().forEach(shopId -> {
-			orgFeatures.addAll(featureRepo.findByShopId(shopId));
-		});
+		metaData.getShopIds().forEach(shopId -> orgFeatures.addAll(featureRepo.findByShopId(shopId)));
 		ByteArrayInputStream in = readCsvFile(file, context);
 		BeanListProcessor<CsvRow> rowProcessor = createRowProcessor(metaData, orgFeatures);
 		RowParseErrorHandler rowParsingErrHandler = new RowParseErrorHandler(context);

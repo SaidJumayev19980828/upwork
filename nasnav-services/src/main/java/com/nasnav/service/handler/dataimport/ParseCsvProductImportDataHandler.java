@@ -82,9 +82,7 @@ public class ParseCsvProductImportDataHandler implements Handler<ImportDataComma
 
     private List<CsvRow> parseCsvFile(byte[] file, ProductListImportDTO metaData, ImportProductContext context,Long orgId) throws ImportProductException {
         List<ProductFeaturesEntity> orgFeatures = new ArrayList<>();
-        metaData.getShopIds().forEach(shopId -> {
-            orgFeatures.addAll(featureRepo.findByShopId(shopId));
-        });
+        metaData.getShopIds().forEach(shopId -> orgFeatures.addAll(featureRepo.findByShopId(shopId)));
 
         ByteArrayInputStream in = new ByteArrayInputStream(file);
         BeanListProcessor<CsvRow> rowProcessor = createRowProcessor(orgFeatures,orgId);
