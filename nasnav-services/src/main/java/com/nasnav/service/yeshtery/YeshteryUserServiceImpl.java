@@ -10,7 +10,6 @@ import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.yeshtery.BaseYeshteryUserEntity;
@@ -64,7 +63,6 @@ import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
@@ -160,7 +158,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     private void sendRecoveryMail(UserEntity userEntity, ActivationMethod activationMethod) {
         String userName = ofNullable(userEntity.getName()).orElse("User");
-        String orgName = orgRepo.getOne(userEntity.getOrganizationId()).getName();
+        String orgName = orgRepo.findOneById(userEntity.getOrganizationId()).getName();
         try {
             // create parameter map to replace parameter by actual UserEntity data.
             Map<String, String> parametersMap = new HashMap<>();
@@ -311,7 +309,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
                     nasNavUserRepository.saveAndFlush(user);
                     count++;
                 } catch (Exception e) {
-                    logger.error("couldn't create/link user with email :"+user.getEmail()+" and org :"+user.getOrganizationId()+", error"+e.getMessage());
+                    logger.error(String.format("Couldn't create/link user with email: %s and org: %d, error: %s", user.getEmail(), user.getOrganizationId(), e.getMessage()));
                 }
             }
         }
@@ -354,7 +352,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             user.setPhoneNumber(userJson.getPhoneNumber());
             user.setOrganizationId(org.getId());
             user.setUserStatus(NOT_ACTIVATED.getValue());
-            String generatedToken = generatePasswordToken(user);
+            String generatedToken = generatePasswordToken();
             user.setResetPasswordToken(generatedToken);
             user.setResetPasswordSentAt(now());
             user.setAllowReward(true);
@@ -381,19 +379,12 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             return getUserRepresentationWithUserRoles(currentUser);
         } else {
             Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
-
-            if (userHighestRole.equals(NASNAV_ADMIN)) {
-                user = commonNasnavUserRepo.findById(userId, isEmployee)
-                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
-            } else {
-                Set<String> roles = Roles.getAllPrivileges().get(userHighestRole.name());
-                if (!isEmployee) {
-                    if (!List.of(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER).contains(userHighestRole))
-                        throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
-                }
-                user = userRepo.findById(userId)
-                        .map(BaseUserEntity.class::cast).orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+            List<Roles> rolesThatViewNonEmployees = List.of(NASNAV_ADMIN, ORGANIZATION_ADMIN, ORGANIZATION_MANAGER);
+            if (isEmployee != null && !isEmployee && !rolesThatViewNonEmployees.contains(userHighestRole)) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
             }
+            user = commonNasnavUserRepo.findById(userId, isEmployee)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
             return getUserRepresentationWithUserRoles(user);
         }
     }
@@ -462,6 +453,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         sendSubscriptionInvitationMail(email, sub.getToken(), orgId);
 
     }
+
     @Override
     public RedirectView activateYeshterySubscribedEmail(String token, Long orgId) {
             String url = domainService.getOrganizationDomainAndSubDir(orgId);
@@ -498,8 +490,10 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
         Long orgId = userJson.getOrgId();
 
-        orgRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId));
+        boolean orgExists = orgRepo.existsById(orgId);
+        if (!orgExists) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId);
+        }
 
         if (userRepository.existsByEmailIgnoreCaseAndOrganizationId(userJson.email, orgId)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0007, userJson.getEmail(), userJson.getOrgId());
@@ -524,39 +518,26 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     private void generateResetPasswordToken(UserEntity userEntity) {
-        String generatedToken = generatePasswordToken(userEntity);
+        String generatedToken = generatePasswordToken();
         userEntity.setResetPasswordToken(generatedToken);
         userEntity.setResetPasswordSentAt(now());
     }
 
 
     private void generateYeshteryResetPasswordToken(YeshteryUserEntity userEntity) {
-        String generatedToken = generateUUIDToken();
-        boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
-        if (existsByToken) {
-            generatedToken = reGenerateResetPasswordToken();
-        }
+        String generatedToken = generatePasswordToken();
         userEntity.setResetPasswordToken(generatedToken);
         userEntity.setResetPasswordSentAt(now());
     }
 
-    private String generatePasswordToken(UserEntity userEntity) {
-        String generatedToken = generateUUIDToken();
-        boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
-        if (existsByToken) {
-            return reGenerateResetPasswordToken();
-        }
+    private String generatePasswordToken() {
+        String generatedToken;
+        do {
+            generatedToken = generateUUIDToken();
+        } while (userRepository.existsByResetPasswordToken(generatedToken));
         return generatedToken;
     }
 
-    private String reGenerateResetPasswordToken() {
-        String generatedToken = generateUUIDToken();
-        boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
-        if (existsByToken) {
-            return reGenerateResetPasswordToken();
-        }
-        return generatedToken;
-    }
 
     private void sendActivationMail(YeshteryUserEntity userEntity, String redirectUrl) {
         try {
@@ -575,9 +556,9 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         String orgDomain = domainService.getOrganizationDomainAndSubDir(userEntity.getOrganizationId());
 
         String activationRedirectUrl = buildActivationRedirectUrl(userEntity, redirectUrl);
-        String orgLogo = domain + "/files/"+ orgService.getOrgLogo(userEntity.getOrganizationId());
-        String orgName = orgRepo.findById(userEntity.getOrganizationId()).get().getName();
-        String year = LocalDateTime.now().getYear()+"";
+        String orgLogo = domain + "/files/" + orgService.getOrgLogo(userEntity.getOrganizationId());
+        String orgName = orgRepo.findOneById(userEntity.getOrganizationId()).getName();
+        String year = LocalDateTime.now().getYear() + "";
 
         Map<String, String> parametersMap = new HashMap<>();
         parametersMap.put(USERNAME_PARAMETER, userEntity.getName());
@@ -603,7 +584,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     private void validateActivationRedirectUrl(String redirectUrl, Long orgId) {
         List<String> orgDomains = domainService.getOrganizationDomainOnly(orgId);
-        if(isNull(redirectUrl) || isInvalidRedirectUrl(redirectUrl, orgDomains)) {
+        if (isNull(redirectUrl) || isInvalidRedirectUrl(redirectUrl, orgDomains)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0004, redirectUrl);
         }
     }
@@ -634,29 +615,30 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         return userRepObj;
     }
 
-    private List<AddressRepObj> getUserAddresses(Long userId){
+    private List<AddressRepObj> getUserAddresses(Long userId) {
         return userAddressRepo
                 .findByUser_Id(userId)
                 .stream()
                 .filter(Objects::nonNull)
                 .map(a -> (AddressRepObj) a.getRepresentation())
-                .collect(toList());
+                .toList();
     }
 
     private void validateActivationEmailResend(ActivationEmailResendDTO accountInfo, BaseYeshteryUserEntity user) {
         String email = accountInfo.getEmail();
         Long orgId = accountInfo.getOrgId();
-        if(!(user instanceof YeshteryUserEntity)) {
+        if (!(user instanceof YeshteryUserEntity)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0001, email, orgId);
-        }else if(!isUserDeactivated(user)){
+        } else if (!isUserDeactivated(user)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0002, email);
-        }else if(resendRequestedTooSoon(accountInfo)) {
+        }
+        else if (resendRequestedTooSoon(accountInfo)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0003, email);
         }
     }
 
     private boolean resendRequestedTooSoon(ActivationEmailResendDTO accountInfo) {
-        // TODO Auto-generated method stub
+        // TTODO Auto-generated method stub
         return false;
     }
 
@@ -671,21 +653,12 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         return redirectView;
     }
 
-    private String generateSubscriptionToken() {
-        String generatedToken = generateUUIDToken();
-        boolean existsByToken = subsRepo.existsByToken(generatedToken);
-        if (existsByToken) {
-            return regenerateSubscriptionToken();
-        }
-        return generatedToken;
-    }
 
-    private String regenerateSubscriptionToken() {
-        String generatedToken = generateUUIDToken();
-        boolean existsByToken = subsRepo.existsByToken(generatedToken);
-        if (existsByToken) {
-            return regenerateSubscriptionToken();
-        }
+    private String generateSubscriptionToken() {
+        String generatedToken;
+        do {
+            generatedToken = generateUUIDToken();
+        } while (subsRepo.existsByToken(generatedToken));
         return generatedToken;
     }
 
@@ -693,10 +666,10 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         try {
             String domain = domainService.getBackendUrl() + YeshteryConstants.API_PATH;
             String orgDomain = domainService.getOrganizationDomainAndSubDir(orgId);
-            String orgLogo = domain + "/files/"+ orgService.getOrgLogo(orgId);
-            String orgName = orgRepo.findById(orgId).get().getName();
-            String subscriptionUrl =  domain + "/user/subscribe/activate?org_id="+orgId+"&token=" + activationToken;
-            String year = LocalDateTime.now().getYear()+"";
+            String orgLogo = domain + "/files/" + orgService.getOrgLogo(orgId);
+            String orgName = orgRepo.findOneById(orgId).getName();
+            String subscriptionUrl = domain + "/user/subscribe/activate?org_id=" + orgId + "&token=" + activationToken;
+            String year = LocalDateTime.now().getYear() + "";
 
             Map<String, String> parametersMap = new HashMap<>();
             parametersMap.put("subscriptionUrl", subscriptionUrl);
@@ -713,13 +686,13 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     public BaseYeshteryUserEntity getCurrentUser() {
         return getCurrentUserOptional()
-                .orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
+                .orElseThrow(() -> new IllegalStateException("Could not retrieve current user!"));
     }
 
     public Optional<YeshteryUserEntity> getCurrentUserOptional() {
-        // TODO should fetch yeshtery entity directly from YeshteryUserRepositoy
-        // related to CommonUserRepositoryImpl todo note
-        Long id =  ofNullable( SecurityContextHolder.getContext() )
+        // ttodo should fetch yeshtery entity directly from YeshteryUserRepositoy
+        // related to CommonUserRepositoryImpl ttodo note
+        Long id = ofNullable(SecurityContextHolder.getContext())
                 .map(SecurityContext::getAuthentication)
                 .map(Authentication::getDetails)
                 .map(UserEntity.class::cast)
@@ -730,7 +703,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     public YeshteryUserApiResponse login(UserDTOs.UserLoginObject loginData) {
 
-        if(invalidLoginData(loginData)) {
+        if (invalidLoginData(loginData)) {
             throwInvalidCredentialsException();
         }
 
@@ -764,16 +737,16 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     private void validateLoginUser(BaseYeshteryUserEntity userEntity) {
-        if(userEntity == null) {
+        if (userEntity == null) {
             throwInvalidCredentialsException();
         }
 
         if (isAccountLocked(userEntity)) { // NOSONAR
-            throw new RuntimeBusinessException(LOCKED,  U$LOG$0004);
+            throw new RuntimeBusinessException(LOCKED, U$LOG$0004);
         }
 
         if (isUserDeactivated(userEntity)) { // NOSONAR
-            throw new RuntimeBusinessException(LOCKED,  U$LOG$0003);
+            throw new RuntimeBusinessException(LOCKED, U$LOG$0003);
         }
     }
 
@@ -796,12 +769,12 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     private boolean invalidLoginData(UserDTOs.UserLoginObject loginData) {
-        return loginData == null || isBlankOrNull(loginData.email) ;
+        return loginData == null || isBlankOrNull(loginData.email);
     }
 
     private void validateUserPassword(UserDTOs.UserLoginObject loginData, BaseYeshteryUserEntity userEntity) {
         boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncryptedPassword());
-        if(!passwordMatched) {
+        if (!passwordMatched) {
             throwInvalidCredentialsException();
         }
     }
@@ -833,7 +806,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     @Override
-    public List<UserRepresentationObject> getUserList(){
+    public List<UserRepresentationObject> getUserList() {
         Set<UserEntity> customers;
         if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
             customers = nasNavUserRepository.findAllLinkedToYeshteryUser();
@@ -843,7 +816,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         return customers
                 .stream()
                 .map(UserEntity::getRepresentation)
-                .collect(toList());
+                .toList();
     }
 
     private void sendUserOtp(Long orgId, String email, String otp) {
@@ -862,7 +835,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     @Transactional
     public RecoveryUserResponse activateRecoveryOtp(ActivateOtpDto activateOtp) throws BusinessException {
         UserEntity user = nasNavUserRepository.getByEmailIgnoreCaseAndOrganizationId(activateOtp.getEmail(), activateOtp.getOrgId());
-                if (user == null) throw new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtp.getEmail());
+        if (user == null) throw new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtp.getEmail());
         nasnavOtpService.validateOtp(activateOtp.getOtp(), user, OtpType.RESET_PASSWORD);
         generateResetPasswordToken(user);
         return new RecoveryUserResponse(user.getResetPasswordToken());
@@ -871,8 +844,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     @Override
     public UserApiResponse activateUserAccount(ActivateOtpDto activateOtp) {
         YeshteryUserEntity user = userRepository.getByEmailIgnoreCaseAndOrganizationId(activateOtp.getEmail(), activateOtp.getOrgId());
-                if (user == null) throw new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtp.getEmail());
-		otpService.validateOtp(activateOtp.getOtp(), user, OtpType.REGISTER);
+        if (user == null) throw new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtp.getEmail());
+        otpService.validateOtp(activateOtp.getOtp(), user, OtpType.REGISTER);
 
         activateUserInDB(user);
         activateOrgUser(user);
