@@ -632,14 +632,6 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         } else if (!isUserDeactivated(user)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0002, email);
         }
-        else if (resendRequestedTooSoon(accountInfo)) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0003, email);
-        }
-    }
-
-    private boolean resendRequestedTooSoon(ActivationEmailResendDTO accountInfo) {
-        // TTODO Auto-generated method stub
-        return false;
     }
 
     private RedirectView redirectUser(String authToken, String loginUrl) {
