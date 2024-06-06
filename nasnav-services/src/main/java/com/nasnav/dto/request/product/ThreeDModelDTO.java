@@ -20,7 +20,7 @@ public class ThreeDModelDTO {
     private String color;
     private String model;
     private String image;
-    private Long size;
+    private String size;
 
     public void toEntity(ProductThreeDModel productThreeDModel) {
         if (this.id != null) {
