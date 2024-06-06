@@ -24,31 +24,39 @@ public class ThreeModelController {
         this.threeModelService = threeModelService;
     }
 
-    @PostMapping(value = "/add/new3d/model", produces = APPLICATION_JSON_VALUE,headers = "Content-Type= multipart/form-data", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/add/new3d/model", produces = APPLICATION_JSON_VALUE, headers = "Content-Type= multipart/form-data", consumes = {"multipart/form-data"})
     public ThreeDModelResponse upload3DModelFiles(
-                                    @RequestPart("files") MultipartFile[] files,
-                                   @RequestPart(value = "properties") String jsonString ) throws JsonProcessingException {
-     return threeModelService.createNewThreeModel(jsonString,files);
+            @RequestPart("files") MultipartFile[] files,
+            @RequestPart(value = "properties") String jsonString) throws JsonProcessingException {
+        return threeModelService.createNewThreeModel(jsonString, files);
+    }
+
+    @PutMapping(value = "/model3d/{modelId}", produces = APPLICATION_JSON_VALUE, headers = "Content-Type= multipart/form-data", consumes = {"multipart/form-data"})
+    public ThreeDModelResponse update3DModelFiles(
+            @RequestParam("modelId") Long modelId,
+            @RequestPart("files") MultipartFile[] files,
+            @RequestPart(value = "properties") String jsonString) throws JsonProcessingException {
+        return threeModelService.updateThreeDModel(modelId, jsonString, files);
     }
 
     @GetMapping(value = "/get3d/model")
     public ThreeDModelResponse getThreeDModel(
-                                              @RequestParam(value = "barcode",required = false) String barcode,
-                                              @RequestParam(value = "sku",required = false) String sku){
-        return threeModelService.getThreeDModelByBarcodeOrSKU(barcode,sku);
+            @RequestParam(value = "barcode", required = false) String barcode,
+            @RequestParam(value = "sku", required = false) String sku) {
+        return threeModelService.getThreeDModelByBarcodeOrSKU(barcode, sku);
     }
 
     @GetMapping(value = "/get3d/all")
     public PageImpl<ThreeDModelResponse> getThreeDModelAll(@RequestParam(required = false, defaultValue = "0") Integer start,
-            @RequestParam(required = false, defaultValue = "10") Integer count) {
+                                                           @RequestParam(required = false, defaultValue = "10") Integer count) {
         return threeModelService.getThreeDModelAll(start, count);
     }
 
-    @PostMapping(value="/assign/model/to/product")
+    @PostMapping(value = "/assign/model/to/product")
     public void assign3DModelToProduct(
-                                       @RequestParam("model_id") Long modelId,
-                                       @RequestParam("product_id") Long productId){
-        threeModelService.assignModelToProduct(modelId,productId);
+            @RequestParam("model_id") Long modelId,
+            @RequestParam("product_id") Long productId) {
+        threeModelService.assignModelToProduct(modelId, productId);
 
     }
 

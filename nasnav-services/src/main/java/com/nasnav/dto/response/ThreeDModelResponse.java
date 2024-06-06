@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ThreeDModelResponse {
-    private long modelId;
+    private Long modelId;
     private String name;
     private String description;
     private String barcode;
@@ -19,10 +19,11 @@ public class ThreeDModelResponse {
     private String color;
     private String model;
     private String imageUrl;
-    private long size;
+    private Long size;
     private List<String> urls;
+
     public static ThreeDModelResponse get3dModelResponse(ProductThreeDModel threeDModel, List<String> filesUrls) {
-        ThreeDModelResponse threeDModelResponse =new ThreeDModelResponse();
+        ThreeDModelResponse threeDModelResponse = new ThreeDModelResponse();
         threeDModelResponse.setModelId(threeDModel.getId());
         threeDModelResponse.setName(threeDModel.getName());
         threeDModelResponse.setDescription(threeDModel.getDescription());
@@ -32,6 +33,7 @@ public class ThreeDModelResponse {
         threeDModelResponse.setBarcode(threeDModel.getBarcode());
         threeDModelResponse.setSku(threeDModel.getSku());
         threeDModelResponse.setUrls(filesUrls);
+        threeDModelResponse.setImageUrl(threeDModel.getImageUrl());
         return threeDModelResponse;
     }
 }

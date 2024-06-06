@@ -32,13 +32,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.dto.response.ThreeDModelResponse.get3dModelResponse;
 import static com.nasnav.exceptions.ErrorCodes.*;
-import static com.nasnav.persistence.ProductThreeDModel.getProductThreeDModel;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
@@ -81,13 +78,12 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         ThreeDModelDTO threeDModelDTO = mapper.readValue(jsonString, ThreeDModelDTO.class);
         validateUserWithOrganization(organizationName);
         validateBarcodeAndSKU(threeDModelDTO.getBarcode(), threeDModelDTO.getSku());
-        ProductThreeDModel productThreeDModel = getProductThreeDModel(threeDModelDTO);
+        ProductThreeDModel productThreeDModel = new ProductThreeDModel();
+        threeDModelDTO.toEntity(productThreeDModel);
         ProductThreeDModel threeDModel = threeDModelRepository.save(productThreeDModel);
         MultipartFile[] filesTobeSaved = validateModelFiles(files);
         List<String> filesUrls = save3DModelFiles(filesTobeSaved, threeDModel.getId());
-        ThreeDModelResponse threeDModelResponse = getThreeDModelResponse(threeDModel, filesUrls);
-        threeDModelResponse.setImageUrl(threeDModel.getImageUrl());
-        return threeDModelResponse;
+        return get3dModelResponse(threeDModel, filesUrls);
     }
 
     @Override
@@ -98,15 +94,29 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         productRepository.save(product);
     }
 
-    private ThreeDModelResponse getThreeDModelResponse(ProductThreeDModel threeDModel, List<String> filesUrls) {
+    @Override
+    public ThreeDModelResponse updateThreeDModel(Long modelId, String jsonString, MultipartFile[] files) throws JsonProcessingException {
+        ProductThreeDModel productThreeDModel = threeDModelRepository.findById(modelId).orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, GEN$3dM$0002, modelId));
+
+        ThreeDModelDTO threeDModelDTO = mapper.readValue(jsonString, ThreeDModelDTO.class);
+        validateUserWithOrganization(organizationName);
+        validateBarcodeAndSKU(threeDModelDTO.getBarcode(), threeDModelDTO.getSku());
+
+        threeDModelDTO.toEntity(productThreeDModel);
+
+        ProductThreeDModel threeDModel = threeDModelRepository.save(productThreeDModel);
+
+        MultipartFile[] filesTobeSaved = validateModelFiles(files);
+        List<String> filesUrls = save3DModelFiles(filesTobeSaved, threeDModel.getId());
+
         return get3dModelResponse(threeDModel, filesUrls);
     }
 
     @Override
     public PageImpl<ThreeDModelResponse> getThreeDModelAll(Integer start, Integer count) {
         Page<ProductThreeDModel> response = threeDModelRepository.findAll(getQueryPage(start, count));
-        List<ThreeDModelResponse> dtos = response.getContent().stream().map(l -> getThreeDModelResponse(l, fileService.getUrlsByModelId(l.getId())))
-                .collect(Collectors.toList());
+        List<ThreeDModelResponse> dtos = response.getContent().stream().map(l -> get3dModelResponse(l, fileService.getUrlsByModelId(l.getId())))
+                .toList();
         return new PageImpl<>(dtos, response.getPageable(), response.getTotalElements());
     }
 
@@ -115,19 +125,21 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         validateBarcodeAndSKU(barcode, sku);
         ProductThreeDModel threeDModel = threeDModelRepository.findByBarcodeOrSku(barcode, sku);
         List<String> fileUrls = fileService.getUrlsByModelId(threeDModel.getId());
-        return getThreeDModelResponse(threeDModel, fileUrls);
+        return get3dModelResponse(threeDModel, fileUrls);
     }
 
 
     @Override
     public ThreeDModelResponse getThreeDModel(Long modelId) {
-        if (modelId == null || modelId == 0) {
+        if (modelId == null) {
             log.warn("there is no model found to assign it for the product");
             return null;
         }
-        ProductThreeDModel threeDModel = threeDModelRepository.findById(modelId).get();
+        ProductThreeDModel threeDModel = threeDModelRepository.findById(modelId).orElseThrow(
+                () -> new RuntimeBusinessException(NOT_FOUND, GEN$3dM$0002, modelId)
+        );
         List<String> fileUrls = fileService.getUrlsByModelId(modelId);
-        return getThreeDModelResponse(threeDModel, fileUrls);
+        return get3dModelResponse(threeDModel, fileUrls);
     }
 
     private List<String> save3DModelFiles(MultipartFile[] files, Long modelId) {
@@ -148,12 +160,11 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
             OrganizationEntity organization = new OrganizationEntity();
             organization.setName(organizationName);
             organizationRepository.save(organization);
-        }else{
+        } else {
             BaseUserEntity currentUser = securityService.getCurrentUser();
-            Optional<EmployeeUserEntity>  employeeUserEntity = Optional.ofNullable(employeeUserRepository.findByIdAndOrganizationId(currentUser.getId(), org.getId()).orElseThrow(
-                    () -> new RuntimeBusinessException(NOT_FOUND, E$USR$0005, currentUser.getId())));
-
-            Roles userHighestRole = roleService.getEmployeeHighestRole(employeeUserEntity.get().getId());
+            EmployeeUserEntity employeeUserEntity = employeeUserRepository.findByIdAndOrganizationId(currentUser.getId(), org.getId()).orElseThrow(
+                    () -> new RuntimeBusinessException(NOT_FOUND, E$USR$0005, currentUser.getId()));
+            Roles userHighestRole = roleService.getEmployeeHighestRole(employeeUserEntity.getId());
             validateUserRoles(userHighestRole, currentUser);
         }
 
