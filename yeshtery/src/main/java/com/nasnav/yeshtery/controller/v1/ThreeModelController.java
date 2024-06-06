@@ -57,7 +57,11 @@ public class ThreeModelController {
             @RequestParam("model_id") Long modelId,
             @RequestParam("product_id") Long productId) {
         threeModelService.assignModelToProduct(modelId, productId);
+    }
 
+    @DeleteMapping(value = "/model3d/{modelId}")
+    public void delete3DModel(@PathVariable("modelId") Long modelId) {
+        threeModelService.deleteThreeDModel(modelId);
     }
 
 }

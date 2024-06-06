@@ -18,4 +18,6 @@ public interface ThreeDModelService {
     void assignModelToProduct(Long modelId, Long productId);
 
     ThreeDModelResponse updateThreeDModel(Long modelId, String jsonString, MultipartFile[] files) throws JsonProcessingException;
+
+    void deleteThreeDModel(Long modelId);
 }

@@ -96,8 +96,7 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
 
     @Override
     public ThreeDModelResponse updateThreeDModel(Long modelId, String jsonString, MultipartFile[] files) throws JsonProcessingException {
-        ProductThreeDModel productThreeDModel = threeDModelRepository.findById(modelId).orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, GEN$3dM$0002, modelId));
-
+        ProductThreeDModel productThreeDModel = validate3DModelExisting(modelId);
         ThreeDModelDTO threeDModelDTO = mapper.readValue(jsonString, ThreeDModelDTO.class);
         validateUserWithOrganization(organizationName);
         validateBarcodeAndSKU(threeDModelDTO.getBarcode(), threeDModelDTO.getSku());
@@ -140,6 +139,14 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         );
         List<String> fileUrls = fileService.getUrlsByModelId(modelId);
         return get3dModelResponse(threeDModel, fileUrls);
+    }
+
+    @Override
+    public void deleteThreeDModel(Long modelId) {
+        ProductThreeDModel threeDModel = validate3DModelExisting(modelId);
+        List<String> filesUrls = fileService.getUrlsByModelId(modelId);
+        filesUrls.forEach(fileService::deleteFileByUrl);
+        threeDModelRepository.delete(threeDModel);
     }
 
     private List<String> save3DModelFiles(MultipartFile[] files, Long modelId) {
