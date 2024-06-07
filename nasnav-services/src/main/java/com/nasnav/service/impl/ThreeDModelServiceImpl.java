@@ -104,6 +104,7 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
 
     @Override
     public ThreeDModelResponse updateThreeDModel(Long modelId, String jsonString, MultipartFile[] files) throws JsonProcessingException {
+        validateCurrentUserForEditing();
         ProductThreeDModel productThreeDModel = validate3DModelExisting(modelId);
         ThreeDModelDTO threeDModelDTO = mapper.readValue(jsonString, ThreeDModelDTO.class);
         validateUserWithOrganization(organizationName);
@@ -155,6 +156,7 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
 
     @Override
     public void deleteThreeDModel(Long modelId) {
+        validateCurrentUserForEditing();
         ProductThreeDModel threeDModel = validate3DModelExisting(modelId);
         List<String> filesUrls = fileService.getUrlsByModelId(modelId);
         filesUrls.forEach(fileService::deleteFileByUrl);
@@ -187,6 +189,14 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
             validateUserRoles(userHighestRole, currentUser);
         }
 
+    }
+
+    void validateCurrentUserForEditing() {
+        BaseUserEntity currentUser = securityService.getCurrentUser();
+        Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
+        if (!userHighestRole.equals(Roles.NASNAV_ADMIN)) {
+            throw new RuntimeBusinessException(FORBIDDEN, E$USR$0006, currentUser.getId());
+        }
     }
 
     void validateUserRoles(Roles userHighestRole, BaseUserEntity currentUser) {
