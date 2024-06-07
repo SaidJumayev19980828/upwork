@@ -1,8 +1,9 @@
 package com.nasnav.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.nasnav.dto.response.ThreeDModelList;
 import com.nasnav.dto.response.ThreeDModelResponse;
-import org.springframework.data.domain.PageImpl;
+import com.nasnav.request.ThreeDModelSearchParam;
 import org.springframework.web.multipart.MultipartFile;
 
 
@@ -11,7 +12,7 @@ public interface ThreeDModelService {
 
     ThreeDModelResponse getThreeDModelByBarcodeOrSKU(String barcode, String sku);
 
-    PageImpl<ThreeDModelResponse> getThreeDModelAll(Integer start, Integer count);
+    ThreeDModelList getThreeDModelAll(ThreeDModelSearchParam searchParam);
 
     ThreeDModelResponse getThreeDModel(Long modelId);
 

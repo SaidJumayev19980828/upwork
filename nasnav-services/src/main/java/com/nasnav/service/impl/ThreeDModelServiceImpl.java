@@ -2,6 +2,8 @@ package com.nasnav.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
+import com.nasnav.commons.criteria.data.CrieteriaQueryResults;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.OrganizationRepository;
@@ -9,10 +11,12 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ThreeDModelRepository;
 import com.nasnav.dto.SubscriptionInfoDTO;
 import com.nasnav.dto.request.product.ThreeDModelDTO;
+import com.nasnav.dto.response.ThreeDModelList;
 import com.nasnav.dto.response.ThreeDModelResponse;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
+import com.nasnav.request.ThreeDModelSearchParam;
 import com.nasnav.service.FileService;
 import com.nasnav.service.RoleService;
 import com.nasnav.service.SecurityService;
@@ -53,6 +57,8 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
     private final ObjectMapper mapper;
     private final FileService fileService;
     private final SubscriptionService subscriptionService;
+    @Qualifier("threeDModelCriteriaQueryBuilder")
+    private AbstractCriteriaQueryBuilder<ProductThreeDModel, ThreeDModelSearchParam> criteriaQueryBuilder;
 
     @Autowired
     public ThreeDModelServiceImpl(@Value("${organization_meetus_ar_name}") String organizationName,
@@ -60,7 +66,8 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
                                   OrganizationRepository organizationRepository, SecurityService securityService,
                                   RoleService roleService, EmployeeUserRepository employeeUserRepository,
                                   ProductRepository productRepository, ObjectMapper mapper, FileService fileService,
-                                  @Lazy @Qualifier("wert") SubscriptionService subscriptionService) {
+                                  @Lazy @Qualifier("wert") SubscriptionService subscriptionService,
+                                  AbstractCriteriaQueryBuilder<ProductThreeDModel, ThreeDModelSearchParam> criteriaQueryBuilder) {
         this.organizationName = organizationName;
         this.threeDModelRepository = threeDModelRepository;
         this.organizationRepository = organizationRepository;
@@ -71,6 +78,7 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         this.mapper = mapper;
         this.fileService = fileService;
         this.subscriptionService = subscriptionService;
+        this.criteriaQueryBuilder = criteriaQueryBuilder;
     }
 
     @Override
@@ -112,11 +120,15 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
     }
 
     @Override
-    public PageImpl<ThreeDModelResponse> getThreeDModelAll(Integer start, Integer count) {
-        Page<ProductThreeDModel> response = threeDModelRepository.findAll(getQueryPage(start, count));
-        List<ThreeDModelResponse> dtos = response.getContent().stream().map(l -> get3dModelResponse(l, fileService.getUrlsByModelId(l.getId())))
-                .toList();
-        return new PageImpl<>(dtos, response.getPageable(), response.getTotalElements());
+    public ThreeDModelList getThreeDModelAll(ThreeDModelSearchParam searchParam) {
+        setDefaultSearchParams(searchParam);
+        CrieteriaQueryResults<ProductThreeDModel> results = criteriaQueryBuilder.getResultList(searchParam, true);
+        List<ThreeDModelResponse> threeDModelResponses = new ArrayList<>();
+        results.getResultList().forEach(threeDModel -> {
+            List<String> fileUrls = fileService.getUrlsByModelId(threeDModel.getId());
+            threeDModelResponses.add(get3dModelResponse(threeDModel, fileUrls));
+        });
+        return new ThreeDModelList(results.getResultCount(), threeDModelResponses);
     }
 
     @Override
@@ -213,6 +225,17 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         if (StringUtils.anyBlankOrNull(barcode) && StringUtils.anyBlankOrNull(sku)) {
             log.error("missing params you should enter barcode or sku.");
             throw new RuntimeBusinessException(BAD_REQUEST, $003d$MODEL$, "barcode or sku");
+        }
+    }
+
+    private void setDefaultSearchParams(ThreeDModelSearchParam searchParams) {
+        if (searchParams.getStart() == null || searchParams.getStart() < 0) {
+            searchParams.setStart(0);
+        }
+        if (searchParams.getCount() == null || (searchParams.getCount() < 1)) {
+            searchParams.setCount(10);
+        } else if (searchParams.getCount() > 1000) {
+            searchParams.setCount(1000);
         }
     }
 }

@@ -17,6 +17,6 @@ public class ProductThreeDModel {
     private String sku;
     private String color;
     private String model;
-    private Long size;
+    private String size;
     private String imageUrl;
 }

@@ -2,10 +2,11 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nasnav.commons.YeshteryConstants;
+import com.nasnav.dto.response.ThreeDModelList;
 import com.nasnav.dto.response.ThreeDModelResponse;
+import com.nasnav.request.ThreeDModelSearchParam;
 import com.nasnav.service.ThreeDModelService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -47,9 +48,8 @@ public class ThreeModelController {
     }
 
     @GetMapping(value = "/get3d/all")
-    public PageImpl<ThreeDModelResponse> getThreeDModelAll(@RequestParam(required = false, defaultValue = "0") Integer start,
-                                                           @RequestParam(required = false, defaultValue = "10") Integer count) {
-        return threeModelService.getThreeDModelAll(start, count);
+    public ThreeDModelList getThreeDModelAll(ThreeDModelSearchParam searchParam){
+        return threeModelService.getThreeDModelAll(searchParam);
     }
 
     @PostMapping(value = "/assign/model/to/product")
