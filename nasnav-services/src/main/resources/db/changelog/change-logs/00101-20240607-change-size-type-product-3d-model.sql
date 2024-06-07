@@ -1,0 +1,1 @@
+ALTER TABLE public.product_3d_model ALTER COLUMN size TYPE varchar(255);
