@@ -26,6 +26,7 @@ import com.nasnav.service.AdminService;
 import com.nasnav.service.MailService;
 import com.nasnav.service.UserService;
 import com.nasnav.service.otp.OtpType;
+import com.nasnav.service.yeshtery.YeshteryUserService;
 import com.nasnav.yeshtery.test.commons.TestCommons;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import lombok.extern.slf4j.Slf4j;
@@ -131,6 +132,9 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private AppConfig config;
 
+    @Autowired
+    private YeshteryUserService  yeshteryUserService;
+
 
     @BeforeEach
     public void setupLoginUser() {
@@ -225,6 +229,26 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         UserEntity createdUser = userRepository.getByEmailAndOrganizationId("new_email@nasnav.com", organization.getId());
         assertNotNull(createdUser);
     }
+
+    @Test
+    public void link_nasnav_users_to_yeshtery_users() {
+        HttpEntity<Object> userJson = getHttpEntity(
+                "{\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"confirmation_flag\":true,\"org_id\":"
+                        + organization.getId() + ",\"redirect_url\":\"https://www.tooawsome.com/activate\"}",
+                "nasnav-admin-token");
+        ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/link_nasnav_users_to_yeshtery_users", userJson,
+                UserApiResponse.class);
+        assertEquals(OK, response.getStatusCode());
+        assertNotNull(response);
+    }
+
+    @Test
+    public void testRegisterWithoutActivationMethodAndRedirectUrl() {
+        UserEntity user = userRepository.findById(88003L).orElseThrow();
+       YeshteryUserEntity yeshteryUser = yeshteryUserService.createYeshteryEntity("test","test_01@yahoo.com",user,99001,99001L);
+       assertNotNull(yeshteryUser);
+    }
+
 
     @Test
     public void testRegisterWithoutActivationMethodAndNoRedirectUrl() {
@@ -948,4 +972,44 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         Assertions.assertEquals(1, Objects.requireNonNull(res.getBody()).size());
     }
 
+    @Test
+    void testCustomerUserInfo() {
+        HttpEntity<?> entity = getHttpEntity("123");
+        ResponseEntity<UserRepresentationObject> res = template.exchange(API_PATH +"/user/info?" +
+                        "is_employee=false" ,
+                HttpMethod.GET,
+                entity,
+                UserRepresentationObject.class);
+
+        Assertions.assertEquals(200, res.getStatusCodeValue());
+        Assertions.assertNotNull(res.getBody());
+        Assertions.assertEquals(88001, res.getBody().getId());
+    }
+
+    @Test
+    void testEmployeeUserInfo() {
+        HttpEntity<?> entity = getHttpEntity("nasnav-admin-token");
+        ResponseEntity<UserRepresentationObject> res = template.exchange(API_PATH +"/user/info?" +
+                        "is_employee=true&id=160" ,
+                HttpMethod.GET,
+                entity,
+                UserRepresentationObject.class);
+
+        Assertions.assertEquals(200, res.getStatusCodeValue());
+        Assertions.assertNotNull(res.getBody());
+        Assertions.assertEquals(160, res.getBody().getId());
+    }
+
+
+    @Test
+    void testEmployeeUserInfoExc() {
+        HttpEntity<?> entity = getHttpEntity("tt");
+        ResponseEntity<UserRepresentationObject> res = template.exchange(API_PATH +"/user/info?" +
+                        "is_employee=true&id=160" ,
+                HttpMethod.GET,
+                entity,
+                UserRepresentationObject.class);
+
+        Assertions.assertEquals(401, res.getStatusCodeValue());
+    }
 }

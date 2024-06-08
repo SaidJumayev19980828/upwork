@@ -34,6 +34,8 @@ import com.nasnav.response.CreateAiAccountResponse;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.security.jwt.JwtLoginData;
+import com.nasnav.security.jwt.JwtResponse;
 import com.nasnav.service.AdminService;
 import com.nasnav.service.MailService;
 import com.nasnav.service.SecurityService;
@@ -1670,6 +1672,43 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		assertEquals(200, res.getStatusCodeValue());
 		List<UserRepresentationObject> userList = mapper.readValue(res.getBody(), new TypeReference<List<UserRepresentationObject>>(){});
 		assertFalse(userList.isEmpty());
+	}
+
+
+	@Test
+	public	void test_Invalid_refresh_token_returns_new_token() {
+
+
+		JwtLoginData loginData = JwtLoginData.builder()
+				.email("mohamedghazi.pvt@gmail.com")
+				.password("password")
+				.isEmployee(false)
+				.orgId(6L)
+				.build();
+
+		ResponseEntity<Void> res = template.postForEntity("/nasnav/token", loginData, Void.class);
+		assertEquals(500 , res.getStatusCode().value());
+
+	}
+
+	@Test
+	public	void test_valid_refresh_token_returns_new_token() {
+
+
+		JwtLoginData loginData = JwtLoginData.builder()
+				.email("user0@nasnav.com")
+				.password("1234")
+				.isEmployee(false)
+				.orgId(99001L)
+				.build();
+
+		ResponseEntity<JwtResponse> res = template.postForEntity("/nasnav/token", loginData, JwtResponse.class);
+		assertEquals(200 , res.getStatusCode().value());
+		Assert.assertNotNull(res);
+		Assert.assertNotNull(res.getBody());
+		Assert.assertNotNull(res.getBody().refresh());
+		Assert.assertNotNull(res.getBody().token());
+
 	}
 
 	@Test

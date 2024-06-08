@@ -40,23 +40,27 @@ public class JwtOAuthServiceImpl implements JwtOAuthService {
         return (JwtUserDetailsImpl) authenticatedUser.getPrincipal();
     }
 
-    JwtResponse tokenize(JwtUserDetailsImpl userDetails) {
+
+    private  String generateToken( UserInfo userInfo , int expirationHours){
         Instant issuedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS);
-        Instant expiry = issuedAt.plus(1, ChronoUnit.HOURS);
-
-        UserInfo userInfo = buildUserInfo(userDetails);
-
+        Instant expiry = issuedAt.plus(expirationHours, ChronoUnit.HOURS);
         JwtClaimsSet claims = createClaimsSet(issuedAt, expiry, userInfo);
         JwsHeader jwsHeader = JwsHeader.with(SignatureAlgorithm.RS256)
                 .keyId(JwtConfig.JWT_KID)
                 .build();
         JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(jwsHeader, claims);
         String tokenValue = this.encoder.encode(jwtEncoderParameters).getTokenValue();
-        log.info("The token for user {} and organization {} is: {}", userDetails.getUsername(), userDetails.userEntity().getOrganizationId(), tokenValue);
+        log.info("The token for user {} and organization {} is: {}", userInfo.name(), userInfo.organizationId(), tokenValue);
 
-
-        return new JwtResponse(tokenValue, userInfo);
+        return tokenValue;
     }
+    JwtResponse tokenize(JwtUserDetailsImpl userDetails) {
+        UserInfo userInfo = buildUserInfo(userDetails);
+        String tokenValue = generateToken(userInfo,1);
+        String refreshToken = generateToken(userInfo, 24);
+        return new JwtResponse(tokenValue, refreshToken ,userInfo);
+    }
+
 
     static JwtClaimsSet createClaimsSet(Instant issuedAt, Instant expiry, UserInfo userInfo) {
         return JwtClaimsSet.builder()

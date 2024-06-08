@@ -26,7 +26,12 @@ insert into public.loyalty_point_config
 values (31002, 'description2', 99001, 501, true, now(), 6, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
 
 
+
 --inserting users
+
+INSERT INTO public.users(id, email,  user_name, organization_id,encrypted_password, user_status)
+    VALUES (88000, 'user0@nasnav.com','sinwar', 99001,'$2a$10$mmtloBjl5dM0ClvYcO.23.7LIJYYIaoIHjXr5B.logqbE8c6ou9Te', 201);
+
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, tier_id,encrypted_password, user_status)
     VALUES (88001, 'user1@nasnav.com','user1','123', 99001, 5,'$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status)
