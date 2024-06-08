@@ -193,8 +193,8 @@ public class SecurityConfiguration {
             , patternOf("/v1/user/review", GET, setOf(CUSTOMER))
             , patternOf("/v1/product/model3d",POST)
             , patternOf("/v1/product/model3d/assign",POST)
-            , patternOf("/product/model3d/**", DELETE)
-            , patternOf("/product/model3d/**", PUT)
+            , patternOf("/v1/product/model3d/**", DELETE)
+            , patternOf("/v1/product/model3d/**", PUT)
             , patternOf("/v1/user/link_nasnav_users_to_yeshtery_users", POST, setOf(NASNAV_ADMIN)),
             patternOf("/v1/videochat/**", POST, getAllRoles()),
             patternOf("/v1/videochat/**", GET, getNonCustomersRoles()),
