@@ -28,8 +28,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -37,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.dto.response.ThreeDModelResponse.get3dModelResponse;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.*;
@@ -108,7 +105,14 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         ProductThreeDModel productThreeDModel = validate3DModelExisting(modelId);
         ThreeDModelDTO threeDModelDTO = mapper.readValue(jsonString, ThreeDModelDTO.class);
         validateUserWithOrganization(organizationName);
-        validateBarcodeAndSKU(threeDModelDTO.getBarcode(), threeDModelDTO.getSku());
+        if (threeDModelDTO.getBarcode() != null && !threeDModelDTO.getBarcode().equals(productThreeDModel.getBarcode())
+                && threeDModelRepository.existsByBarcode(threeDModelDTO.getBarcode())) {
+            throw new RuntimeBusinessException(CONFLICT, $005d$MODEL$, "barcode");
+        }
+        if (threeDModelDTO.getSku() != null && !threeDModelDTO.getSku().equals(productThreeDModel.getSku())
+                && threeDModelRepository.existsBySku(threeDModelDTO.getSku())) {
+            throw new RuntimeBusinessException(CONFLICT, $006d$MODEL$, "sku");
+        }
 
         threeDModelDTO.toEntity(productThreeDModel);
 
@@ -134,7 +138,9 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
 
     @Override
     public ThreeDModelResponse getThreeDModelByBarcodeOrSKU(String barcode, String sku) {
-        validateBarcodeAndSKU(barcode, sku);
+        if (StringUtils.anyBlankOrNull(barcode) && StringUtils.anyBlankOrNull(sku)) {
+            throw new RuntimeBusinessException(BAD_REQUEST, $003d$MODEL$, "barcode or sku");
+        }
         ProductThreeDModel threeDModel = threeDModelRepository.findByBarcodeOrSku(barcode, sku);
         List<String> fileUrls = fileService.getUrlsByModelId(threeDModel.getId());
         return get3dModelResponse(threeDModel, fileUrls);
@@ -235,6 +241,12 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         if (StringUtils.anyBlankOrNull(barcode) && StringUtils.anyBlankOrNull(sku)) {
             log.error("missing params you should enter barcode or sku.");
             throw new RuntimeBusinessException(BAD_REQUEST, $003d$MODEL$, "barcode or sku");
+        }
+        if (barcode != null && threeDModelRepository.existsByBarcode(barcode)) {
+            throw new RuntimeBusinessException(CONFLICT, $005d$MODEL$, "barcode");
+        }
+        if (sku != null && threeDModelRepository.existsBySku(sku)) {
+            throw new RuntimeBusinessException(CONFLICT, $006d$MODEL$, "sku");
         }
     }
 

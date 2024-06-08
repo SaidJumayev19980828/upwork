@@ -17,7 +17,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @CrossOrigin("*")
 public class ThreeModelController {
 
-    static final String API_PATH = YeshteryConstants.API_PATH + "/product";
+    static final String API_PATH = YeshteryConstants.API_PATH + "/product/model3d";
     private final ThreeDModelService threeModelService;
 
     @Autowired
@@ -25,42 +25,59 @@ public class ThreeModelController {
         this.threeModelService = threeModelService;
     }
 
-    @PostMapping(value = "/add/new3d/model", produces = APPLICATION_JSON_VALUE, headers = "Content-Type= multipart/form-data", consumes = {"multipart/form-data"})
+    @PostMapping(produces = APPLICATION_JSON_VALUE, headers = "Content-Type= multipart/form-data", consumes = {"multipart/form-data"})
     public ThreeDModelResponse upload3DModelFiles(
+            @RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestPart("files") MultipartFile[] files,
             @RequestPart(value = "properties") String jsonString) throws JsonProcessingException {
         return threeModelService.createNewThreeModel(jsonString, files);
     }
 
-    @PutMapping(value = "/model3d/{modelId}", produces = APPLICATION_JSON_VALUE, headers = "Content-Type= multipart/form-data", consumes = {"multipart/form-data"})
+    @PutMapping(value = "/{modelId}", produces = APPLICATION_JSON_VALUE, headers = "Content-Type= multipart/form-data", consumes = {"multipart/form-data"})
     public ThreeDModelResponse update3DModelFiles(
-            @RequestParam("modelId") Long modelId,
+            @PathVariable("modelId") Long modelId,
+            @RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestPart("files") MultipartFile[] files,
             @RequestPart(value = "properties") String jsonString) throws JsonProcessingException {
         return threeModelService.updateThreeDModel(modelId, jsonString, files);
     }
 
-    @GetMapping(value = "/get3d/model")
+    @GetMapping(value = "/one")
     public ThreeDModelResponse getThreeDModel(
+            @RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestParam(value = "barcode", required = false) String barcode,
             @RequestParam(value = "sku", required = false) String sku) {
         return threeModelService.getThreeDModelByBarcodeOrSKU(barcode, sku);
     }
 
-    @GetMapping(value = "/get3d/all")
-    public ThreeDModelList getThreeDModelAll(ThreeDModelSearchParam searchParam){
+    @GetMapping(value = "/all")
+    public ThreeDModelList getThreeDModelAll(
+            @RequestHeader(name = "User-Token", required = false) String userToken,
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "barcode", required = false) String barcode,
+            @RequestParam(name = "sku", required = false) String sku,
+            @RequestParam(name = "description", required = false) String description,
+            @RequestParam(name = "color", required = false) String color,
+            @RequestParam(name = "size", required = false) String size,
+            @RequestParam(name = "start", required = false) Integer start,
+            @RequestParam(name = "count", required = false) Integer count
+    ) {
+        ThreeDModelSearchParam searchParam = new ThreeDModelSearchParam(name, barcode, sku, description, color, size, start, count);
         return threeModelService.getThreeDModelAll(searchParam);
     }
 
-    @PostMapping(value = "/assign/model/to/product")
+    @PostMapping(value = "/assign")
     public void assign3DModelToProduct(
+            @RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestParam("model_id") Long modelId,
             @RequestParam("product_id") Long productId) {
         threeModelService.assignModelToProduct(modelId, productId);
     }
 
-    @DeleteMapping(value = "/model3d/{modelId}")
-    public void delete3DModel(@PathVariable("modelId") Long modelId) {
+    @DeleteMapping(value = "/{modelId}")
+    public void delete3DModel(
+            @RequestHeader(name = "User-Token", required = false) String userToken,
+            @PathVariable("modelId") Long modelId) {
         threeModelService.deleteThreeDModel(modelId);
     }
 

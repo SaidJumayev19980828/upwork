@@ -3,8 +3,7 @@ package com.nasnav.test;
 
 import com.nasnav.dao.FilesRepository;
 
-import com.nasnav.dto.PaginatedResponse;
-import com.nasnav.dto.response.PostResponseDTO;
+import com.nasnav.dto.response.ThreeDModelList;
 import com.nasnav.dto.response.ThreeDModelResponse;
 import com.nasnav.service.ThreeDModelService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
@@ -27,6 +26,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -58,89 +58,86 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
         map.add("properties", body);
         map.add("files", file);
         HttpEntity<Object> json = getHttpEntity(map, "hijkllm", MediaType.valueOf(MediaType.MULTIPART_FORM_DATA_VALUE));
-        ResponseEntity<ThreeDModelResponse> response = template.postForEntity("/product/add/new3d/model", json, ThreeDModelResponse.class);
+        ResponseEntity<ThreeDModelResponse> response = template.postForEntity("/product/model3d", json, ThreeDModelResponse.class);
         assertEquals(200, response.getStatusCode().value());
-        assertEquals("test-barcode1", response.getBody().getBarcode());
+        assertEquals("test-barcode", response.getBody().getBarcode());
         List<String> filesUrls = filesRepository.getUrlsByModelId(response.getBody().getModelId());
-        assertEquals(filesUrls.size(), 1);
+        assertEquals(1, filesUrls.size());
     }
 
     private JSONObject createThreeDModelRequestBody() {
         return json()
-                .put("barcode", "test-barcode1")
+                .put("barcode", "test-barcode")
                 .put("name", "Alfa Romero")
-                .put("sku", "sku-test1")
+                .put("sku", "sku-test")
                 .put("model", "model-test")
-                .put("size", 30L)
+                .put("size", "30")
                 .put("description", "des-test")
                 .put("color", "red")
                 .put("image", "image");
     }
 
     @Test
-    void searchByBarcode() {
+    void searchAllByParams() {
+        String sku = "sku-test2";
         String barcode = "test-barcode2";
+        String color = "blue";
         HttpEntity<Object> request = getHttpEntity("hijkllm");
-        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/get3d/model?barcode=" + barcode, GET, request, ThreeDModelResponse.class);
+        ResponseEntity<ThreeDModelList> response = template.exchange("/product/model3d/all?barcode=" + barcode + "&sku=" + sku + "&color=" + color, GET, request, ThreeDModelList.class);
         assertEquals(OK, response.getStatusCode());
-        assertEquals(6, response.getBody().getSize());
+        assertEquals(1, Objects.requireNonNull(response.getBody()).getThreeDModels().size());
     }
 
     @Test
-    void searchBySKU() {
+    void searchOneByBarcode() {
+        String barcode = "test-barcode2";
+        HttpEntity<Object> request = getHttpEntity("hijkllm");
+        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/model3d/one?barcode=" + barcode, GET, request, ThreeDModelResponse.class);
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(barcode, response.getBody().getBarcode());
+    }
+
+    @Test
+    void searchOneBySKU() {
         String sku = "sku-test2";
         HttpEntity<Object> request = getHttpEntity("hijkllm");
-        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/get3d/model?sku=" + sku, GET, request, ThreeDModelResponse.class);
+        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/model3d/one?sku=" + sku, GET, request, ThreeDModelResponse.class);
         assertEquals(OK, response.getStatusCode());
-        assertEquals(6, response.getBody().getSize());
+        assertEquals(sku, response.getBody().getSku());
     }
 
     @Test
     void assignModelToProduct() {
         String sku = "sku-test2";
         HttpEntity<Object> request = getHttpEntity("hijkllm");
-        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/get3d/model?sku=" + sku, GET, request, ThreeDModelResponse.class);
+        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/model3d/one?sku=" + sku, GET, request, ThreeDModelResponse.class);
         assertEquals(OK, response.getStatusCode());
         Long modelId = response.getBody().getModelId();
-        ResponseEntity<String> producResponse = template.postForEntity("/product/assign/model/to/product?product_id=1001&model_id=" + modelId, request, String.class);
+        ResponseEntity<String> producResponse = template.postForEntity("/product/model3d/assign?product_id=1001&model_id=" + modelId, request, String.class);
         assertEquals(OK, producResponse.getStatusCode());
 
     }
 
     @Test
-    void getThreeDModelByBarcodeOrSKU() {
+    void getOneByBarcodeAndSKU() {
         String sku = "sku-test2";
         String barcode = "test-barcode2";
         HttpEntity<Object> request = getHttpEntity("hijkllm");
-        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/get3d/model?barcode="+barcode+"&sku=" + sku, GET, request, ThreeDModelResponse.class);
-        assertEquals(response.getBody().getSku(), "sku-test2");
-        assertEquals(response.getBody().getBarcode(), "test-barcode2");
+        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/model3d/one?barcode="+barcode+"&sku=" + sku, GET, request, ThreeDModelResponse.class);
+        assertEquals(response.getBody().getSku(), sku);
+        assertEquals(response.getBody().getBarcode(), barcode);
     }
 
     @Test
-    void getThreeDModel() {
-        String sku = "sku-test2";
+    void getOneWithMissingParamsError() {
         HttpEntity<Object> request = getHttpEntity("hijkllm");
-        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/get3d/model?sku=" + sku, GET, request, ThreeDModelResponse.class);
-        Long modelId=response.getBody().getModelId();
-        ThreeDModelResponse modelResponse = threeDModelService.getThreeDModel(modelId);
-        assertEquals(modelResponse.getModel(), response.getBody().getModel());
-    }
-
-    @Test
-    void getThreeDModelMissingParamsError() {
-        HttpEntity<Object> request = getHttpEntity("hijkllm");
-        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/get3d/model", GET, request, ThreeDModelResponse.class);
-        assertEquals(response.getStatusCode(), BAD_REQUEST);
+        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/model3d/one", GET, request, ThreeDModelResponse.class);
+        assertEquals(BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
     void getAllThreeDModel() {
-        HttpEntity<Object> request = getHttpEntity("testNonAuth");
-        ResponseEntity<PaginatedResponse<ThreeDModelResponse>> response = template.exchange("/product/get3d/all", GET, request,
-                new ParameterizedTypeReference<>()
-                {
-                });
+        ResponseEntity<ThreeDModelList> response = template.getForEntity("/product/model3d/all", ThreeDModelList.class);
         assertEquals(200, response.getStatusCode().value());
     }
 

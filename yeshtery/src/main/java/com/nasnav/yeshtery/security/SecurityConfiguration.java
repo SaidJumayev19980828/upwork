@@ -191,6 +191,8 @@ public class SecurityConfiguration {
             , patternOf("/v1/yeshtery/review", POST, setOf(CUSTOMER))
             , patternOf("/yeshtery/get-token", GET, setOf(CUSTOMER))
             , patternOf("/v1/user/review", GET, setOf(CUSTOMER))
+            , patternOf("/v1/product/model3d",POST)
+            , patternOf("/v1/product/model3d/assign",POST)
             , patternOf("/v1/user/link_nasnav_users_to_yeshtery_users", POST, setOf(NASNAV_ADMIN)),
             patternOf("/v1/videochat/**", POST, getAllRoles()),
             patternOf("/v1/videochat/**", GET, getNonCustomersRoles()),
@@ -316,8 +318,7 @@ public class SecurityConfiguration {
                     , patternOf("/v1/user/subscribe/activate")
                     , patternOf("/v1/employee-user-heart-beats-logs/list-active-employee", GET)
                     , patternOf("/v1/organization/register", HttpMethod.POST)
-                    , patternOf("/v1/product/get3d/all", HttpMethod.GET)
-                    , patternOf("/v1/product/get3d/model", HttpMethod.GET)
+                    , patternOf("/v1/product/model3d/**", HttpMethod.GET)
 
                     , patternOf("/v1/frontend/setting", GET)
                     , patternOf("/v1/package", GET)
