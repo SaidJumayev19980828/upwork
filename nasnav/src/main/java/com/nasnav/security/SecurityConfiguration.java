@@ -109,8 +109,10 @@ public class SecurityConfiguration {
 			patternOf( "/user/logout_all"										, getAllRoles() ),
 			patternOf( "/user/suspend"											, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 			patternOf("/user/review"					    , HttpMethod.GET   , setOf(CUSTOMER)),
-			patternOf("/product/model3d",POST),
-			patternOf("/product/model3d/assign",POST),
+			patternOf("/product/model3d/assign", POST),
+			patternOf("/product/model3d", POST),
+			patternOf("product/model3d/**", DELETE),
+			patternOf("product/model3d/**", PUT),
 			patternOf( "/product/review"					,HttpMethod.POST	, setOf(CUSTOMER)),
 			patternOf( "/product/**"						,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
 			patternOf( "/product/**"						,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN)),
@@ -442,7 +444,7 @@ public class SecurityConfiguration {
 
 
     private static HashSet<Roles> setOf(Roles... roles) {
-        return new HashSet<Roles>(Arrays.asList(roles));
+        return new HashSet<>(Arrays.asList(roles));
     }
 
 

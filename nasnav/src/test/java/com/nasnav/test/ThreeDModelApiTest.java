@@ -14,10 +14,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -78,7 +76,13 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
-    void searchAllByParams() {
+    void getAllThreeDModel() {
+        ResponseEntity<ThreeDModelList> response = template.getForEntity("/product/model3d/all", ThreeDModelList.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    void getAllByParams() {
         String sku = "sku-test2";
         String barcode = "test-barcode2";
         String color = "blue";
@@ -89,7 +93,7 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
-    void searchOneByBarcode() {
+    void getOneByBarcode() {
         String barcode = "test-barcode2";
         HttpEntity<Object> request = getHttpEntity("hijkllm");
         ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/model3d/one?barcode=" + barcode, GET, request, ThreeDModelResponse.class);
@@ -98,7 +102,7 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
-    void searchOneBySKU() {
+    void getOneBySKU() {
         String sku = "sku-test2";
         HttpEntity<Object> request = getHttpEntity("hijkllm");
         ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/model3d/one?sku=" + sku, GET, request, ThreeDModelResponse.class);
@@ -123,7 +127,7 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
         String sku = "sku-test2";
         String barcode = "test-barcode2";
         HttpEntity<Object> request = getHttpEntity("hijkllm");
-        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/model3d/one?barcode="+barcode+"&sku=" + sku, GET, request, ThreeDModelResponse.class);
+        ResponseEntity<ThreeDModelResponse> response = template.exchange("/product/model3d/one?barcode=" + barcode + "&sku=" + sku, GET, request, ThreeDModelResponse.class);
         assertEquals(response.getBody().getSku(), sku);
         assertEquals(response.getBody().getBarcode(), barcode);
     }
@@ -136,8 +140,59 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
-    void getAllThreeDModel() {
-        ResponseEntity<ThreeDModelList> response = template.getForEntity("/product/model3d/all", ThreeDModelList.class);
+    void update3DModel() {
+        Long modelId = 24L;
+        String updatedBody = createThreeDModelRequestBody().put("barcode", "updated-barcode").toString();
+        MultiValueMap<String, Object> updatedMap = new LinkedMultiValueMap<>();
+        updatedMap.add("properties", updatedBody);
+        updatedMap.add("files", file);
+        HttpEntity<Object> updatedJson = getHttpEntity(updatedMap, "abcdefg", MediaType.valueOf(MediaType.MULTIPART_FORM_DATA_VALUE));
+        ResponseEntity<ThreeDModelResponse> updatedResponse = template.exchange("/product/model3d/" + modelId, org.springframework.http.HttpMethod.PUT, updatedJson, ThreeDModelResponse.class);
+        assertEquals(200, updatedResponse.getStatusCode().value());
+        assertEquals("updated-barcode", updatedResponse.getBody().getBarcode());
+    }
+
+    @Test
+    void update3DModelWithUnauthorizedRole() {
+        Long modelId = 24L;
+        String updatedBody = createThreeDModelRequestBody().put("barcode", "updated-barcode").toString();
+        MultiValueMap<String, Object> updatedMap = new LinkedMultiValueMap<>();
+        updatedMap.add("properties", updatedBody);
+        updatedMap.add("files", file);
+        HttpEntity<Object> updatedJson = getHttpEntity(updatedMap, "hijkllm", MediaType.valueOf(MediaType.MULTIPART_FORM_DATA_VALUE));
+        ResponseEntity<ThreeDModelResponse> updatedResponse = template.exchange("/product/model3d/" + modelId, org.springframework.http.HttpMethod.PUT, updatedJson, ThreeDModelResponse.class);
+        assertEquals(403, updatedResponse.getStatusCode().value());
+    }
+
+    @Test
+    void update3DModelWithExistingBarcode() {
+        Long modelId = 24L;
+        String updatedBody = createThreeDModelRequestBody().put("barcode", "test-barcode2").toString();
+        MultiValueMap<String, Object> updatedMap = new LinkedMultiValueMap<>();
+        updatedMap.add("properties", updatedBody);
+        updatedMap.add("files", file);
+        HttpEntity<Object> updatedJson = getHttpEntity(updatedMap, "abcdefg", MediaType.valueOf(MediaType.MULTIPART_FORM_DATA_VALUE));
+        ResponseEntity<ThreeDModelResponse> updatedResponse = template.exchange("/product/model3d/" + modelId, org.springframework.http.HttpMethod.PUT, updatedJson, ThreeDModelResponse.class);
+        assertEquals(409, updatedResponse.getStatusCode().value());
+    }
+
+    @Test
+    void update3DModelWithExistingSku() {
+        Long modelId = 24L;
+        String updatedBody = createThreeDModelRequestBody().put("sku", "sku-test2").toString();
+        MultiValueMap<String, Object> updatedMap = new LinkedMultiValueMap<>();
+        updatedMap.add("properties", updatedBody);
+        updatedMap.add("files", file);
+        HttpEntity<Object> updatedJson = getHttpEntity(updatedMap, "abcdefg", MediaType.valueOf(MediaType.MULTIPART_FORM_DATA_VALUE));
+        ResponseEntity<ThreeDModelResponse> updatedResponse = template.exchange("/product/model3d/" + modelId, org.springframework.http.HttpMethod.PUT, updatedJson, ThreeDModelResponse.class);
+        assertEquals(409, updatedResponse.getStatusCode().value());
+    }
+
+    @Test
+    void delete3DModel() {
+        Long modelId = 24L;
+        HttpEntity<Object> request = getHttpEntity("abcdefg");
+        ResponseEntity<String> response = template.exchange("/product/model3d/" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
         assertEquals(200, response.getStatusCode().value());
     }
 
