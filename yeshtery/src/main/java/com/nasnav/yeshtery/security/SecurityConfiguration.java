@@ -78,7 +78,8 @@ public class SecurityConfiguration {
     //- note that the request url is matched against the patterns IN ORDER, so  
     //	universal patterns like "/**" must always be the last one.
     //- to created a pattern use one of the overloads of "patternOf" method, each adds
-    //	more fine grained control of the permission (by HttpMethod, by roles) 
+    //	more fine grained control of the permission (by HttpMethod, by roles)
+    String modelPath = "/v1/product/model3d/**";
     private List<AuthPattern> permissions = asList(
             patternOf("/v1/360view/**", POST, setOf(ORGANIZATION_ADMIN)),
             patternOf("/v1/room/shop/list_for_user", GET, getAllRoles()),
@@ -193,8 +194,8 @@ public class SecurityConfiguration {
             , patternOf("/v1/user/review", GET, setOf(CUSTOMER))
             , patternOf("/v1/product/model3d",POST)
             , patternOf("/v1/product/model3d/assign",POST)
-            , patternOf("/v1/product/model3d/**", DELETE)
-            , patternOf("/v1/product/model3d/**", PUT)
+            , patternOf(modelPath, DELETE)
+            , patternOf(modelPath, PUT)
             , patternOf("/v1/user/link_nasnav_users_to_yeshtery_users", POST, setOf(NASNAV_ADMIN)),
             patternOf("/v1/videochat/**", POST, getAllRoles()),
             patternOf("/v1/videochat/**", GET, getNonCustomersRoles()),
@@ -320,7 +321,7 @@ public class SecurityConfiguration {
                     , patternOf("/v1/user/subscribe/activate")
                     , patternOf("/v1/employee-user-heart-beats-logs/list-active-employee", GET)
                     , patternOf("/v1/organization/register", HttpMethod.POST)
-                    , patternOf("/v1/product/model3d/**", HttpMethod.GET)
+                    , patternOf(modelPath, HttpMethod.GET)
 
                     , patternOf("/v1/frontend/setting", GET)
                     , patternOf("/v1/package", GET)

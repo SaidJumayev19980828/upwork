@@ -561,8 +561,8 @@ public enum ErrorCodes {
 
 	,$003d$MODEL$("missing params you should enter barcode or sku."),
 	$004d$MODEL$("missing params you should enter at lest one file."),
-	$005d$MODEL$("This barcode already exists in the database."),
-	$006d$MODEL$("This SKU already exists in the database."),
+	MODEL$005("This barcode already exists in the database."),
+	MODEL$006("This SKU already exists in the database."),
 
 	PE_EVENT_$001("No personal event found with the provided ID [%s] and a start date in the future For that User"),
 	PE_EVENT_$002("No personal event found with the provided ID [%s]"),

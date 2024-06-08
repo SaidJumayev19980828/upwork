@@ -107,11 +107,11 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         validateUserWithOrganization(organizationName);
         if (threeDModelDTO.getBarcode() != null && !threeDModelDTO.getBarcode().equals(productThreeDModel.getBarcode())
                 && threeDModelRepository.existsByBarcode(threeDModelDTO.getBarcode())) {
-            throw new RuntimeBusinessException(CONFLICT, $005d$MODEL$, "barcode");
+            throw new RuntimeBusinessException(CONFLICT, MODEL$005, "barcode");
         }
         if (threeDModelDTO.getSku() != null && !threeDModelDTO.getSku().equals(productThreeDModel.getSku())
                 && threeDModelRepository.existsBySku(threeDModelDTO.getSku())) {
-            throw new RuntimeBusinessException(CONFLICT, $006d$MODEL$, "sku");
+            throw new RuntimeBusinessException(CONFLICT, MODEL$006, "sku");
         }
 
         threeDModelDTO.toEntity(productThreeDModel);
@@ -243,10 +243,10 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
             throw new RuntimeBusinessException(BAD_REQUEST, $003d$MODEL$, "barcode or sku");
         }
         if (barcode != null && threeDModelRepository.existsByBarcode(barcode)) {
-            throw new RuntimeBusinessException(CONFLICT, $005d$MODEL$, "barcode");
+            throw new RuntimeBusinessException(CONFLICT, MODEL$005, "barcode");
         }
         if (sku != null && threeDModelRepository.existsBySku(sku)) {
-            throw new RuntimeBusinessException(CONFLICT, $006d$MODEL$, "sku");
+            throw new RuntimeBusinessException(CONFLICT, MODEL$006, "sku");
         }
     }
 
