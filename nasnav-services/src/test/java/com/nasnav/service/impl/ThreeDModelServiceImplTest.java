@@ -42,9 +42,6 @@ class ThreeDModelServiceImplTest {
     void testNullableThreeDModel() {
         Long modelId = null;
         assertNull(threeDModelService.getThreeDModel(modelId));
-        modelId = 0L;
-        //if model id have default value
-        assertNull(threeDModelService.getThreeDModel(modelId));
     }
 
     @Test

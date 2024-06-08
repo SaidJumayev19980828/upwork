@@ -46,8 +46,6 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
     private FilesRepository filesRepository;
     @Value("classpath:/files/product__list_upate.csv")
     private Resource file;
-    @Autowired
-    private ThreeDModelService threeDModelService;
 
     @Test
     void addNewThreeDModel() {

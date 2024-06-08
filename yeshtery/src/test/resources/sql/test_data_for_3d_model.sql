@@ -14,6 +14,8 @@ INSERT INTO public.organizations(id, name, currency_iso) VALUES (63, 'MeetusAR',
 --insert employee
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (70, 'testuser2@nasnav.com', 63, 'hijkllm',  null);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+VALUES (71, 'admin@nasnav.com', 63, 'abcdefg',  null);
 
 
 --inserting Roles
@@ -25,9 +27,14 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (41, 70, 40);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (20, 'hijkllm', now(), 70, null);
-
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (42, 71, 30);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (21, 'abcdefg', now(), 71, null);
 
 truncate TABLE public.product_3d_model;
 insert into product_3d_model (id, name, description, model, size, barcode, sku, color)
 values (22,'3dm-model','description-test','model1',6,'test-barcode2','sku-test2','blue');
+insert into product_3d_model (id, name, description, model, size, barcode, sku, color)
+values (23,'3dm-model','description-test','model2',6,'test-barcode3','sku-test3','red');
+insert into product_3d_model (id, name, description, model, size, barcode, sku, color)
+values (24,'3dm-model','description-test','model3',6,'test-barcode4','sku-test4','blue');
 
