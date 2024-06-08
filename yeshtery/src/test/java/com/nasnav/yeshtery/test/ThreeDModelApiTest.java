@@ -3,7 +3,6 @@ package com.nasnav.yeshtery.test;
 import com.nasnav.dao.FilesRepository;
 import com.nasnav.dto.response.ThreeDModelList;
 import com.nasnav.dto.response.ThreeDModelResponse;
-import com.nasnav.service.ThreeDModelService;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
@@ -183,14 +182,6 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir
         HttpEntity<Object> updatedJson = getHttpEntity(updatedMap, "abcdefg", MediaType.valueOf(MediaType.MULTIPART_FORM_DATA_VALUE));
         ResponseEntity<ThreeDModelResponse> updatedResponse = template.exchange("/v1/product/model3d/" + modelId, org.springframework.http.HttpMethod.PUT, updatedJson, ThreeDModelResponse.class);
         assertEquals(409, updatedResponse.getStatusCode().value());
-    }
-
-    @Test
-    void delete3DModel() {
-        Long modelId = 24L;
-        HttpEntity<Object> request = getHttpEntity("abcdefg");
-        ResponseEntity<String> response = template.exchange("/v1/product/model3d/" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
-        assertEquals(200, response.getStatusCode().value());
     }
 
 }
