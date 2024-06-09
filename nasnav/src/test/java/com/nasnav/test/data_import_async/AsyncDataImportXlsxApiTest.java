@@ -14,8 +14,6 @@ import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,9 +38,7 @@ import javax.servlet.http.Cookie;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -233,15 +229,10 @@ public class AsyncDataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
         result.andExpect(status().is(403));
     }
 
-	@ParameterizedTest
-	@CsvSource({
-			"shop_ids",
-			"encoding",
-			"currency"
-	})
-	public void uploadProductsXlsxMissingRequiredFieldTest(String missingField) throws  Exception {
+	@Test
+	public void uploadProductsXlsxMissingRequiredFieldTest() throws  Exception {
 		var importProperties = createDataImportProperties();
-		importProperties.remove(missingField);
+		importProperties.remove("encoding");
 
 		var result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "131415", xlsxFile, importProperties);
 

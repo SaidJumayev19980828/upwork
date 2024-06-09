@@ -150,12 +150,12 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
     @Override
     public ThreeDModelResponse getThreeDModel(Long modelId) {
         if (modelId == null) {
-            log.warn("there is no model found to assign it for the product");
             return null;
         }
-        ProductThreeDModel threeDModel = threeDModelRepository.findById(modelId).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND, GEN$3dM$0002, modelId)
-        );
+        ProductThreeDModel threeDModel = threeDModelRepository.findById(modelId).orElse(null);
+        if (threeDModel == null) {
+            return null;
+        }
         List<String> fileUrls = fileService.getUrlsByModelId(modelId);
         return get3dModelResponse(threeDModel, fileUrls);
     }
