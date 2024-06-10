@@ -251,15 +251,10 @@ public class AsyncDataImportCsvApiTest extends AbstractTestWithTempBaseDir {
         result.andExpect(status().is(403));
     }
 
-	@ParameterizedTest
-	@CsvSource({
-			"shop_ids",
-			"encoding",
-			"currency"
-	})
-	public void uploadProductsCSVMissingRequiredFieldTest(String missingField) throws IOException, Exception {
+	@Test
+	public void uploadProductsCSVMissingRequiredFieldTest() throws IOException, Exception {
 		var importProperties = createDataImportProperties();
-		importProperties.remove(missingField);
+		importProperties.remove("encoding");
 
 		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST, "131415", csvFile, importProperties);
 

@@ -184,4 +184,26 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir
         assertEquals(409, updatedResponse.getStatusCode().value());
     }
 
+    @Test
+    void update3DModelWithoutFiles() {
+        Long modelId = 24L;
+        String updatedBody = createThreeDModelRequestBody().put("barcode", "updated-barcode").toString();
+        MultiValueMap<String, Object> updatedMap = new LinkedMultiValueMap<>();
+        updatedMap.add("properties", updatedBody);
+        HttpEntity<Object> updatedJson = getHttpEntity(updatedMap, "abcdefg", MediaType.valueOf(MediaType.MULTIPART_FORM_DATA_VALUE));
+        ResponseEntity<ThreeDModelResponse> updatedResponse = template.exchange("/v1/product/model3d/" + modelId, org.springframework.http.HttpMethod.PUT, updatedJson, ThreeDModelResponse.class);
+        assertEquals(200, updatedResponse.getStatusCode().value());
+        assertEquals("updated-barcode", updatedResponse.getBody().getBarcode());
+    }
+
+    @Test
+    void update3DModelWithoutProperties() {
+        Long modelId = 24L;
+        MultiValueMap<String, Object> updatedMap = new LinkedMultiValueMap<>();
+        updatedMap.add("files", file);
+        HttpEntity<Object> updatedJson = getHttpEntity(updatedMap, "abcdefg", MediaType.valueOf(MediaType.MULTIPART_FORM_DATA_VALUE));
+        ResponseEntity<ThreeDModelResponse> updatedResponse = template.exchange("/v1/product/model3d/" + modelId, org.springframework.http.HttpMethod.PUT, updatedJson, ThreeDModelResponse.class);
+        assertEquals(200, updatedResponse.getStatusCode().value());
+    }
+
 }

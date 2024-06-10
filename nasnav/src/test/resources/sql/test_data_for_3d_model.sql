@@ -38,3 +38,4 @@ values (23,'3dm-model','description-test','model2',6,'test-barcode3','sku-test3'
 insert into product_3d_model (id, name, description, model, size, barcode, sku, color)
 values (24,'3dm-model','description-test','model3',6,'test-barcode4','sku-test4','blue');
 
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, model_id, created_at, updated_at) VALUES (1000, 'product_2',null, null, 99001, 24, now(), now());

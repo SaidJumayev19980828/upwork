@@ -37,8 +37,8 @@ public class ThreeModelController {
     public ThreeDModelResponse update3DModelFiles(
             @PathVariable("modelId") Long modelId,
             @RequestHeader(name = "User-Token", required = false) String userToken,
-            @RequestPart("files") MultipartFile[] files,
-            @RequestPart(value = "properties") String jsonString) throws JsonProcessingException {
+            @RequestPart(value = "files", required = false) MultipartFile[] files,
+            @RequestPart(value = "properties", required = false) String jsonString) throws JsonProcessingException {
         return threeModelService.updateThreeDModel(modelId, jsonString, files);
     }
 
@@ -74,11 +74,26 @@ public class ThreeModelController {
         threeModelService.assignModelToProduct(modelId, productId);
     }
 
+    @PostMapping(value = "/unassign")
+    public void unassign3DModelToProduct(
+            @RequestHeader (name = "User-Token", required = false) String userToken,
+            @RequestParam(value = "model_id") Long modelId,
+            @RequestParam(value = "product_id") Long productId) {
+        threeModelService.unassignModelToProduct(modelId, productId);
+    }
+
     @DeleteMapping(value = "/{modelId}")
     public void delete3DModel(
             @RequestHeader(name = "User-Token", required = false) String userToken,
             @PathVariable("modelId") Long modelId) {
         threeModelService.deleteThreeDModel(modelId);
+    }
+
+    @DeleteMapping(value = "/files/{modelId}")
+    public void delete3DModelFiles(
+            @RequestHeader (name = "User-Token", required = false) String userToken,
+            @PathVariable("modelId") Long modelId) {
+        threeModelService.deleteThreeDModelFiles(modelId);
     }
 
 }

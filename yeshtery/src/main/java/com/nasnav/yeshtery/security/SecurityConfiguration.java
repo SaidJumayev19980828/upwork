@@ -194,6 +194,7 @@ public class SecurityConfiguration {
             , patternOf("/v1/user/review", GET, setOf(CUSTOMER))
             , patternOf("/v1/product/model3d",POST)
             , patternOf("/v1/product/model3d/assign",POST)
+            , patternOf("/v1/product/model3d/unassign",POST)
             , patternOf(modelPath, DELETE)
             , patternOf(modelPath, PUT)
             , patternOf("/v1/user/link_nasnav_users_to_yeshtery_users", POST, setOf(NASNAV_ADMIN)),

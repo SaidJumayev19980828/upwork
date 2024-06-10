@@ -21,4 +21,8 @@ public interface ThreeDModelService {
     ThreeDModelResponse updateThreeDModel(Long modelId, String jsonString, MultipartFile[] files) throws JsonProcessingException;
 
     void deleteThreeDModel(Long modelId);
+
+    void deleteThreeDModelFiles(Long modelId);
+
+    void unassignModelToProduct(Long modelId, Long productId);
 }

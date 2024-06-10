@@ -103,25 +103,29 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
     public ThreeDModelResponse updateThreeDModel(Long modelId, String jsonString, MultipartFile[] files) throws JsonProcessingException {
         validateCurrentUserForEditing();
         ProductThreeDModel productThreeDModel = validate3DModelExisting(modelId);
-        ThreeDModelDTO threeDModelDTO = mapper.readValue(jsonString, ThreeDModelDTO.class);
-        validateUserWithOrganization(organizationName);
-        if (threeDModelDTO.getBarcode() != null && !threeDModelDTO.getBarcode().equals(productThreeDModel.getBarcode())
-                && threeDModelRepository.existsByBarcode(threeDModelDTO.getBarcode())) {
-            throw new RuntimeBusinessException(CONFLICT, MODEL$005, "barcode");
+        if (StringUtils.isNotBlankOrNull(jsonString)) {
+            ThreeDModelDTO threeDModelDTO = mapper.readValue(jsonString, ThreeDModelDTO.class);
+            validateUserWithOrganization(organizationName);
+            if (threeDModelDTO.getBarcode() != null && !threeDModelDTO.getBarcode().equals(productThreeDModel.getBarcode())
+                    && threeDModelRepository.existsByBarcode(threeDModelDTO.getBarcode())) {
+                throw new RuntimeBusinessException(CONFLICT, MODEL$005, "barcode");
+            }
+            if (threeDModelDTO.getSku() != null && !threeDModelDTO.getSku().equals(productThreeDModel.getSku())
+                    && threeDModelRepository.existsBySku(threeDModelDTO.getSku())) {
+                throw new RuntimeBusinessException(CONFLICT, MODEL$006, "sku");
+            }
+            threeDModelDTO.toEntity(productThreeDModel);
+            productThreeDModel = threeDModelRepository.save(productThreeDModel);
         }
-        if (threeDModelDTO.getSku() != null && !threeDModelDTO.getSku().equals(productThreeDModel.getSku())
-                && threeDModelRepository.existsBySku(threeDModelDTO.getSku())) {
-            throw new RuntimeBusinessException(CONFLICT, MODEL$006, "sku");
+
+        List<String> filesUrls;
+        if (files != null && files.length > 0) {
+            deleteThreeDModelFiles(modelId);
+            filesUrls = save3DModelFiles(files, modelId);
+        } else {
+            filesUrls = fileService.getUrlsByModelId(modelId);
         }
-
-        threeDModelDTO.toEntity(productThreeDModel);
-
-        ProductThreeDModel threeDModel = threeDModelRepository.save(productThreeDModel);
-
-        MultipartFile[] filesTobeSaved = validateModelFiles(files);
-        List<String> filesUrls = save3DModelFiles(filesTobeSaved, threeDModel.getId());
-
-        return get3dModelResponse(threeDModel, filesUrls);
+        return get3dModelResponse(productThreeDModel, filesUrls);
     }
 
     @Override
@@ -167,6 +171,24 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         List<String> filesUrls = fileService.getUrlsByModelId(modelId);
         filesUrls.forEach(fileService::deleteFileByUrl);
         threeDModelRepository.delete(threeDModel);
+    }
+
+    @Override
+    public void deleteThreeDModelFiles(Long modelId) {
+        validateCurrentUserForEditing();
+        ProductThreeDModel threeDModel = validate3DModelExisting(modelId);
+        List<String> filesUrls = fileService.getUrlsByModelId(threeDModel.getId());
+        filesUrls.forEach(fileService::deleteFileByUrl);
+    }
+
+    @Override
+    public void unassignModelToProduct(Long modelId, Long productId) {
+        validate3DModelExisting(modelId);
+        ProductEntity product = validateProductExisting(productId);
+        if (product.getModelId() != null && product.getModelId().equals(modelId)) {
+            product.setModelId(null);
+            productRepository.save(product);
+        }
     }
 
     private List<String> save3DModelFiles(MultipartFile[] files, Long modelId) {

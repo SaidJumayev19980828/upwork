@@ -110,6 +110,7 @@ public class SecurityConfiguration {
 			patternOf( "/user/suspend"											, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 			patternOf("/user/review"					    , HttpMethod.GET   , setOf(CUSTOMER)),
 			patternOf("/product/model3d/assign", POST),
+			patternOf("/product/model3d/unassign", POST),
 			patternOf("/product/model3d", POST),
 			patternOf("product/model3d/**", DELETE),
 			patternOf("product/model3d/**", PUT),
