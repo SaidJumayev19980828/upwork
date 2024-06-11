@@ -206,4 +206,46 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir
         assertEquals(200, updatedResponse.getStatusCode().value());
     }
 
+    @Test
+    void delete3DModel() {
+        Long modelId = 24L;
+        HttpEntity<Object> request = getHttpEntity("abcdefg");
+        ResponseEntity<String> response = template.exchange("/v1/product/model3d/" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    void unassignModelToProduct() {
+        Long modelId = 24L;
+        HttpEntity<Object> request = getHttpEntity("abcdefg");
+        ResponseEntity<String> response = template.exchange("/v1/product/model3d/unassign?product_id=1000&model_id=" + modelId, org.springframework.http.HttpMethod.POST, request, String.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    void deleteFilesByModelId() {
+        Long modelId = 24L;
+        HttpEntity<Object> request = getHttpEntity("abcdefg");
+        ResponseEntity<String> response = template.exchange("/v1/product/model3d/files/" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    void deleteFilesByModelIdWithUnauthorizedRole() {
+        Long modelId = 24L;
+        HttpEntity<Object> request = getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/v1/product/model3d/files/" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
+        assertEquals(403, response.getStatusCode().value());
+    }
+
+    @Test
+    void deleteFilesByModelIdWithInvalidModelId() {
+        Long modelId = 100L;
+        HttpEntity<Object> request = getHttpEntity("abcdefg");
+        ResponseEntity<String> response = template.exchange("/v1/product/model3d/files/" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
+        assertEquals(404, response.getStatusCode().value());
+    }
+
+
+
 }
