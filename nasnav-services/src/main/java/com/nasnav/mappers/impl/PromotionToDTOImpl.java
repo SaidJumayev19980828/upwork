@@ -83,9 +83,14 @@ public class PromotionToDTOImpl implements promotionToDTO {
                 String promotion = mapPromotionType(promoTypeId);
                 Integer quantityMin = constraints.getProductQuantityMin();
                 Integer productToGive = constraints.getProductToGive();
-                return replaceSecondOccurrence(promotion,String.valueOf(productToGive))
-                        .replace("X", String.valueOf(quantityMin));
-
+                if (quantityMin == null || productToGive == null) {
+                    return promotion;
+                }
+                if (promotion.equals(PromotionType.BUY_X_GET_Y_FROM_BRAND.name()) || promotion.equals(PromotionType.BUY_X_GET_Y_FROM_TAG.name())
+                    || promotion.equals(PromotionType.BUY_X_GET_Y_FROM_PRODUCT.name())) {
+                    return replaceSecondOccurrence(promotion, String.valueOf(productToGive))
+                            .replace("X", String.valueOf(quantityMin));
+                }
             }
         }
         return mapPromotionType(promoTypeId);

@@ -4,7 +4,6 @@ package com.nasnav.dto.response;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.PromosConstraints;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -46,9 +45,12 @@ public class PromotionDTO implements Comparable<PromotionDTO> {
 
 	@Override
 	public int compareTo(PromotionDTO promo) {
-		return Comparator
-				.comparing(PromotionDTO::getPriority, Comparator.reverseOrder())
-				.thenComparing(PromotionDTO::getId)
-				.compare(this, promo);
+        if (promo != null) {
+            return Comparator
+                    .comparing(PromotionDTO::getPriority, Comparator.nullsFirst(Comparator.reverseOrder()))
+                    .thenComparing(PromotionDTO::getId, Comparator.nullsFirst(Comparator.naturalOrder()))
+                    .compare(this, promo);
+        }
+        return 1;
 	}
 }
