@@ -46,6 +46,7 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private Integer priority;
     private Long id;
     private List<ProductPromotionDto> promotions;
+    private Long modelId;
     @JsonProperty("3dModel")
     private ThreeDModelResponse threeDModel;
 

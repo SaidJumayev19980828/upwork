@@ -52,6 +52,8 @@ public class QProducts extends com.querydsl.sql.RelationalPathBase<QProducts> {
 
     public final BooleanPath search360 = createBoolean("search360");
 
+    public final NumberPath<Long> modelId = createNumber("modelId", Long.class);
+
     public final DateTimePath<java.sql.Timestamp> updatedAt = createDateTime("updatedAt", java.sql.Timestamp.class);
 
     public final com.querydsl.sql.PrimaryKey<QProducts> productsPkey = createPrimaryKey(id);
@@ -124,6 +126,7 @@ public class QProducts extends com.querydsl.sql.RelationalPathBase<QProducts> {
         addMetadata(removed, ColumnMetadata.named("removed").withIndex(13).ofType(Types.INTEGER).withSize(10).notNull());
         addMetadata(search360, ColumnMetadata.named("search_360").withIndex(14).ofType(Types.BIT).withSize(1));
         addMetadata(updatedAt, ColumnMetadata.named("updated_at").withIndex(9).ofType(Types.TIMESTAMP).withSize(29).withDigits(6));
+        addMetadata(modelId, ColumnMetadata.named("model_id").withIndex(16).ofType(Types.BIGINT).withSize(19));
     }
 
 }

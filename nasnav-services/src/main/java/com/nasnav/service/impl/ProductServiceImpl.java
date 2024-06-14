@@ -281,7 +281,6 @@ public class ProductServiceImpl implements ProductService {
 		productDTO.setVariantFeatures(getVariantFeatures(productVariants));
 		productDTO.setBundleItems(getBundleItems(product));
 		productDTO.setTags(tagsDTOList);
-		Long modelId =product.getModelId();
 		ThreeDModelResponse threeDModelResponse = threeDModelService.getThreeDModel(product.getModelId());
 		productDTO.setThreeDModel(threeDModelResponse);
 		return productDTO;
@@ -672,7 +671,7 @@ public class ProductServiceImpl implements ProductService {
 
 
 	private SubQueryExpression<?> getProductsQuery(QStocks stock, QProducts product, QProductVariants variant, SQLQuery fromClause) {
-		SQLQuery<?> productsQuery = fromClause.select(
+		return fromClause.select(
 				stock.id.as("stock_id"),
 				stock.quantity.as("quantity"),
 				stock.price.as("price"),
@@ -696,6 +695,7 @@ public class ProductServiceImpl implements ProductService {
 				product.pName.as("pname"),
 				product.description.as("description"),
 				product.search360.as("has_360_view"),
+				product.modelId.as("model_id"),
 				product.createdAt.as("creation_date"),
 				product.updatedAt.as("update_date"),
 				product.productType,
@@ -708,8 +708,6 @@ public class ProductServiceImpl implements ProductService {
 								.then(ONE)
 								.otherwise(ZERO).desc())
 						.orderBy(stock.price).as("row_num"));
-
-		return productsQuery;
 	}
 
 
@@ -1229,7 +1227,7 @@ public class ProductServiceImpl implements ProductService {
 
 			Map<Long, List<Long>> product360Shops = getProducts360ShopsList(productIdList);
 
-			stocks.stream()
+			stocks = stocks.stream()
 					.map(s -> setAdditionalInfo(s, productCoverImages))
 					.map(s -> setProductImages(s, productImages))
 					.map(s -> setProductTags(s, productsTags))
@@ -1238,7 +1236,8 @@ public class ProductServiceImpl implements ProductService {
 					.map(s -> setCollectionPrices(s, collectionsPricesMap))
 					.map(s -> setProductShops(s, product360Shops))
 					.map(s -> setProductRating(s, productRatings))
-					.collect(toList());
+					.map(this::addThreeDModel)
+					.toList();
 			if (searchParam.has_promotions || searchParam.promo_id != null) {
 				Set<Long> productIds = stocks.stream().map(ProductRepresentationObject::getId).collect(toSet());
 				ItemsPromotionsDTO promotionsDTO = promotionsService.getPromotionsListFromProductsAndBrandsAndTagsLists(productIds, emptySet(), emptySet(), searchParam.promotions_per_item);
@@ -1282,6 +1281,13 @@ public class ProductServiceImpl implements ProductService {
 		if (ratings.containsKey(product.getId()))
 			product.setRating(ratings.get(product.getId()));
 		return product;
+	}
+
+	private ProductRepresentationObject addThreeDModel(ProductRepresentationObject product) {
+		ThreeDModelResponse threeDModelResponse = threeDModelService.getThreeDModel(product.getModelId());
+		product.setThreeDModel(threeDModelResponse);
+		return product;
+
 	}
 
 	private ProductRepresentationObject setProductShops(ProductRepresentationObject product, Map<Long, List<Long>> shops) {
