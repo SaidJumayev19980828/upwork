@@ -42,4 +42,5 @@ public interface FileService {
 
   ByteArrayOutputStream getImagesInfo(Long orgId);
 
+  void delete(String fileName, String fileUrl, Long modelId);
 }

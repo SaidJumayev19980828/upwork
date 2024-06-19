@@ -22,20 +22,20 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 @RequestMapping("/files")
 public class FilesController {
 
-	@Autowired
-	private FileService fileService;
+    @Autowired
+    private FileService fileService;
 
     private static Logger logger = Logger.getLogger(FilesController.class);
 
     @PostMapping(consumes = MULTIPART_FORM_DATA_VALUE)
-	@ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.OK)
     public String updateShop(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
-    		                 @RequestParam("org_id") @Nullable Long orgId,
-    		                 @RequestParam("file") MultipartFile file) {
+                             @RequestParam("org_id") @Nullable Long orgId,
+                             @RequestParam("file") MultipartFile file) {
         return fileService.saveFile(file, orgId);
     }
 
-    @GetMapping( path="**")
+    @GetMapping(path = "**")
     public void downloadFile(HttpServletRequest request,
                              HttpServletResponse resp,
                              @RequestParam(required = false) Integer height,
@@ -45,14 +45,18 @@ public class FilesController {
         logger.info("Requesting image " + url + ", size: {" + width + "} x {" + height + "}");
         String resourceInternalUrl = fileService.getResourceInternalUrl(url, width, height, type);
         logger.info("Resultant URL: " + resourceInternalUrl);
-		resp.setStatus(HttpStatus.OK.value());
+        resp.setStatus(HttpStatus.OK.value());
 
-		RequestDispatcher dispatcher = request.getRequestDispatcher(resourceInternalUrl);
-		dispatcher.forward(request, resp);
+        RequestDispatcher dispatcher = request.getRequestDispatcher(resourceInternalUrl);
+        dispatcher.forward(request, resp);
     }
 
-    @DeleteMapping
-    public void deleteFile(@RequestHeader (TOKEN_HEADER) String userToken, @RequestParam("file_name") String fileName) {
-        fileService.deleteOrganizationFile(fileName);
+    @DeleteMapping()
+    public void deleteFile(
+            @RequestHeader(name = "User-Token", required = false) String userToken,
+            @RequestParam(value = "file_name", required = false) String fileName,
+            @RequestParam(value = "url", required = false) String fileUrl,
+            @RequestParam(value = "model_id", required = false) Long modelId) {
+        fileService.delete(fileName, fileUrl, modelId);
     }
 }

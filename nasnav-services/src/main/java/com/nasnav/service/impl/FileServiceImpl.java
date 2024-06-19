@@ -13,6 +13,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.service.FileService;
 import com.nasnav.service.SecurityService;
+import com.nasnav.service.ThreeDModelService;
 import com.nasnav.service.model.FileUrlResource;
 import com.univocity.parsers.common.processor.BeanWriterProcessor;
 import com.univocity.parsers.csv.CsvWriter;
@@ -90,6 +91,8 @@ public class FileServiceImpl implements FileService {
 	private FilesRepository filesRepo;
 	@Autowired
 	private OrganizationImagesRepository orgImagesRepo;
+	@Autowired
+	private ThreeDModelService threeDModelService;
 
 	@Autowired
 	private SecurityService securityService;
@@ -823,7 +826,18 @@ public class FileServiceImpl implements FileService {
 				.collect(collectingAndThen(toList(), this::writeImagesInfoToCsv));
 	}
 
-
+	@Override
+	public void delete(String fileName, String fileUrl, Long modelId) {
+		if (StringUtils.isNotBlankOrNull(fileName)) {
+			deleteOrganizationFile(fileName);
+		}
+		if (StringUtils.isNotBlankOrNull(fileUrl)) {
+			deleteFileByUrl(fileUrl);
+		}
+		if (StringUtils.isNotBlankOrNull(modelId)) {
+			threeDModelService.deleteThreeDModelFiles(modelId);
+		}
+	}
 
 
 	private List<FileEntity> getImagesFiles(List<OrganizationImagesEntity> orgImages, List<ProductImagesEntity> prodImages) {

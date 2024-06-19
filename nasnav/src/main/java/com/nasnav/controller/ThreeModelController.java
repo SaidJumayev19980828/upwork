@@ -86,12 +86,4 @@ public class ThreeModelController {
             @PathVariable("modelId") Long modelId) {
         threeModelService.deleteThreeDModel(modelId);
     }
-
-    @DeleteMapping(value = "/files/{modelId}")
-    public void delete3DModelFiles(
-            @RequestHeader (name = "User-Token", required = false) String userToken,
-            @PathVariable("modelId") Long modelId) {
-        threeModelService.deleteThreeDModelFiles(modelId);
-    }
-
 }

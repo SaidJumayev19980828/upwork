@@ -118,12 +118,10 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
             productThreeDModel = threeDModelRepository.save(productThreeDModel);
         }
 
-        List<String> filesUrls;
+        List<String> filesUrls = fileService.getUrlsByModelId(modelId);
         if (files != null && files.length > 0) {
-            deleteThreeDModelFiles(modelId);
-            filesUrls = save3DModelFiles(files, modelId);
-        } else {
-            filesUrls = fileService.getUrlsByModelId(modelId);
+            List<String> list = save3DModelFiles(files, modelId);
+            filesUrls.addAll(list);
         }
         return get3dModelResponse(productThreeDModel, filesUrls);
     }
@@ -222,7 +220,7 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
     void validateCurrentUserForEditing() {
         BaseUserEntity currentUser = securityService.getCurrentUser();
         Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
-        if (!userHighestRole.equals(Roles.NASNAV_ADMIN)) {
+        if (!(userHighestRole.equals(Roles.NASNAV_ADMIN) || userHighestRole.equals(Roles.ORGANIZATION_ADMIN))) {
             throw new RuntimeBusinessException(FORBIDDEN, E$USR$0006, currentUser.getId());
         }
     }

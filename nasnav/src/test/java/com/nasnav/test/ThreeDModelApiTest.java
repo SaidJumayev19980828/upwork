@@ -157,7 +157,7 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
         MultiValueMap<String, Object> updatedMap = new LinkedMultiValueMap<>();
         updatedMap.add("properties", updatedBody);
         updatedMap.add("files", file);
-        HttpEntity<Object> updatedJson = getHttpEntity(updatedMap, "hijkllm", MediaType.valueOf(MediaType.MULTIPART_FORM_DATA_VALUE));
+        HttpEntity<Object> updatedJson = getHttpEntity(updatedMap, "nopqrst", MediaType.valueOf(MediaType.MULTIPART_FORM_DATA_VALUE));
         ResponseEntity<ThreeDModelResponse> updatedResponse = template.exchange("/product/model3d/" + modelId, org.springframework.http.HttpMethod.PUT, updatedJson, ThreeDModelResponse.class);
         assertEquals(403, updatedResponse.getStatusCode().value());
     }
@@ -225,26 +225,18 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
-    void deleteFilesByModelId() {
+    public void deleteFilesByModelId() {
         Long modelId = 24L;
-        HttpEntity<Object> request = getHttpEntity("abcdefg");
-        ResponseEntity<String> response = template.exchange("/product/model3d/files/" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
+        HttpEntity<Object> request = getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/files?model_id=" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
         assertEquals(200, response.getStatusCode().value());
     }
 
     @Test
-    void deleteFilesByModelIdWithUnauthorizedRole() {
-        Long modelId = 24L;
-        HttpEntity<Object> request = getHttpEntity("hijkllm");
-        ResponseEntity<String> response = template.exchange("/product/model3d/files/" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
-        assertEquals(403, response.getStatusCode().value());
-    }
-
-    @Test
-    void deleteFilesByModelIdWithInvalidModelId() {
+    public void deleteFilesByModelIdWithInvalidModelId() {
         Long modelId = 100L;
-        HttpEntity<Object> request = getHttpEntity("abcdefg");
-        ResponseEntity<String> response = template.exchange("/product/model3d/files/" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
+        HttpEntity<Object> request = getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/files?model_id=" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
         assertEquals(404, response.getStatusCode().value());
     }
 

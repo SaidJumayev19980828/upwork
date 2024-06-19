@@ -48,8 +48,12 @@ public class FilesController {
 		dispatcher.forward(request, resp);
     }
 
-    @DeleteMapping
-    public void deleteFile(@RequestHeader (TOKEN_HEADER) String userToken, @RequestParam("file_name") String fileName) {
-        fileService.deleteOrganizationFile(fileName);
+    @DeleteMapping()
+    public void deleteFile(
+            @RequestHeader(name = "User-Token", required = false) String userToken,
+            @RequestParam(value = "file_name", required = false) String fileName,
+            @RequestParam(value = "url", required = false) String fileUrl,
+            @RequestParam(value = "model_id", required = false) Long modelId) {
+        fileService.delete(fileName, fileUrl, modelId);
     }
 }
