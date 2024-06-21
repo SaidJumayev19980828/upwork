@@ -347,6 +347,60 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 
 	}
 
+	@Test
+	public void deleteFileByUrlTest() throws Exception {
+		//first upload a file
+		String fileName = TEST_PHOTO;
+		Long orgId = 99001L;
+
+		String sanitizedFileName = getFileNameSanitized(fileName);
+		String expectedUrl = orgId + "/" + sanitizedFileName;
+
+		uploadValidTestImg(fileName, orgId, sanitizedFileName, expectedUrl);
+
+		//----------------------------------------------
+		// to get cached in spring resource cache
+		ResponseEntity<String> response = template.exchange("/files/"+ expectedUrl, GET, getHttpEntity(""), String.class);
+		assertEquals(OK, response.getStatusCode());
+		//--------------------------------------------
+		// still in cache
+		Path uploadedFile = basePath.resolve(""+orgId).resolve(sanitizedFileName);
+		assertTrue(Files.exists(uploadedFile));
+
+		//--------------------------------------------
+		// delete the file
+		template.exchange("/files?url="+expectedUrl, org.springframework.http.HttpMethod.DELETE, getHttpEntity("101112"), String.class);
+
+		assertFalse(Files.exists(uploadedFile));
+	}
+
+	@Test
+	public void deleteFileByNameTest() throws Exception {
+		//first upload a file
+		String fileName = TEST_PHOTO;
+		Long orgId = 99001L;
+
+		String sanitizedFileName = getFileNameSanitized(fileName);
+		String expectedUrl = orgId + "/" + sanitizedFileName;
+
+		uploadValidTestImg(fileName, orgId, sanitizedFileName, expectedUrl);
+
+		//----------------------------------------------
+		// to get cached in spring resource cache
+		ResponseEntity<String> response = template.exchange("/files/"+ expectedUrl, GET, getHttpEntity(""), String.class);
+		assertEquals(OK, response.getStatusCode());
+		//--------------------------------------------
+		// still in cache
+		Path uploadedFile = basePath.resolve(""+orgId).resolve(sanitizedFileName);
+		assertTrue(Files.exists(uploadedFile));
+
+		//--------------------------------------------
+		// delete the file
+		template.exchange("/files?file_name="+expectedUrl, org.springframework.http.HttpMethod.DELETE, getHttpEntity("101112"), String.class);
+
+		assertFalse(Files.exists(uploadedFile));
+	}
+
 	
     private void uploadValidTestImg(
             String fileName,

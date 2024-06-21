@@ -5,7 +5,6 @@ import com.nasnav.dao.FilesRepository;
 
 import com.nasnav.dto.response.ThreeDModelList;
 import com.nasnav.dto.response.ThreeDModelResponse;
-import com.nasnav.service.ThreeDModelService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
@@ -53,7 +52,7 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("files", file);
-        HttpEntity<Object> json = getHttpEntity(map, "hijkllm", MediaType.valueOf(MediaType.MULTIPART_FORM_DATA_VALUE));
+        HttpEntity<Object> json = getHttpEntity(map, "abcdefg", MediaType.valueOf(MediaType.MULTIPART_FORM_DATA_VALUE));
         ResponseEntity<ThreeDModelResponse> response = template.postForEntity("/product/model3d", json, ThreeDModelResponse.class);
         assertEquals(200, response.getStatusCode().value());
         assertEquals("test-barcode", response.getBody().getBarcode());
@@ -195,6 +194,22 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    void delete3DModelWithUnauthorizedRole() {
+        Long modelId = 24L;
+        HttpEntity<Object> request = getHttpEntity("nopqrst");
+        ResponseEntity<String> response = template.exchange("/product/model3d/" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
+        assertEquals(403, response.getStatusCode().value());
+    }
+
+    @Test
+    void delete3DModelWithUnauthorizedUser() {
+        Long modelId = 24L;
+        HttpEntity<Object> request = getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/product/model3d/" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
+        assertEquals(404, response.getStatusCode().value());
+    }
+
+    @Test
     void unassignModelToProduct() {
         Long modelId = 24L;
         HttpEntity<Object> request = getHttpEntity("abcdefg");
@@ -227,7 +242,7 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
     @Test
     public void deleteFilesByModelId() {
         Long modelId = 24L;
-        HttpEntity<Object> request = getHttpEntity("hijkllm");
+        HttpEntity<Object> request = getHttpEntity("abcdefg");
         ResponseEntity<String> response = template.exchange("/files?model_id=" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
         assertEquals(200, response.getStatusCode().value());
     }
@@ -235,9 +250,16 @@ class ThreeDModelApiTest extends AbstractTestWithTempBaseDir {
     @Test
     public void deleteFilesByModelIdWithInvalidModelId() {
         Long modelId = 100L;
-        HttpEntity<Object> request = getHttpEntity("hijkllm");
+        HttpEntity<Object> request = getHttpEntity("abcdefg");
         ResponseEntity<String> response = template.exchange("/files?model_id=" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
         assertEquals(404, response.getStatusCode().value());
     }
 
+    @Test
+    public void deleteFilesByModelIdWithUnauthorizedRole() {
+        Long modelId = 24L;
+        HttpEntity<Object> request = getHttpEntity("nopqrst");
+        ResponseEntity<String> response = template.exchange("/files?model_id=" + modelId, org.springframework.http.HttpMethod.DELETE, request, String.class);
+        assertEquals(403, response.getStatusCode().value());
+    }
 }

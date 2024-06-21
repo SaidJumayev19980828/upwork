@@ -65,7 +65,7 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
                                   ProductRepository productRepository, ObjectMapper mapper, FileService fileService,
                                   @Lazy @Qualifier("wert") SubscriptionService subscriptionService,
                                   AbstractCriteriaQueryBuilder<ProductThreeDModel, ThreeDModelSearchParam> criteriaQueryBuilder) {
-        this.organizationName = organizationName;
+        this.organizationName = "MeetusAR";
         this.threeDModelRepository = threeDModelRepository;
         this.organizationRepository = organizationRepository;
         this.securityService = securityService;
@@ -80,8 +80,8 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
 
     @Override
     public ThreeDModelResponse createNewThreeModel(String jsonString, MultipartFile[] files) throws JsonProcessingException {
+        validateUserWithOrganization(organizationName, false);
         ThreeDModelDTO threeDModelDTO = mapper.readValue(jsonString, ThreeDModelDTO.class);
-        validateUserWithOrganization(organizationName);
         validateBarcodeAndSKU(threeDModelDTO.getBarcode(), threeDModelDTO.getSku());
         ProductThreeDModel productThreeDModel = new ProductThreeDModel();
         threeDModelDTO.toEntity(productThreeDModel);
@@ -101,11 +101,10 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
 
     @Override
     public ThreeDModelResponse updateThreeDModel(Long modelId, String jsonString, MultipartFile[] files) throws JsonProcessingException {
-        validateCurrentUserForEditing();
+        validateUserWithOrganization(organizationName, false);
         ProductThreeDModel productThreeDModel = validate3DModelExisting(modelId);
         if (StringUtils.isNotBlankOrNull(jsonString)) {
             ThreeDModelDTO threeDModelDTO = mapper.readValue(jsonString, ThreeDModelDTO.class);
-            validateUserWithOrganization(organizationName);
             if (threeDModelDTO.getBarcode() != null && !threeDModelDTO.getBarcode().equals(productThreeDModel.getBarcode())
                     && threeDModelRepository.existsByBarcode(threeDModelDTO.getBarcode())) {
                 throw new RuntimeBusinessException(CONFLICT, MODEL$005, "barcode");
@@ -164,7 +163,7 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
 
     @Override
     public void deleteThreeDModel(Long modelId) {
-        validateCurrentUserForEditing();
+        validateUserWithOrganization(organizationName, true);
         ProductThreeDModel threeDModel = validate3DModelExisting(modelId);
         List<String> filesUrls = fileService.getUrlsByModelId(modelId);
         filesUrls.forEach(fileService::deleteFileByUrl);
@@ -173,7 +172,7 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
 
     @Override
     public void deleteThreeDModelFiles(Long modelId) {
-        validateCurrentUserForEditing();
+        validateUserWithOrganization(organizationName, true);
         ProductThreeDModel threeDModel = validate3DModelExisting(modelId);
         List<String> filesUrls = fileService.getUrlsByModelId(threeDModel.getId());
         filesUrls.forEach(fileService::deleteFileByUrl);
@@ -198,7 +197,7 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         return filesUrls;
     }
 
-    void validateUserWithOrganization(String organizationName) {
+    void validateUserWithOrganization(String organizationName, boolean isDelete) {
         OrganizationEntity org = null;
         List<OrganizationEntity> organizations = organizationRepository.findByName(organizationName);
         if (organizations != null && !organizations.isEmpty())
@@ -206,29 +205,23 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
         if (org == null) {
             OrganizationEntity organization = new OrganizationEntity();
             organization.setName(organizationName);
-            organizationRepository.save(organization);
-        } else {
-            BaseUserEntity currentUser = securityService.getCurrentUser();
-            EmployeeUserEntity employeeUserEntity = employeeUserRepository.findByIdAndOrganizationId(currentUser.getId(), org.getId()).orElseThrow(
-                    () -> new RuntimeBusinessException(NOT_FOUND, E$USR$0005, currentUser.getId()));
-            Roles userHighestRole = roleService.getEmployeeHighestRole(employeeUserEntity.getId());
-            validateUserRoles(userHighestRole, currentUser);
+            org = organizationRepository.save(organization);
         }
 
-    }
-
-    void validateCurrentUserForEditing() {
         BaseUserEntity currentUser = securityService.getCurrentUser();
-        Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
-        if (!(userHighestRole.equals(Roles.NASNAV_ADMIN) || userHighestRole.equals(Roles.ORGANIZATION_ADMIN))) {
-            throw new RuntimeBusinessException(FORBIDDEN, E$USR$0006, currentUser.getId());
-        }
-    }
-
-    void validateUserRoles(Roles userHighestRole, BaseUserEntity currentUser) {
+        EmployeeUserEntity employeeUserEntity = employeeUserRepository.findByIdAndOrganizationId(currentUser.getId(), org.getId()).orElseThrow(
+                () -> new RuntimeBusinessException(NOT_FOUND, E$USR$0005, currentUser.getId()));
+        Roles userHighestRole = roleService.getEmployeeHighestRole(employeeUserEntity.getId());
         if (userHighestRole == null) {
             log.error("there isn no roles for current user");
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0006, currentUser.getId());
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0005, currentUser.getId());
+        }
+        if (isDelete && !userHighestRole.equals(Roles.NASNAV_ADMIN)) {
+            throw new RuntimeBusinessException(FORBIDDEN, E$USR$0006, currentUser.getId());
+        }
+        if (!isDelete && !userHighestRole.equals(Roles.NASNAV_ADMIN) && !userHighestRole.equals(Roles.ORGANIZATION_ADMIN)
+                && !userHighestRole.equals(Roles.ORGANIZATION_MANAGER)) {
+            throw new RuntimeBusinessException(FORBIDDEN, E$USR$0006, currentUser.getId());
         }
     }
 
