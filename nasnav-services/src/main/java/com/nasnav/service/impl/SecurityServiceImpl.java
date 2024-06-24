@@ -12,8 +12,8 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
+import com.nasnav.service.RoleService;
 import com.nasnav.service.SecurityService;
-import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.service.model.security.UserAuthenticationData;
 import com.nasnav.service.yeshtery.YeshteryUserService;
 import lombok.AllArgsConstructor;
@@ -36,10 +36,7 @@ import javax.cache.annotation.CacheResult;
 import javax.servlet.http.Cookie;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 
 import static com.nasnav.cache.Caches.USERS_BY_TOKENS;
@@ -88,7 +85,10 @@ public class SecurityServiceImpl implements SecurityService {
     private AppConfig config;
 
     @Autowired
-    private UserServicesHelper helper;
+    private RoleService roleService;
+
+    @Autowired
+    private PermissionRepository permissionRepository;
 
 
     @Override
@@ -171,7 +171,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 
     private List<GrantedAuthority> getUserRoles(BaseUserEntity userEntity) {
-        return userRepo.getUserRoles(userEntity).stream()
+        return roleService.getUserRoles(userEntity).stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(toList());
     }
@@ -328,7 +328,7 @@ public class SecurityServiceImpl implements SecurityService {
         }
 
         Long orgId = ofNullable(userEntity.getOrganizationId()).orElse(0L);
-        List<String> userRoles = userRepo.getUserRoles(userEntity);
+        List<String> userRoles = roleService.getUserRoles(userEntity);
 
         return new UserApiResponse(userEntity.getId(), cookie.getValue(), userRoles, orgId, shopId,
                 userEntity.getName(), userEntity.getEmail(), cookie);
@@ -399,7 +399,7 @@ public class SecurityServiceImpl implements SecurityService {
     @Override
     public boolean currentUserHasMaxRoleLevelOf(Roles role) {
         var currentUserRoles = getCurrentUserRoles();
-        return helper.hasMaxRoleLevelOf(role, currentUserRoles);
+        return roleService.hasMaxRoleLevelOf(role, new ArrayList<>(currentUserRoles));
     }
 
 
@@ -462,7 +462,7 @@ public class SecurityServiceImpl implements SecurityService {
 
     @Override
     public Boolean userHasRole(BaseUserEntity user, Roles role) {
-        return userRepo.getUserRoles(user)
+        return roleService.getUserRoles(user)
                 .stream()
                 .anyMatch(auth -> Objects.equals(auth, role.getValue()));
     }
@@ -600,17 +600,17 @@ public class SecurityServiceImpl implements SecurityService {
 
     @Override
     public boolean currentEmployeeUserHasShopRolesOrHigher() {
-        return helper.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.STORE_EMPLOYEE);
+        return roleService.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.STORE_EMPLOYEE);
     }
 
     @Override
     public boolean currentEmployeeHasOrgRolesOrHigher() {
-        return helper.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.ORGANIZATION_EMPLOYEE);
+        return roleService.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.ORGANIZATION_EMPLOYEE);
     }
 
     @Override
     public boolean currentEmployeeHasNasnavRoles() {
-        return helper.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.NASNAV_EMPLOYEE);
+        return roleService.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.NASNAV_EMPLOYEE);
     }
 
     @Override
@@ -647,6 +647,12 @@ public class SecurityServiceImpl implements SecurityService {
         userTokenEntity.setUserEntity(user);
         userTokenEntity.setEmployeeUserEntity(employee);
         return userTokenEntity;
+    }
+
+    @Override
+    public boolean hasPermission(String permissionName) {
+        BaseUserEntity currentUser = getCurrentUser();
+        return permissionRepository.findByUserId(currentUser.getId()).stream().map(Permission::getName).anyMatch(permissionName::equals);
     }
 
 }

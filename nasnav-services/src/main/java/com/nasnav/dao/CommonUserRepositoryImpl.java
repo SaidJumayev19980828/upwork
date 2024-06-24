@@ -1,10 +1,8 @@
 package com.nasnav.dao;
 
-import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.Role;
 import com.nasnav.persistence.UserEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -14,7 +12,6 @@ import java.util.*;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.exceptions.ErrorCodes.GEN$0004;
 import static com.nasnav.exceptions.ErrorCodes.U$LOG$0002;
-import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
@@ -32,36 +29,6 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 	@Autowired
 	private YeshteryUserRepository yeshteryUserRepo;
 	 */
-	
-	@Autowired
-	private RoleRepository roleRepo; 
-
-	
-	@Override
-	public List<String> getUserRoles(BaseUserEntity user) {
-		
-		if(user == null)
-			return new ArrayList<>();
-		
-		
-		if(user instanceof UserEntity)
-			return getCustomerUserRoles();
-		
-		List<Role> rolesOfEmployeeUser = this.roleRepo.getRolesOfEmployeeUser(user.getId());
-		return rolesOfEmployeeUser.stream()
-						.filter(role -> role != null)
-						.map(Role::getName)
-						.collect(toList());
-	}
-	
-	
-	
-	private List<String> getCustomerUserRoles() {
-		// for now, return default role which is Customer
-		return Collections.singletonList(Roles.CUSTOMER.name());
-	}
-
-
 
 
 	@Override

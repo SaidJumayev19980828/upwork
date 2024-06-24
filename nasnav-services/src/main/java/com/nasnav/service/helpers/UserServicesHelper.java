@@ -36,8 +36,6 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -46,159 +44,13 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 public class UserServicesHelper {
 
 	private final EmployeeUserRepository employeeUserRepository;
-	private final RoleRepository roleRepository;
-	private final RoleEmployeeUserRepository roleEmployeeUserRepository;
 	private final RoleService roleService;
 	private final MailService mailService;
 	private final OrganizationRepository organizationRepo;
 	private final AppConfig appConfig;
-
 	private final ShopsRepository shopRepo;
 
-
-	public void createRoles(List<String> rolesList, EmployeeUserEntity employee, Long orgId) {
-		List<String> existingRolesListNames = getAllRoles();
-		Role role;
-		Roles roleEnum;
-		roleEmployeeUserRepository.deleteByEmployee_Id(employee.getId()); //delete all existing rolesemployeeuser relations
-		for (String r : rolesList) {
-			// check if role exists in db
-			if (!existingRolesListNames.contains(r)) {
-				// find the Role enum from the string value
-				roleEnum = Roles.valueOf(r);
-				role = createRole(roleEnum);
-			} else {
-				role = roleRepository.findByName(r);
-			}
-			createRoleEmployeeUser(employee, role);
-		}
-	}
-
-
-	public void updateUserRolesIfPossible(List<String> newRoles, EmployeeUserEntity updatedEmployee) {
-		List<String> allExistedRoles = getAllRoles();
-		Role role;
-		Roles roleEnum;
-		if (!newRoles.isEmpty()) {
-			roleEmployeeUserRepository.deleteByEmployee_Id(updatedEmployee.getId());
-		}
-		for (String roleToBeUpdated : newRoles) {
-			if (!allExistedRoles.contains(roleToBeUpdated)){
-				roleEnum = Roles.valueOf(roleToBeUpdated);
-				role = createRole(roleEnum);
-			}else {
-				role = roleRepository.findByName(roleToBeUpdated);
-			}
-			createRoleEmployeeUser(updatedEmployee, role);
-
-		}
-	}
-
-	private void createRoleEmployeeUser(EmployeeUserEntity employee, Role role) {
-		RoleEmployeeUser roleEmployeeUser = new RoleEmployeeUser();
-		roleEmployeeUser.setRole(role);
-		roleEmployeeUser.setEmployee(employee);
-		roleEmployeeUserRepository.save(roleEmployeeUser);
-	}
-
-	private List<String> getAllRoles() {
-		return 	roleRepository
-				.findAll()
-				.stream()
-				.map(Role::getName)
-				.collect(toList());
-	}
-
-	private Role createRole( Roles roleEnum) {
-		Role role = new Role();
-		role.setName(roleEnum.name());
-
-		return roleRepository.save(role);
-	}
-
-
-
-	public void isValidRolesList(List<String> rolesList){
-		if(rolesList.isEmpty()){
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0001);
-		}
-		for (String role : rolesList) {
-			try {
-				Roles.valueOf(role);
-			} catch (IllegalArgumentException ex) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0007, role);
-			}
-		}
-	}
-
-
-
-
-	public boolean roleCannotManageUsers(Long currentUserId) {
-		List<Role> rolesEntity = roleRepository.getRolesOfEmployeeUser(currentUserId);
-		return rolesEntity
-				.stream()
-				.map( role -> Roles.valueOf(role.getName()))
-				.noneMatch(Roles::isCanCreateUsers);
-	}
-
-	public boolean employeeHasRoleOrHigher(EmployeeUserEntity employee, Roles requiredRole) {
-		return employee.getRoles().stream()
-				.map(role -> Roles.valueOf(role.getName()))
-				.anyMatch(role -> role.getLevel() <= requiredRole.getLevel());
-	}
-
-	public boolean hasInsufficientLevel(Long currentUserId, List<String> otherUserRolesNames) {
-		Set<Roles> currentUserRoles = getUserRoles(currentUserId);
-		List<Roles> newUserRoles =
-				otherUserRolesNames
-				.stream()
-				.map(Roles::valueOf)
-				.collect(toList());
-		return newUserRoles
-				.stream()
-				.anyMatch(newUserRole -> isHigherThanAllGivenRoles(newUserRole, currentUserRoles));
-	}
-
-
-
-	public boolean hasMaxRoleLevelOf(Roles role, Long currentUserId){
-		Set<Roles> currentUserRoles = getUserRoles(currentUserId);
-		return hasMaxRoleLevelOf(role, currentUserRoles);
-	}
-
-
-
-	public boolean hasMaxRoleLevelOf(Roles role, Set<Roles> userRoles) {
-		boolean hasNoRolesWithHigherLevel =
-				userRoles
-				.stream()
-				.noneMatch(currentUserRole -> currentUserRole.getLevel() < role.getLevel());
-		boolean hasRole = userRoles.contains(role);
-		return hasRole && hasNoRolesWithHigherLevel;
-	}
-
-
-	private Set<Roles> getUserRoles(Long currentUserId) {
-		return roleRepository
-				.getRolesOfEmployeeUser(currentUserId)
-				.stream()
-				.map(role -> Roles.valueOf(role.getName()))
-				.collect(toSet());
-	}
-
-
-	private boolean isHigherThanAllGivenRoles(Roles role, Collection<Roles> otherRoles){
-		//lower level number gets higher privilege, nasnav has max privilege with
-		//negative level
-		return otherRoles
-				.stream()
-				.allMatch(otherRole -> role.getLevel() < otherRole.getLevel());
-	}
-
-
-
-	public EmployeeUserEntity createEmployeeUser(EmployeeUserCreationObject employeeUserJson) {
+		public EmployeeUserEntity createEmployeeUser(EmployeeUserCreationObject employeeUserJson) {
 		EmployeeUserEntity employeeUser = new EmployeeUserEntity();
 		employeeUser.setName(employeeUserJson.name);
 		employeeUser.setEmail(employeeUserJson.email.toLowerCase());
@@ -215,7 +67,7 @@ public class UserServicesHelper {
 
 	public UserApiResponse updateEmployeeUser(Long currentUserId, EmployeeUserEntity employeeUserEntity,
 											  UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
-		Set<Roles> currentUserRoles = getUserRoles(currentUserId);
+		List<Roles> currentUserRoles = roleService.getRolesEnumOfEmployeeUser(currentUserId);
 		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
 		if (isNotBlankOrNull(employeeUserJson.getName())) {
 			validateName(employeeUserJson.getName());
@@ -280,7 +132,7 @@ public class UserServicesHelper {
 	}
 
 
-	private boolean isStoreChangeApplicable(UserDTOs.EmployeeUserUpdatingObject employeeUserJson, Set<Roles> currentUserRoles) {
+	private boolean isStoreChangeApplicable(UserDTOs.EmployeeUserUpdatingObject employeeUserJson, List<Roles> currentUserRoles) {
 		return isNotBlankOrNull(employeeUserJson.getStoreId())
 				&& (currentUserRoles.contains(ORGANIZATION_ADMIN)
 				|| currentUserRoles.contains(NASNAV_ADMIN));
@@ -335,14 +187,6 @@ public class UserServicesHelper {
 		return generatedToken;
 	}
 
-
-	public List<String> getEmployeeUserRoles(Long userId) {
-		return roleService
-				.getRolesOfEmployeeUser(userId)
-				.stream()
-				.map(Role::getName)
-				.collect(toList());
-	}
 
 	public void validateBusinessRules(String name, String email, Long orgId) {
 		validateName(name);

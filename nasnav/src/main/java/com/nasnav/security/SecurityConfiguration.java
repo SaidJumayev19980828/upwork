@@ -7,6 +7,7 @@ import com.nasnav.security.oauth2.OAuth2AuthenticationFailureHandler;
 import com.nasnav.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -46,6 +47,7 @@ import static org.springframework.http.HttpMethod.*;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@EnableAspectJAutoProxy
 public class SecurityConfiguration {
 
     private static RequestMatcher protectedUrlList;
@@ -127,6 +129,8 @@ public class SecurityConfiguration {
 			patternOf( "/admin/**"	   	 									, setOf(NASNAV_ADMIN) ),
 			patternOf( "/files/**"							,HttpMethod.DELETE  , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 			patternOf( "/files/**"),
+			patternOf( "/permission/**"					,setOf(NASNAV_ADMIN)),
+			patternOf( "/roles/**"							,setOf(NASNAV_ADMIN)),
 			patternOf( "/package/create"					,HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 			patternOf( "/package/{packageId:\\d+}"			,HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 			patternOf( "/package/{packageId:\\d+}"			,HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),

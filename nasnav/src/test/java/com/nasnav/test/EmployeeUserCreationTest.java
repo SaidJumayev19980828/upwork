@@ -13,15 +13,14 @@ import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.response.BaseResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.EmployeeUserService;
+import com.nasnav.service.RoleService;
 import com.nasnav.service.SecurityService;
-import com.nasnav.service.helpers.UserServicesHelper;
 
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
-import org.hamcrest.MatcherAssert;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,7 +29,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +42,6 @@ import java.util.Set;
 
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.*;
@@ -69,7 +66,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 	@Autowired
 	EmployeeUserService employeeUserService;
 	@Autowired
-	private UserServicesHelper userServicesHelper;
+	private RoleService roleService;
 	
 	@Autowired
 	EmployeeUserRepository empRepository;
@@ -583,7 +580,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 
 		assertEquals(200, response.getStatusCode().value());
 		Set<String> expectedEmpRoles = new HashSet<>(asList("NASNAV_ADMIN"));
-		Set<String> newEmpRoles = new HashSet<>(userServicesHelper.getEmployeeUserRoles(158L));
+		Set<String> newEmpRoles = new HashSet<>(roleService.getRolesNamesOfEmployeeUser(158L));
 		assertTrue(expectedEmpRoles.equals(newEmpRoles));
 	}
 
@@ -595,7 +592,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 
 		assertEquals(200, response.getStatusCode().value());
 		Set<String> expectedEmpRoles = new HashSet<>(asList("ORGANIZATION_EMPLOYEE", "STORE_MANAGER"));
-		Set<String> newEmpRoles = new HashSet<>(userServicesHelper.getEmployeeUserRoles(158L));
+		Set<String> newEmpRoles = new HashSet<>(roleService.getRolesNamesOfEmployeeUser(158L));
 		assertTrue(expectedEmpRoles.equals(newEmpRoles));
 	}
 
@@ -607,7 +604,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 
 		assertEquals(200, response.getStatusCode().value());
 		Set<String> expectedEmpRoles = new HashSet<>(asList("ORGANIZATION_EMPLOYEE"));
-		Set<String> newEmpRoles = new HashSet<>(userServicesHelper.getEmployeeUserRoles(158L));
+		Set<String> newEmpRoles = new HashSet<>(roleService.getRolesNamesOfEmployeeUser(158L));
 		assertTrue(expectedEmpRoles.equals(newEmpRoles));
 	}
 
@@ -619,7 +616,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 
 		assertEquals(200, response.getStatusCode().value());
 		Set<String> expectedEmpRoles = new HashSet<>(asList("STORE_EMPLOYEE"));
-		Set<String> newEmpRoles = new HashSet<>(userServicesHelper.getEmployeeUserRoles(158L));
+		Set<String> newEmpRoles = new HashSet<>(roleService.getRolesNamesOfEmployeeUser(158L));
 		assertTrue(expectedEmpRoles.equals(newEmpRoles));
 	}
 	//finish Nasnav_admin role test
@@ -643,7 +640,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertEquals(200, response.getStatusCode().value());
 
 		Set<String> expectedEmpRoles = new HashSet<>(asList("ORGANIZATION_ADMIN"));
-		Set<String> newEmpRoles = new HashSet<>(userServicesHelper.getEmployeeUserRoles(158L));
+		Set<String> newEmpRoles = new HashSet<>(roleService.getRolesNamesOfEmployeeUser(158L));
 		assertTrue(expectedEmpRoles.equals(newEmpRoles));
 	}
 
@@ -656,7 +653,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertEquals(200, response.getStatusCode().value());
 
 		Set<String> expectedEmpRoles = new HashSet<>(asList("ORGANIZATION_EMPLOYEE"));
-		Set<String> newEmpRoles = new HashSet<>(userServicesHelper.getEmployeeUserRoles(158L));
+		Set<String> newEmpRoles = new HashSet<>(roleService.getRolesNamesOfEmployeeUser(158L));
 		assertTrue(expectedEmpRoles.equals(newEmpRoles));
 	}
 
@@ -670,7 +667,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertEquals(200, response.getStatusCode().value());
 
 		Set<String> expectedEmpRoles = new HashSet<>(asList("STORE_EMPLOYEE"));
-		Set<String> newEmpRoles = new HashSet<>(userServicesHelper.getEmployeeUserRoles(158L));
+		Set<String> newEmpRoles = new HashSet<>(roleService.getRolesNamesOfEmployeeUser(158L));
 		assertTrue(expectedEmpRoles.equals(newEmpRoles));
 	}
 
@@ -685,7 +682,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertEquals(200, response.getStatusCode().value());
 
 		Set<String> expectedEmpRoles = new HashSet<>(asList("STORE_MANAGER"));
-		Set<String> newEmpRoles = new HashSet<>(userServicesHelper.getEmployeeUserRoles(158L));
+		Set<String> newEmpRoles = new HashSet<>(roleService.getRolesNamesOfEmployeeUser(158L));
 		assertTrue(expectedEmpRoles.equals(newEmpRoles));
 	}
 	//finish ORGANIZATION_ADMIN role test

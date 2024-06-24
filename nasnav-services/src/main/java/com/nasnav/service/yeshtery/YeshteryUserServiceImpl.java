@@ -438,20 +438,22 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     public UserRepresentationObject getYeshteryUserData(Long userId, Boolean isEmployee) {
         BaseUserEntity currentUser = securityService.getCurrentUser();
         BaseUserEntity user;
+
         if (Boolean.TRUE.equals(securityService.currentUserIsCustomer()) || userId == null) {
             return getUserRepresentationWithUserRoles(currentUser);
-        } else {
-            Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
-            if (!userHighestRole.equals(NASNAV_ADMIN)
-                    && Boolean.TRUE.equals(!isEmployee) &&
-                    !List.of(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER).contains(userHighestRole)) {
-                throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
-            }
-            user = commonNasnavUserRepo.findById(userId, Boolean.TRUE.equals(isEmployee))
+        }
+        Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
+        if (userHighestRole.equals(NASNAV_ADMIN)) {
+            user = commonNasnavUserRepo.findById(userId, isEmployee)
                     .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
-            }
-            return getUserRepresentationWithUserRoles(user);
+        } else {
+            if (isEmployee != null && !isEmployee && !List.of(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER).contains(userHighestRole))
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
+            user = commonNasnavUserRepo.findByIdAndOrganizationId(userId, currentUser.getOrganizationId(), isEmployee)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+        }
 
+        return getUserRepresentationWithUserRoles(user);
     }
 
     @Override
@@ -664,7 +666,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     private UserRepresentationObject getUserRepresentationWithUserRoles(BaseUserEntity user) {
         UserRepresentationObject userRepObj = user.getRepresentation();
         userRepObj.setAddresses(getUserAddresses(userRepObj.getId()));
-        userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
+        userRepObj.setRoles(new HashSet<>(roleService.getUserRoles(user)));
         userRepObj.setIsInfluencer(user.getRepresentation().getIsInfluencer());
         userRepObj.setLastLogin(securityService.getLastLoginForUser(user));
         userRepObj.setDateOfBirth(user.getDateOfBirth());
@@ -859,7 +861,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         BaseYeshteryUserEntity userEntity = userData.getUserEntity();
 
         Long orgId = ofNullable(userEntity.getOrganizationId()).orElse(0L);
-        List<String> userRoles = commonUserRepo.getUserRoles(userEntity);
+        List<String> userRoles = roleService.getUserRoles(userEntity);
 
         return new YeshteryUserApiResponse(userEntity.getId(), cookie.getValue(), userRoles, orgId, shopId,
                 userEntity.getName(), userEntity.getEmail(), cookie);

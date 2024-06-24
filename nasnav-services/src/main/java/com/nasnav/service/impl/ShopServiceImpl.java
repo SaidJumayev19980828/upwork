@@ -10,10 +10,10 @@ import com.nasnav.persistence.*;
 import com.nasnav.querydsl.sql.*;
 import com.nasnav.request.LocationShopsParam;
 import com.nasnav.response.ShopResponse;
+import com.nasnav.service.RoleService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShopService;
 import com.nasnav.service.helpers.ShopServiceHelper;
-import com.nasnav.service.helpers.UserServicesHelper;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
@@ -56,9 +56,9 @@ public class ShopServiceImpl implements ShopService {
     @Autowired
     ShopRatingRepository shopRatingRepository;
     private final ShopsRepository shopsRepository;
-    private final UserServicesHelper userServicehelper;
     private final ShopServiceHelper shopServiceHelper;
     private final OrganizationImagesRepository orgImgRepo;
+    private final RoleService roleService;
 
     @Autowired
     private StockRepository stockRepo;
@@ -69,12 +69,12 @@ public class ShopServiceImpl implements ShopService {
     private EmployeeUserRepository empUserRepo;
     
     @Autowired
-    public ShopServiceImpl(ShopsRepository shopsRepository, UserServicesHelper userServicehelper,
-                           ShopServiceHelper shopServiceHelper, OrganizationImagesRepository orgImgRepo){
+    public ShopServiceImpl(ShopsRepository shopsRepository, ShopServiceHelper shopServiceHelper,
+                           OrganizationImagesRepository orgImgRepo, RoleService roleService){
         this.shopsRepository = shopsRepository;
-        this.userServicehelper = userServicehelper;
         this.shopServiceHelper = shopServiceHelper;
         this.orgImgRepo = orgImgRepo;
+        this.roleService = roleService;
     }
     
     
@@ -127,7 +127,7 @@ public class ShopServiceImpl implements ShopService {
     @CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
     public ShopResponse shopModification(ShopJsonDTO shopJson) {
         EmployeeUserEntity user = (EmployeeUserEntity)securityService.getCurrentUser();
-        List<String> userRoles = userServicehelper.getEmployeeUserRoles(user.getId());
+        List<String> userRoles = roleService.getRolesNamesOfEmployeeUser(user.getId());
         OrganizationEntity org = securityService.getCurrentUserOrganization();
         if (shopJson.getId() == null){
             return createShop(shopJson, org, userRoles);

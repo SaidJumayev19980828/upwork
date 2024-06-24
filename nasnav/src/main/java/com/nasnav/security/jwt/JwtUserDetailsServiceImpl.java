@@ -2,11 +2,10 @@ package com.nasnav.security.jwt;
 
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.CommonUserRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.ShopsRepository;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.service.RoleService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -14,7 +13,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -25,16 +27,13 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 public class JwtUserDetailsServiceImpl implements JwtUserDetailsService {
 
     private final CommonUserRepository userRepo;
-    private final OrganizationRepository orgRepo;
-    private final ShopsRepository shopsRepo;
+    private final RoleService roleService;
 
     @Autowired
     public JwtUserDetailsServiceImpl(CommonUserRepository userRepo,
-                                     OrganizationRepository orgRepo,
-                                     ShopsRepository shopsRepo) {
+                                     RoleService roleService) {
         this.userRepo = userRepo;
-        this.orgRepo = orgRepo;
-        this.shopsRepo = shopsRepo;
+        this.roleService = roleService;
     }
 
     @Override
@@ -51,10 +50,13 @@ public class JwtUserDetailsServiceImpl implements JwtUserDetailsService {
     }
 
     List<SimpleGrantedAuthority> getUserAuthorities(BaseUserEntity userEntity) {
-        List<String> userRoles = userRepo.getUserRoles(userEntity);
-        return userRoles.stream()
-                .map(SimpleGrantedAuthority::new)
-                .toList();
+        List<String> roles = roleService.getUserRoles(userEntity);
+
+        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+        for (String role : roles) {
+            authorities.add(new SimpleGrantedAuthority(role));
+        }
+        return new ArrayList<>(authorities);
     }
 
     static void valideLoginData(JwtLoginData loginData) {

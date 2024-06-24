@@ -37,6 +37,7 @@ public enum ErrorCodes {
 	, U$STATUS$0004("Couldn't get user status!")
 
 	,U$AUTH$0001("User is not an authorized to modify %s!")
+	,UAUTH$0002("The user is not authorized to access this resource!")
 
 	,U$EMP$0001("No Roles provided for user creation!")
 	,U$EMP$0002("No Employee exists with id[%d]!")
@@ -583,7 +584,12 @@ public enum ErrorCodes {
 	INFREF$005("There is already promotion code with same code!"),
 	INFREF$006("Choose only one of cashback strategy!"),
 
-	;
+	PERMISSION$001("The permission already exists in the system."),
+	PERMISSION$002("The name cannot be empty or null. Please provide name for the permission"),
+	PERMISSION$003("The permission is not found in the system."),
+	ROLE$001("The role is not found in the system."),
+	ROLE$002("The name and organizationId cannot be null"),
+	ROLE$003("The role already exists");
 
 	@Getter
 	@JsonValue

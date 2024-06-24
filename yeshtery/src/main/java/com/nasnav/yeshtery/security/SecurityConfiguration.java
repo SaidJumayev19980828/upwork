@@ -125,6 +125,8 @@ public class SecurityConfiguration {
             patternOf("/v1/admin/**", setOf(NASNAV_ADMIN)),
             patternOf("/v1/files/**", DELETE, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
             patternOf("/v1/files/**"),
+            patternOf( "/v1/permission/**"					,setOf(NASNAV_ADMIN)),
+            patternOf( "/v1/roles/**"							,setOf(NASNAV_ADMIN)),
             patternOf("/v1/package/create", HttpMethod.POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/package/{packageId:\\d+}", HttpMethod.POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/package/{packageId:\\d+}", HttpMethod.POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),

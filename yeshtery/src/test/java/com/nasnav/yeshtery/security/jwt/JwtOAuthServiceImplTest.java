@@ -3,6 +3,7 @@ package com.nasnav.yeshtery.security.jwt;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class JwtOAuthServiceImplTest extends DockerPostgresDb {
 
     @Test
+    @Transactional
     void tokenize(@Autowired JwtOAuthServiceImpl authService) throws Exception {
         POSTGRE_SQL_CONTAINER
                 .execInContainer("psql", "-U", "nasnav", "-d", "nasnav", "-c", "SET session_replication_role = 'replica';", "-f", "/tmp/db-dump-data/" + currentDump);

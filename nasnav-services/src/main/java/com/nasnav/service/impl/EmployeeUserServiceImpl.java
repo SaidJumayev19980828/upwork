@@ -20,7 +20,6 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.EmployeeUserOtpEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.request.UsersSearchParam;
 import com.nasnav.response.UserApiResponse;
@@ -99,7 +98,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		List<String> rolesList = extractRoles(employeeUserJson);
 
 		empUserSvcHelper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.orgId);
-		empUserSvcHelper.isValidRolesList(rolesList);
+		Roles.isValidRolesList(rolesList);
 		validateEmpEmailAlreadyExists(employeeUserJson);
 		List<EmployeeUserEntity> orgEmployees = employeeUserRepository.findByOrganizationId(employeeUserJson.orgId);
 		if(!orgEmployees.isEmpty()) {
@@ -118,7 +117,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		List<String> rolesList = extractRoles(employeeUserWithPassword);
 
 		empUserSvcHelper.validateBusinessRules(employeeUserWithPassword.name, employeeUserWithPassword.email, employeeUserWithPassword.orgId);
-		empUserSvcHelper.isValidRolesList(rolesList);
+		Roles.isValidRolesList(rolesList);
 		validateEmpEmailAlreadyExists(employeeUserWithPassword);
 		List<EmployeeUserEntity> orgEmployees = employeeUserRepository.findByOrganizationId(employeeUserWithPassword.orgId);
 		if (!orgEmployees.isEmpty()) {
@@ -194,7 +193,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	private EmployeeUserEntity doCreateNewEmpAccount(UserDTOs.EmployeeUserCreationObject employeeUserJson, List<String> rolesList) {
 		EmployeeUserEntity employeeUserEntity = empUserSvcHelper.createEmployeeUser(employeeUserJson);
-		empUserSvcHelper.createRoles(rolesList, employeeUserEntity, employeeUserJson.orgId);
+		roleService.createRoles(rolesList, employeeUserEntity, employeeUserJson.orgId);
 		employeeUserEntity = empUserSvcHelper.generateResetPasswordToken(employeeUserEntity);
 		empUserSvcHelper.sendRecoveryMail(employeeUserEntity);
 		return employeeUserEntity;
@@ -203,7 +202,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	private EmployeeUserEntity doCreateNewEmpAccountWithPassword(UserDTOs.EmployeeUserWithPassword employeeUserWithPassword,
 																 List<String> rolesList) {
 		EmployeeUserEntity employeeUserEntity = empUserSvcHelper.createEmployeeUser(employeeUserWithPassword);
-		empUserSvcHelper.createRoles(rolesList, employeeUserEntity, employeeUserWithPassword.orgId);
+		roleService.createRoles(rolesList, employeeUserEntity, employeeUserWithPassword.orgId);
 //		employeeUserEntity = empUserSvcHelper.generateResetPasswordToken(employeeUserEntity);
 //		empUserSvcHelper.sendRecoveryMail(employeeUserEntity);
 		return employeeUserEntity;
@@ -214,10 +213,10 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	private void validateCurrentUserCanManageEmpAccount(Long otherEmpOrgId, Long otherEmpStoreId, List<String> rolesList) {
 		EmployeeUserEntity currentUser = getCurrentUser();
 		Long userId = currentUser.getId();
-		if (empUserSvcHelper.roleCannotManageUsers(userId)) {
+		if (roleService.roleCannotManageUsers(userId)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0008);
 		}
-		if ( empUserSvcHelper.hasInsufficientLevel(userId, rolesList)) {
+		if ( roleService.hasInsufficientLevel(userId, rolesList)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0009);
 		}
 
@@ -226,10 +225,9 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0010 );
 			}
 		}
-		if (empUserSvcHelper.hasMaxRoleLevelOf(STORE_MANAGER, userId)) {
-			if (!currentUser.getShopId().equals(otherEmpStoreId)){
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0011 );
-			}
+
+		if (roleService.hasMaxRoleLevelOf(STORE_MANAGER, userId) && !currentUser.getShopId().equals(otherEmpStoreId)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0011 );
 		}
 	}
 
@@ -260,7 +258,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	private EmployeeUserEntity getCurrentUser() {
 		BaseUserEntity baseCurrentUser = securityService.getCurrentUser();
-		
+
 		if(!(baseCurrentUser instanceof EmployeeUserEntity)) {
 			throw new RuntimeBusinessException(UNAUTHORIZED, G$USR$0001);
 		}
@@ -283,14 +281,14 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 		List<String> updatedUserNewRoles = extractRoles(employeeUserJson);
 		if (!updatedUserNewRoles.isEmpty()) {
-			empUserSvcHelper.isValidRolesList(updatedUserNewRoles);
+			Roles.isValidRolesList(updatedUserNewRoles);
 		}
-		List<String> updatedUserOldRoles = empUserSvcHelper.getEmployeeUserRoles(updatedUserId);
+		List<String> updatedUserOldRoles = roleService.getRolesNamesOfEmployeeUser(updatedUserId);
 		List<String> allRolesToCheck = CollectionUtils.concat(updatedUserNewRoles, updatedUserOldRoles);
 
 		validateCurrentUserCanManageEmpAccount(updateUser.getOrganizationId(), updateUser.getShopId(), allRolesToCheck);
 
-		empUserSvcHelper.updateUserRolesIfPossible(updatedUserNewRoles, updateUser);
+		roleService.createRoles(updatedUserNewRoles, updateUser, updateUser.getOrganizationId());
 
 		return empUserSvcHelper.updateEmployeeUser(currentUser.getId(), updateUser, employeeUserJson);
 	}
@@ -366,7 +364,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		if (isNotBlankOrNull(role)) {
 			if (!Enums.getIfPresent(Roles.class, role).isPresent())
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0007,  role);
-			if (!roleService.checkRoleOrder(userHighestRole.getValue(), role)) {
+			if (!Roles.checkRoleOrder(userHighestRole.getValue(), role)) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0013);
 			}
 			roles = Set.of(role);
@@ -430,7 +428,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	private EmployeeUserEntity getAndValidateEmployeeToSuspend(Long id) {
 		EmployeeUserEntity user = getEmployeeToSuspend(id);
-		List<String> userRoles = empUserSvcHelper.getEmployeeUserRoles(user.getId());
+		List<String> userRoles = roleService.getRolesNamesOfEmployeeUser(user.getId());
 		validateCurrentUserCanManageEmpAccount(user.getOrganizationId(), user.getShopId(), userRoles);
 		validateUserNotSuspendingHimself(user);
 		return user;

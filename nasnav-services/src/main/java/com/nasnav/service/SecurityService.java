@@ -82,4 +82,6 @@ public interface SecurityService {
     void setCurrentUserNotificationToken(String userToken, String notificationToken);
     void setCurrentUserNotificationToken(String userToken, String notificationToken,String jwtToken);
 
+    boolean hasPermission(String permissionName);
+
 }

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface RoleRepository extends JpaRepository<Role, Integer> {
@@ -14,4 +15,10 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
 
     // get role by its name
     Role findByName(String name);
+
+    Role findByNameAndOrganizationId(String name, Long organizationId);
+
+    List<Role> findByOrganizationId(Long organizationId);
+
+    List<Role> findByIdIn(Collection<Integer> id);
 }

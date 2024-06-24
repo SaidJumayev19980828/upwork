@@ -3,6 +3,7 @@ package com.nasnav.persistence;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -35,10 +36,19 @@ public class ServiceEntity extends DefaultBusinessEntity<Long> {
     @ManyToMany(fetch = FetchType.LAZY)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
+    @ToString.Exclude
     @JoinTable(name = "package_service"
             ,joinColumns = {@JoinColumn(name="service_id")}
             ,inverseJoinColumns = {@JoinColumn(name="package_id")})
-    private Set<PackageEntity> packageEntity = new HashSet<>();;
+    private Set<PackageEntity> packageEntity = new HashSet<>();
 
+
+    @ManyToMany(cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JoinTable(name = "service_permissions"
+            ,joinColumns = {@JoinColumn(name="service_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="permission_id")})
+    private Set<Permission> permissions;
 }

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class JwtDaoAuthenticationProviderTest extends DockerPostgresDb {
 
     @Test
+    @Transactional
     void authenticate_test(@Autowired JwtDaoAuthenticationProvider provider) throws Exception {
 
         POSTGRE_SQL_CONTAINER

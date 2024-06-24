@@ -591,24 +591,20 @@ public class UserServiceImpl implements UserService {
 		BaseUserEntity currentUser = securityService.getCurrentUser();
 		BaseUserEntity user;
 
-		if ( securityService.currentUserIsCustomer() || userId == null ) {
+		if (Boolean.TRUE.equals(securityService.currentUserIsCustomer()) || userId == null) {
 			return getUserRepresentationWithUserRoles(currentUser);
-		} else {
-			Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
-
-			if (userHighestRole.equals(NASNAV_ADMIN)) {
-				user = commonUserRepo.findByIdAndOrganizationId(userId, currentUser.getOrganizationId(), isEmployee)
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
-			} else {
-				Set<String> roles = Roles.getAllPrivileges().get(userHighestRole.name());
-				if (!isEmployee) {
-					if (!List.of(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER).contains(userHighestRole))
-						throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
-				}
-				user = commonUserRepo.findByIdAndOrganizationId(userId, currentUser.getOrganizationId(), isEmployee)
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
-			}
 		}
+		Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
+		if (userHighestRole.equals(NASNAV_ADMIN)) {
+			user = commonUserRepo.findById(userId, isEmployee)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+		} else {
+			if (isEmployee != null && !isEmployee && !List.of(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER).contains(userHighestRole))
+					throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
+			user = commonUserRepo.findByIdAndOrganizationId(userId, currentUser.getOrganizationId(), isEmployee)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+		}
+
 		return getUserRepresentationWithUserRoles(user);
 	}
 
@@ -670,7 +666,7 @@ public class UserServiceImpl implements UserService {
 	private UserRepresentationObject getUserRepresentationWithUserRoles(BaseUserEntity user) {
 		UserRepresentationObject userRepObj = user.getRepresentation();
 		userRepObj.setAddresses(getUserAddresses(userRepObj.getId()));
-		userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
+		userRepObj.setRoles(new HashSet<>(roleService.getUserRoles(user)));
 		userRepObj.setLastLogin(securityService.getLastLoginForUser(user));
 		return userRepObj;
 	}

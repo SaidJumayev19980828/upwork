@@ -1,25 +1,29 @@
 package com.nasnav.enumerations;
 
+import com.nasnav.exceptions.RuntimeBusinessException;
 import lombok.Getter;
 
 import java.util.*;
 import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.exceptions.ErrorCodes.U$EMP$0001;
+import static com.nasnav.exceptions.ErrorCodes.U$EMP$0007;
 import static java.util.Collections.emptySet;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 /**
  * Hold User Roles
  */
 public enum Roles {
-	CUSTOMER("CUSTOMER", 100000, false ),
+    CUSTOMER("CUSTOMER", 100000, false),
     ORGANIZATION_MANAGER("ORGANIZATION_MANAGER", 2, false),
     STORE_MANAGER("STORE_MANAGER", 4, true),
     NASNAV_ADMIN("NASNAV_ADMIN", -100000, true),
     NASNAV_EMPLOYEE("NASNAV_EMPLOYEE", -99999, false),
     ORGANIZATION_ADMIN("ORGANIZATION_ADMIN", 1, true),
-	ORGANIZATION_EMPLOYEE("ORGANIZATION_EMPLOYEE", 3, false),
-	STORE_EMPLOYEE("STORE_EMPLOYEE", 5, false);
+    ORGANIZATION_EMPLOYEE("ORGANIZATION_EMPLOYEE", 3, false),
+    STORE_EMPLOYEE("STORE_EMPLOYEE", 5, false);
 
     @Getter
     private final String value;
@@ -63,10 +67,10 @@ public enum Roles {
 
 
     public static Roles fromString(String text) {
-    	return Stream.of(Roles.values())
-    		.filter( role -> role.value.equals(text))
-    		.findFirst()
-    		.orElseThrow(() -> new IllegalStateException("No Role Enum exists with value: " + text));
+        return Stream.of(Roles.values())
+                .filter(role -> role.value.equals(text))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No Role Enum exists with value: " + text));
 
     }
 
@@ -75,7 +79,7 @@ public enum Roles {
         return List.of(NASNAV_ADMIN, NASNAV_EMPLOYEE, ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, ORGANIZATION_EMPLOYEE, STORE_MANAGER, STORE_EMPLOYEE);
     }
 
-    public static Map<String, Set<String>> getAllPrivileges(){
+    public static Map<String, Set<String>> getAllPrivileges() {
         Map<String, Set<String>> result = new HashMap<>();
         result.put(NASNAV_ADMIN.name(), nasnavAdminPrivilege);
         result.put(NASNAV_EMPLOYEE.name(), nasnavEmployeePrivilege);
@@ -85,5 +89,36 @@ public enum Roles {
         result.put(STORE_MANAGER.name(), storeManagerPrivilege);
         result.put(STORE_EMPLOYEE.name(), storeEmployeePrivilege);
         return result;
+    }
+
+    public static Roles getEmployeeHighestRole(List<Roles> employeeRoles) {
+        return Roles
+                .getSortedEmployeeRoles()
+                .stream()
+                .filter(employeeRoles::contains)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static boolean checkRoleOrder(String userRole, String requestedRole) {
+        Map<String, Set<String>> privileges = Roles.getAllPrivileges();
+        if (privileges.containsKey(userRole)) {
+            Set<String> roles = privileges.get(userRole);
+            return roles.contains(requestedRole);
+        }
+        return false;
+    }
+
+    public static void isValidRolesList(List<String> rolesList) {
+        if (rolesList.isEmpty()) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0001);
+        }
+        for (String role : rolesList) {
+            try {
+                Roles.valueOf(role);
+            } catch (IllegalArgumentException ex) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0007, role);
+            }
+        }
     }
 }

@@ -139,7 +139,7 @@ class YeshteryUserServiceTest {
 		when(securityService.getCurrentUser()).thenReturn(currentUser);
 		when(securityService.currentUserIsCustomer()).thenReturn(false);
 		when(roleService.getEmployeeHighestRole(currentUser.getId())).thenReturn(Roles.ORGANIZATION_ADMIN);
-		when(commonNasnavUserRepo.findById(2L, true)).thenReturn(Optional.empty());
+		when(commonNasnavUserRepo.findByIdAndOrganizationId(2L, 99002L, true)).thenReturn(Optional.empty());
 
 		RuntimeBusinessException exception = assertThrows(RuntimeBusinessException.class, () -> {
 			yeshteryUserService.getYeshteryUserData(2L, true);
@@ -149,7 +149,7 @@ class YeshteryUserServiceTest {
 		verify(securityService).getCurrentUser();
 		verify(securityService).currentUserIsCustomer();
 		verify(roleService).getEmployeeHighestRole(currentUser.getId());
-		verify(commonNasnavUserRepo).findById(2L, true);
+		verify(commonNasnavUserRepo).findByIdAndOrganizationId(2L, 99002L, true);
 		verifyNoMoreInteractions(securityService, roleService, commonNasnavUserRepo, commonUserRepo, userAddressRepo);
 	}
 
@@ -163,7 +163,7 @@ class YeshteryUserServiceTest {
 		when(securityService.getCurrentUser()).thenReturn(currentUser);
 		when(securityService.currentUserIsCustomer()).thenReturn(false);
 		when(roleService.getEmployeeHighestRole(currentUser.getId())).thenReturn(Roles.ORGANIZATION_ADMIN);
-		when(commonNasnavUserRepo.findById(2L, true)).thenReturn(Optional.of(user));
+		when(commonNasnavUserRepo.findByIdAndOrganizationId(2L, 99002L, true)).thenReturn(Optional.of(user));
 		mockUserRepresentation(user);
 
 		UserRepresentationObject result = yeshteryUserService.getYeshteryUserData(2L, true);
@@ -172,8 +172,8 @@ class YeshteryUserServiceTest {
 		verify(securityService).getCurrentUser();
 		verify(securityService).currentUserIsCustomer();
 		verify(roleService).getEmployeeHighestRole(currentUser.getId());
-		verify(commonNasnavUserRepo).findById(2L, true);
-		verify(commonUserRepo).getUserRoles(user);
+		verify(commonNasnavUserRepo).findByIdAndOrganizationId(2L, 99002L, true);
+		verify(roleService).getUserRoles(user);
 		verify(userAddressRepo).findByUser_Id(userRep.getId());
 	}
 
@@ -183,7 +183,7 @@ class YeshteryUserServiceTest {
 		List<String> roles = List.of(Roles.NASNAV_ADMIN.name());
 
 		when(userAddressRepo.findByUser_Id(userRep.getId())).thenReturn(addresses);
-		when(commonUserRepo.getUserRoles(user)).thenReturn(roles);
+		when(roleService.getUserRoles(user)).thenReturn(roles);
 		when(securityService.getLastLoginForUser(user)).thenReturn(LocalDateTime.now());
 
 		userRep.setAddresses(new ArrayList<>());

@@ -105,9 +105,9 @@ public class OrderServiceImpl implements OrderService {
 	private final BasketRepository basketRepository;
 	private final StockRepository stockRepository;
 	private final StockService stockService;
-	private final UserServicesHelper userServicesHelper;
 	private final Logger logger = LogManager.getLogger();
 	private OrdersFiltersHelper ordersFiltersHelper;
+	private final RoleService roleService;
 
 	@Autowired
 	private ReferralCodeService referralCodeService;
@@ -217,15 +217,14 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
-							StockRepository stockRepository , StockService stockService,
-							UserServicesHelper userServicesHelper) {
+							StockRepository stockRepository , StockService stockService, RoleService roleService) {
 		this.ordersRepository = ordersRepository;
 		this.stockRepository = stockRepository;
 		this.basketRepository = basketRepository;
 		this.stockService = stockService;
-		this.userServicesHelper = userServicesHelper;
 		setOrderStatusPermissions();
 		buildOrderStatusTransitionMap();
+		this.roleService = roleService;
 	}
 
 	private void setOrderStatusPermissions() {
@@ -254,7 +253,7 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public void updateExistingOrder(OrderJsonDto orderJson) {
 		EmployeeUserEntity empUser = (EmployeeUserEntity)securityService.getCurrentUser();
-		List<String> employeeUserRoles = userServicesHelper.getEmployeeUserRoles(empUser.getId());
+		List<String> employeeUserRoles = roleService.getRolesNamesOfEmployeeUser(empUser.getId());
 		OrdersEntity order = getAndValidateOrdersEntityForStatusUpdate(orderJson, empUser, employeeUserRoles);
 
 		updateOrderStatusAndMetaOrderIfNeeded(order, orderJson.getStatus());
@@ -1203,7 +1202,7 @@ public class OrderServiceImpl implements OrderService {
 			return;
 
 		EmployeeUserEntity empUser = (EmployeeUserEntity)user;
-		List<String> employeeUserRoles = userServicesHelper.getEmployeeUserRoles(empUser.getId());
+		List<String> employeeUserRoles = roleService.getRolesNamesOfEmployeeUser(empUser.getId());
 
 		if ( collectionContainsAnyOf(employeeUserRoles, ORGANIZATION_ADMIN.name() ,ORGANIZATION_MANAGER.name(), ORGANIZATION_EMPLOYEE.name()) )  {
 			params.setOrg_id(asList(empUser.getOrganizationId()));
