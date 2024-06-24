@@ -46,7 +46,7 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
      'd67438ac-f3a5-4939-9686-a1fc096f3f4f', now());
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status, reset_password_token)
     VALUES (88006, 'suspended.man@nasnav.com','suspended','88', 99001, '963', 202, null);
-   
+
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '123', now(), null, 88001);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '456', now(), null, 88002);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '789', now(), null, 88003);
@@ -69,20 +69,30 @@ INSERT INTO public.employee_users(id, name,  email, organization_id, authenticat
 VALUES (162, 'Walid 4', 'emp.user4@nasnav.com', 99001, 'ttt',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru',
         200, 'd67438ac-f3a5-4939-9686-a1fc096f3f4e', now());
 
+INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password, user_status,
+                                  reset_password_token, reset_password_sent_at)
+VALUES (163, 'shaker 4', 'emp.user5@nasnav.com', 99001, '123654',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru',
+        200, 'd67438ac-f3a5-4939-9686-a2gc096f3f4e', now());
+
+
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700009, '875488', NOW() - INTERVAL '29 DAY', 159, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700010, '101112', now(), 159, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700011, '131415', now(), 159, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700012, '161718', now(), 159, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700013, '192021', now(), 160, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700014, '222324', now(), 161, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700015, '123654', now(), 163, null);
 
 
 insert into roles(id, name,  organization_id) values(1, 'ORGANIZATION_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_MANAGER', 99001);
 insert into roles(id, name,  organization_id) values(3, 'ORGANIZATION_EMPLOYEE', 99001);
+insert into roles(id, name,  organization_id) values(4, 'NASNAV_ADMIN', 99001);
+
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 159, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 160, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 161, 3);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (24, 163, 4);
 
 
 INSERT INTO public.user_subscriptions VALUES (10001, 'sub@g.com', 99001, null);

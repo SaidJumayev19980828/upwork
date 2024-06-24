@@ -29,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -619,8 +620,6 @@ public class UserServiceImpl implements UserService {
 
 		activateUserInDB(user);
 		// using securityService.getCurrentUserOrganizationId() causes the api to fail because no current user exists
-		Long orgId = user.getOrganizationId();
-		Long userId = user.getId();
 		return redirectUser(securityService.login(user, false).getToken(), redirect);
 	}
 
@@ -854,7 +853,7 @@ public class UserServiceImpl implements UserService {
 
 	public List<UserRepresentationObject> getUserList(){
 		List<UserEntity> customers;
-		if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
+		if (Boolean.TRUE.equals(securityService.currentUserHasRole(NASNAV_ADMIN))) {
 			customers = userRepository.findAll();
 		} else {
 			customers = userRepository.findByOrganizationId(securityService.getCurrentUserOrganizationId());
@@ -865,26 +864,29 @@ public class UserServiceImpl implements UserService {
 				.collect(toList());
 	}
 
-	public List<UserRepresentationObject> getUserListByStatusPaging(Integer start, Integer count, Integer userStatus) {
-		List<UserEntity> customers = null;
+	public PaginatedResponse<UserRepresentationObject> getUserListByStatusPaging(Integer start, Integer count, Integer userStatus) {
+		Page<UserEntity> customersPage ;
 		PageRequest pageRequest = PagingUtils.getQueryPageAddIdSort(start, count);
-		if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
-
+		if (Boolean.TRUE.equals(securityService.currentUserHasRole(NASNAV_ADMIN))) {
 			if(userStatus!=null)
-				customers = userRepository.findAllUsersByUserStatus(userStatus, pageRequest);
+				customersPage = userRepository.findAllUsersByUserStatus(userStatus, pageRequest);
 			else
-				customers = userRepository.findAll(pageRequest.first()).toList();
-
+				customersPage = userRepository.findAll(pageRequest.first());
 		} else {
-
 			Long orgID = securityService.getCurrentUserOrganizationId();
 			if(userStatus!=null)
-				customers = userRepository.findByOrganizationIdAndUserStatus(orgID, userStatus, pageRequest);
+				customersPage = userRepository.findByOrganizationIdAndUserStatus(orgID, userStatus, pageRequest);
 			else
-				customers = userRepository.findByOrganizationId(orgID, pageRequest);
-
+				customersPage = userRepository.findByOrganizationId(orgID, pageRequest);
 		}
-		return customers.stream().map(UserEntity::getRepresentation).collect(toList());
+
+		return PaginatedResponse.<UserRepresentationObject>builder()
+				.content(customersPage.getContent().stream()
+						.map(UserEntity::getRepresentation)
+						.toList())
+				.totalPages(customersPage.getTotalPages())
+				.totalRecords(customersPage.getTotalElements())
+				.build();
 	}
 
 	@Override

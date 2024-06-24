@@ -1,9 +1,6 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.ActivationMethod;
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.dto.UserDTOs;
-import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
@@ -170,10 +167,10 @@ public class UserController {
     }
 
     @GetMapping(value = "list/customer", produces = APPLICATION_JSON_VALUE)
-    public List<UserRepresentationObject> getCustomersList(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                                           @RequestParam (value = "paging_start", required = false) Integer start,
-                                                           @RequestParam (value = "paging_count", required = false) Integer count,
-                                                           @RequestParam (value = "user_status", required = false) Integer userStatus) {
+    public PaginatedResponse<UserRepresentationObject> getCustomersList(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                                                        @RequestParam (value = "paging_start", required = false) Integer start,
+                                                                        @RequestParam (value = "paging_count", required = false) Integer count,
+                                                                        @RequestParam (value = "user_status", required = false) Integer userStatus) {
         return userService.getUserListByStatusPaging( start, count, userStatus);
     }
 

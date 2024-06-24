@@ -15,11 +15,7 @@ import com.nasnav.dao.UserOtpRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dao.UserSubscriptionRepository;
 import com.nasnav.dao.UserTokenRepository;
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.InfluencerDTO;
-import com.nasnav.dto.UserDTOs;
-import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.organization.CreateInfluencerAccountForAiRequest;
 import com.nasnav.exceptions.ErrorResponseDTO;
@@ -1666,14 +1662,65 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
-	public void listCustomersPageableSuccess() throws IOException {
+	public void listCustomersByStatusPageableSuccess() throws IOException {
 		HttpEntity<?> req = getHttpEntity("101112");
-		ResponseEntity<String> res = template.exchange("/user/list/customer?paging_start=0&paging_count=30&user_status=201", GET, req, String.class);
+		ResponseEntity<String> res = template.exchange("/user/list/customer?paging_start=0&paging_count=30&user_status=201",
+				GET
+				,req
+				,String.class);
 		assertEquals(200, res.getStatusCodeValue());
-		List<UserRepresentationObject> userList = mapper.readValue(res.getBody(), new TypeReference<List<UserRepresentationObject>>(){});
-		assertFalse(userList.isEmpty());
+		PaginatedResponse<UserRepresentationObject> userResponse = mapper.readValue(res.getBody(),
+				new TypeReference<>(){});
+		assertFalse(userResponse.getContent().isEmpty());
+		assertEquals(Long.valueOf(4), userResponse.getTotalRecords());
+		assertEquals(Integer.valueOf(1), userResponse.getTotalPages());
 	}
 
+	@Test
+	public void listCustomersByStatusPageableSuccessForNasNavAdmin() throws IOException {
+		HttpEntity<?> req = getHttpEntity("123654");
+		ResponseEntity<String> res = template.exchange("/user/list/customer?paging_start=0&paging_count=30&user_status=201",
+				GET
+				,req
+				,String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		PaginatedResponse<UserRepresentationObject> userResponse = mapper.readValue(res.getBody(),
+				new TypeReference<>(){});
+		assertFalse(userResponse.getContent().isEmpty());
+		assertEquals(Long.valueOf(5), userResponse.getTotalRecords());
+		assertEquals(Integer.valueOf(1), userResponse.getTotalPages());
+	}
+
+
+	@Test
+	public void listCustomersPageableSuccess() throws IOException {
+		HttpEntity<?> req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.exchange("/user/list/customer?paging_start=0&paging_count=3",
+				GET
+				,req
+				,String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		PaginatedResponse<UserRepresentationObject> userResponse = mapper.readValue(res.getBody(),
+				new TypeReference<>(){});
+		assertFalse(userResponse.getContent().isEmpty());
+		assertEquals(Long.valueOf(7), userResponse.getTotalRecords());
+		assertEquals(Integer.valueOf(3), userResponse.getTotalPages());
+	}
+
+	@Test
+	public void listCustomerssPageableSuccessForNasNavAdmin() throws IOException {
+		HttpEntity<?> req = getHttpEntity("123654");
+		ResponseEntity<String> res = template.exchange("/user/list/customer?paging_start=0&paging_count=3",
+				GET
+				,req
+				,String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		PaginatedResponse<UserRepresentationObject> userResponse = mapper.readValue(res.getBody(),
+				new TypeReference<>(){});
+		assertFalse(userResponse.getContent().isEmpty());
+		assertEquals(Long.valueOf(8), userResponse.getTotalRecords());
+		assertEquals(Integer.valueOf(3), userResponse.getTotalPages());
+	}
 
 	@Test
 	public	void test_Invalid_refresh_token_returns_new_token() {

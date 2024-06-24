@@ -1,9 +1,6 @@
 package com.nasnav.service;
 
-import com.nasnav.dto.ActivationMethod;
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.dto.UserDTOs;
-import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
@@ -43,7 +40,7 @@ public interface UserService extends CommonUserServiceInterface {
 
     RedirectView activateSubscribedEmail(String token, Long orgId);
 
-    List<UserRepresentationObject>  getUserListByStatusPaging(Integer start, Integer count, Integer userStatus);
+    PaginatedResponse<UserRepresentationObject> getUserListByStatusPaging(Integer start, Integer count, Integer userStatus);
 
     List<UserRepresentationObject> getUserList();
 
