@@ -2,11 +2,11 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.EventsNewDTO;
+import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.enumerations.EventStatus;
-import com.nasnav.persistence.EventEntity;
 import com.nasnav.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
@@ -126,15 +126,19 @@ public class EventController {
     }
 
     @GetMapping("/all")
-    public PageImpl<EventsNewDTO> getAllEventsPageable(
+    public PaginatedResponse<EventsNewDTO> getAllEventsPageable(
                                                                    @RequestParam(required = false, defaultValue = "0") Integer start,
                                                                    @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count ,
+                                                                   @RequestParam(required = false) EventStatus eventStatus,
                                                                    @RequestParam(required = false, name = "fromDate")
-                                                                   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                                                   @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
                                                                    LocalDateTime fromDate ,
+                                                                   @RequestParam(required = false, name = "toDate")
+                                                                   @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                                                                   LocalDateTime toDate,
                                                                    @RequestParam(required = false ) Long orgId
                                                                    ) {
-        return eventService.getAllEvents(start, count , fromDate , orgId);
+        return eventService.getAllEvents(start, count, eventStatus, fromDate, toDate, orgId);
     }
 
     @GetMapping("/getEventByName/{name}")
@@ -147,9 +151,9 @@ public class EventController {
 
     @GetMapping("/advertise/all")
     public PageImpl<EventsNewDTO> getAllAdvertisedEvents(@RequestHeader(name = "User-Token", required = false) String token ,
-                                                      @RequestParam(required = false, defaultValue = "0") Integer start,
-                                                      @RequestParam(required = false ) Long orgId ,
-                                                      @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
+                                                                  @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                                  @RequestParam(required = false ) Long orgId ,
+                                                                  @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
                                                       ){
         return eventService.getAllAdvertisedEvents(start,count,orgId);
     }

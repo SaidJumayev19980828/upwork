@@ -3,7 +3,7 @@ package com.nasnav.enumerations;
 import java.time.LocalDateTime;
 
 public enum EventStatus {
-    PENDING(0), LIVE(1), ENDED(2);
+    PENDING(0), LIVE(1), ENDED(2), RUNNING(3), UPCOMING(4), FINISHED(5);
 
     private Integer value ;
 

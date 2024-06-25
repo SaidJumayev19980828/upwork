@@ -2,19 +2,10 @@ package com.nasnav.service.impl;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.nasnav.dao.OrganizationThemeRepository;
-import com.nasnav.dto.EventInterestsProjection;
-import com.nasnav.dto.EventProjection;
-import com.nasnav.dto.EventRoomProjection;
-import com.nasnav.dto.EventsNewDTO;
-import com.nasnav.dto.EventsRoomNewDTO;
-import com.nasnav.dto.InfluencerProjection;
-import com.nasnav.dto.OrganizationNewDTO;
-import com.nasnav.dto.OrganizationProjection;
-import com.nasnav.persistence.UserEntity;
+import com.nasnav.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -198,8 +189,8 @@ public class EventRoomServiceImpl implements EventRoomService {
 
 	}
 
-	private Boolean userCanStartEvent(List<InfluencerProjection> entity , Long userId) {
-		return entity.stream().filter(user -> user.getId().equals(userId)).findAny().isPresent();
+	private Boolean userCanStartEvent(List<InflunecerEventDto> entity , Long userId) {
+		return entity.stream().anyMatch(user -> user.id().equals(userId));
 	}
 
 	private Optional<EventRoomTemplateEntity> getRoomTemplateForUpdate(Long eventId) {

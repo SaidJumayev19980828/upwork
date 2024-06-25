@@ -7,7 +7,6 @@ import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.*;
 import com.nasnav.enumerations.EventStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.mappers.EventRoomMapper;
 import com.nasnav.persistence.*;
 import com.nasnav.service.*;
 import lombok.AllArgsConstructor;
@@ -41,10 +40,8 @@ public class EventServiceImpl implements EventService{
     private final OrganizationService organizationService;
     private final ProductService productService;
     private final EventRequestsRepository eventRequestsRepository;
-    private final EventAttachmentsRepository eventAttachmentsRepository;
     private final InfluencerService influencerService;
     private final OrganizationThemeRepository  organizationThemeRepository;
-    private final EventRoomMapper mapper;
     private final EventRoomTemplateRepository roomTemplateRepository;
     private final MailService mailService;
     private final UserRepository userRepository;
@@ -305,23 +302,29 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
-    public PageImpl<EventsNewDTO> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate , Long orgId) {
+    public PaginatedResponse<EventsNewDTO> getAllEvents(Integer start, Integer count, EventStatus eventStatus, LocalDateTime fromDate, LocalDateTime toDate, Long orgId) {
         Pageable page = new CustomPaginationPageRequest(start, count);
         OrganizationEntity organization=null;
-        PageImpl<EventInterestsProjection> events;
+        Page<EventInterestsProjection> events;
 
         if (orgId !=null){
             organization = organizationRepository.findById(orgId)
                     .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
         }
-        if(fromDate == null){
-            events=  eventRepository.findAllOrderedByStartsAtDesc(page , organization);
-        }else {
-            events = eventRepository.findAllByStartOrderedByStartsAtDesc(fromDate, page , organization);
+
+        if(Objects.nonNull(eventStatus)) {
+            events = eventRepository.findAllOrderedByStartsAtDesc(page, organization, eventStatus.toString(),
+                    LocalDateTime.now());
+        } else {
+            events = eventRepository.findAllOrderedByStartsAtDesc(page, organization, fromDate, toDate);
         }
 
-        List<EventsNewDTO> dtos = events.getContent().stream().map(this::mapEventProjectionToDTO).collect(Collectors.toList());
-        return new PageImpl<>(dtos, events.getPageable(), events.getTotalElements());
+        List<EventsNewDTO> dtos = events.getContent().stream().map(this::mapEventProjectionToDTO).toList();
+        return PaginatedResponse.<EventsNewDTO>builder()
+                .content(dtos)
+                .totalRecords(events.getTotalElements())
+                .totalPages(events.getTotalPages())
+                .build();
     }
 
     @Override
@@ -348,7 +351,9 @@ public class EventServiceImpl implements EventService{
         eventDTO.setStatus(eventProjection.getStatus());
         eventDTO.setStartsAt(eventProjection.getStartsAt());
         eventDTO.setEndsAt(eventProjection.getEndsAt());
-        eventDTO.setInfluencers(eventProjection.getInfluencers());
+        eventDTO.setInfluencers(eventProjection.getInfluencers().stream().map(influencerProjection -> new InflunecerEventDto(
+                influencerProjection.getId(), influencerProjection.getName(), influencerProjection.getImage(), influencerProjection.isEmployee()
+        )).toList());
         eventDTO.setAttachments(eventProjection.getAttachments());
         eventDTO.setInterests(eventInterestsProjection.getInterest());
         OrganizationProjection orgProjection = eventProjection.getOrganization();

@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import com.nasnav.dto.EventInterestsProjection;
 import com.nasnav.dto.EventsNewDTO;
+import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
@@ -35,7 +36,7 @@ public interface EventService {
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId);
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, EventEntity event);
     EventResponseDto toDto(EventEntity entity);
-    PageImpl<EventsNewDTO> getAllEvents(Integer start, Integer count , LocalDateTime fromDate, Long orgId);
+    PaginatedResponse<EventsNewDTO> getAllEvents(Integer start, Integer count, EventStatus eventStatus, LocalDateTime fromDate, LocalDateTime toDate, Long orgId);
 
     PageImpl<EventsNewDTO> getAllAdvertisedEvents(Integer start, Integer count,Long orgId);
 

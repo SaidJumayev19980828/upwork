@@ -19,7 +19,7 @@ public class EventsNewDTO {
     private Long id;
     private LocalDateTime startsAt;
     private LocalDateTime endsAt;
-    private List<InfluencerProjection> influencers;
+    private List<InflunecerEventDto> influencers;
     private List<EventAttachmentsEntity> attachments;
     private String name;
     private String description;
@@ -34,7 +34,9 @@ public class EventsNewDTO {
                 .name(eventProjection.getName())
                 .interests(interests)
                 .description(eventProjection.getDescription())
-                .influencers(eventProjection.getInfluencers())
+                .influencers(eventProjection.getInfluencers().stream().map(influencerProjection ->
+                        new InflunecerEventDto(influencerProjection.getId(), influencerProjection.getName(),
+                                influencerProjection.getImage(), influencerProjection.isEmployee())).toList())
                 .startsAt(eventProjection.getStartsAt())
                 .organization(orgDTO)
                 .attachments(eventProjection.getAttachments())

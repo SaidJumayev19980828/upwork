@@ -1,5 +1,8 @@
 package com.nasnav.yeshtery.test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.EventForRequestDTO;
@@ -9,6 +12,8 @@ import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -20,6 +25,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
@@ -45,6 +51,9 @@ public class EventTest extends AbstractTestWithTempBaseDir {
     private InfluencerRepository influencerRepository;
     @Autowired
     private EventRequestsRepository eventRequestsRepository;
+
+    @Autowired
+    private ObjectMapper mapper;
 
     @Test
     public void createEvent(){
@@ -212,18 +221,41 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         assertFalse(entity.isEmpty());
     }
 
-
-
     @Test
-    public void getAllEventsForUnAuth(){
+    public void getAllEventsForUnAuth() throws JsonProcessingException {
         HttpEntity<Object> httpEntity = getHttpEntity("");
         long organizationId = 99001L;
-        LocalDateTime fromDate = LocalDateTime.now().minusDays(15);
+        LocalDateTime now = LocalDateTime.now().minusDays(1);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedDateTime = now.format(formatter);
+        ResponseEntity<String> response = template.exchange("/v1/event/all?fromDate=" + formattedDateTime + "&orgId=" + organizationId ,
+                HttpMethod.GET, httpEntity, String.class);
+        PaginatedResponse<EventsNewDTO> eventResponse = mapper.readValue(response.getBody(),
+                new TypeReference<>(){});
 
-        ResponseEntity<Void> response = template.exchange("/v1/event/all?fromDate=" + fromDate + "&?orgId=" + organizationId  , HttpMethod.GET, httpEntity, Void.class);
         assertEquals(200, response.getStatusCode().value());
-
+        assertEquals(Long.valueOf(1), eventResponse.getTotalRecords());
     }
+
+    @ParameterizedTest
+    @CsvSource({
+            "UPCOMING,1",
+            "RUNNING,2",
+            "FINISHED,0"
+    })
+    public void getAllStatusEventsForUnAuth(String status, Long totalRecords) throws JsonProcessingException {
+        HttpEntity<Object> httpEntity = getHttpEntity("");
+        long organizationId = 99001L;
+
+        ResponseEntity<String> response = template.exchange("/v1/event/all?eventStatus="+ status +"&orgId=" + organizationId ,
+                HttpMethod.GET, httpEntity, String.class);
+        PaginatedResponse<EventsNewDTO> eventResponse = mapper.readValue(response.getBody(),
+                new TypeReference<>(){});
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(totalRecords, eventResponse.getTotalRecords());
+    }
+
     @Test
     public void getAllAdvertises(){
         HttpEntity<Object> httpEntity = getHttpEntity("101112");

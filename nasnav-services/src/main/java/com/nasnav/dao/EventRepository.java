@@ -4,6 +4,7 @@ import com.nasnav.dto.EventInterestsProjection;
 import com.nasnav.persistence.EventEntity;
 import com.nasnav.persistence.InfluencerEntity;
 import com.nasnav.persistence.OrganizationEntity;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -17,8 +18,7 @@ import java.util.Date;
 import java.util.List;
 
 public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaSpecificationExecutor<EventEntity> {
-    @Query("select event from EventEntity event where event.organization.id =:orgId and (:status is null or event.status =:status)")
-    PageImpl<EventEntity> getAllEventForOrg(Long orgId, Integer status, Pageable page);
+
     @Query("select event from EventEntity event where event.organization.id =:orgId and event.visible = true and (:status is null or event.status =:status)")
     List<EventEntity> getAllEventForUser(Long orgId, Integer status);
     @Query("select event from EventEntity event where (CAST(:dateFilter as date) is null or CAST(event.startsAt as date) = :dateFilter) order by event.startsAt desc")
@@ -79,23 +79,36 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
     @Query("SELECT DISTINCT event as event, count(el) as interest FROM EventEntity event JOIN event.influencers influencer " +
             "LEFT JOIN EventLogsEntity el ON el.event = event.id " +
             "WHERE influencer IS NOT NULL  And (:organization is null or event.organization=:organization) " +
+            "AND (:status IS NULL OR " +
+            "(:status = 'RUNNING' AND to_timestamp(CAST(event.startsAt as text), 'yyyy-MM-dd HH24:MI:SS') <= to_timestamp(CAST(:now as text), 'yyyy-MM-dd HH24:MI:SS') AND to_timestamp(CAST(event.endsAt as text), 'yyyy-MM-dd HH24:MI:SS') >= to_timestamp(CAST(:now as text), 'yyyy-MM-dd HH24:MI:SS')) OR " +
+            "(:status = 'UPCOMING' AND to_timestamp(CAST(event.startsAt as text), 'yyyy-MM-dd HH24:MI:SS') > to_timestamp(CAST(:now as text), 'yyyy-MM-dd HH24:MI:SS')) OR " +
+            "(:status = 'FINISHED' AND to_timestamp(CAST(event.endsAt as text), 'yyyy-MM-dd HH24:MI:SS') < to_timestamp(CAST(:now as text), 'yyyy-MM-dd HH24:MI:SS'))) " +
             "GROUP BY event.id " +
             "ORDER BY event.startsAt DESC")
-    PageImpl<EventInterestsProjection> findAllOrderedByStartsAtDesc(Pageable pageable ,@Param("organization") OrganizationEntity organization);
+    Page<EventInterestsProjection> findAllOrderedByStartsAtDesc(Pageable pageable , @Param("organization") OrganizationEntity organization, String status, LocalDateTime now);
 
-    @Query( "SELECT DISTINCT event as event , count(el) as interest  FROM EventEntity event JOIN event.influencers influencer" +
-            " LEFT JOIN EventLogsEntity el ON el.event = event.id " +
-            " WHERE " +
-            "influencer IS NOT NULL  And (:organization is null or event.organization=:organization)  " +
-            "AND " +
-            "( to_timestamp(cast (:startsAt as text), 'yyyy-MM-dd HH24:MI:SS') " +
-            "IS NULL OR " +
-            "event.startsAt >= " +
-            "to_timestamp(cast (:startsAt as text), 'yyyy-MM-dd HH24:MI:SS') )" +
+    @Query("SELECT DISTINCT event as event, count(el) as interest FROM EventEntity event JOIN event.influencers influencer " +
+            "LEFT JOIN EventLogsEntity el ON el.event = event.id " +
+            "WHERE influencer IS NOT NULL  And (:organization is null or event.organization=:organization) " +
+            "AND (  " +
+            "       ( to_timestamp(CAST(:fromDate as text), 'yyyy-MM-dd HH24:MI:SS') IS NULL OR " +
+            "        to_timestamp(CAST(event.startsAt as text), 'yyyy-MM-dd HH24:MI:SS') >= " +
+            "       to_timestamp(CAST(:fromDate as text), 'yyyy-MM-dd HH24:MI:SS') " +
+            "        ) " +
+            "       AND" +
+            "       ( to_timestamp(CAST(:endDate as text), 'yyyy-MM-dd HH24:MI:SS') IS NULL OR " +
+            "    to_timestamp(CAST(event.endsAt as text), 'yyyy-MM-dd HH24:MI:SS') <= " +
+            "    to_timestamp(CAST(:endDate as text), 'yyyy-MM-dd HH24:MI:SS') " +
+            "       )" +
+            ")" +
             "GROUP BY event.id " +
             "ORDER BY event.startsAt DESC")
-    PageImpl<EventInterestsProjection> findAllByStartOrderedByStartsAtDesc(@Param("startsAt") LocalDateTime startsAt, Pageable pageable , @Param("organization") OrganizationEntity organization);
-
+    Page<EventInterestsProjection> findAllOrderedByStartsAtDesc(Pageable pageable , @Param("organization") OrganizationEntity organization,
+                                                                    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                                                                    LocalDateTime fromDate,
+                                                                    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                                                                    LocalDateTime endDate
+    );
 
     @Query("SELECT DISTINCT event as event, COUNT(el.id) AS interest " +
             "FROM EventEntity event " +
