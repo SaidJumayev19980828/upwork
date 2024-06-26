@@ -6,6 +6,7 @@ import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
+import com.nasnav.dto.request.ActivateOtpWithPasswordDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.dto.response.YeshteryUserApiResponse;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
@@ -15,6 +16,9 @@ import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.*;
 import com.nasnav.service.yeshtery.YeshteryUserService;
+import com.nasnav.yeshtery.security.jwt.JwtLoginData;
+import com.nasnav.yeshtery.security.jwt.JwtOAuthService;
+import com.nasnav.yeshtery.security.jwt.JwtResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +43,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequestMapping(YeshteryUserController.API_PATH)
 @RequiredArgsConstructor
 public class YeshteryUserController {
-    static final String API_PATH = YeshteryConstants.API_PATH +"/user/";
+    static final String API_PATH = YeshteryConstants.API_PATH + "/user/";
     private final CommonUserService commonUserService;
     @Autowired
     private YeshteryUserService userService;
@@ -51,38 +55,40 @@ public class YeshteryUserController {
     private SecurityService securityService;
     @Autowired
     private EmployeeUserService employeeUserService;
+    @Autowired
+    private JwtOAuthService jwtOAuthService;
 
     @GetMapping(value = "info")
     public UserRepresentationObject getUserData(@RequestHeader(name = "User-Token", required = false) String token,
                                                 @RequestParam(value = "id", required = false) Long id,
-                                                @RequestParam (value = "is_employee", required = false) Boolean isEmployee) throws BusinessException {
+                                                @RequestParam(value = "is_employee", required = false) Boolean isEmployee) throws BusinessException {
         return userService.getYeshteryUserData(id, isEmployee);
     }
 
     @GetMapping(value = "information", produces = APPLICATION_JSON_VALUE)
     public List<UserRepresentationObject> getUserDataByAnonymous(
-            @RequestHeader (name = "User-Token", required = false) String userToken,
-            @RequestParam (value = "anonymous") String anonymous
-    ) throws BusinessException{
+            @RequestHeader(name = "User-Token", required = false) String userToken,
+            @RequestParam(value = "anonymous") String anonymous
+    ) throws BusinessException {
         return nasnavUserService.getUserData(anonymous);
     }
 
 
     @PostMapping(value = "change/password", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-    public UserApiResponse changePasswordUser(@RequestHeader (name = "User-Token", required = false) String userToken, @RequestBody UserDTOs.ChangePasswordUserObject userJson) {
+    public UserApiResponse changePasswordUser(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody UserDTOs.ChangePasswordUserObject userJson) {
         return commonUserService.changePasswordUser(userJson);
     }
 
     @GetMapping(value = "list", produces = APPLICATION_JSON_VALUE)
-    public List<UserRepresentationObject> getUserList(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                                      @RequestParam (value = "org_id", required = false) Long orgId,
-                                                      @RequestParam (value = "shop_id", required = false) Long storeId,
-                                                      @RequestParam (value = "role", required = false) String role) {
+    public List<UserRepresentationObject> getUserList(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                                      @RequestParam(value = "org_id", required = false) Long orgId,
+                                                      @RequestParam(value = "shop_id", required = false) Long storeId,
+                                                      @RequestParam(value = "role", required = false) String role) {
         return employeeUserService.getUserList(userToken, orgId, storeId, role);
     }
 
     @GetMapping(value = "list/customer", produces = APPLICATION_JSON_VALUE)
-    public List<UserRepresentationObject> getCustomersList(@RequestHeader (name = "User-Token", required = false) String userToken) {
+    public List<UserRepresentationObject> getCustomersList(@RequestHeader(name = "User-Token", required = false) String userToken) {
         return userService.getUserList();
     }
 
@@ -101,8 +107,8 @@ public class YeshteryUserController {
 
     @PostMapping(value = "logout")
     public UserApiResponse logout(@RequestHeader(name = "User-Token", required = false) String headerToken,
-            @CookieValue(name = "User-Token", required = false) String cookieToken,
-            HttpServletResponse response) {
+                                  @CookieValue(name = "User-Token", required = false) String cookieToken,
+                                  HttpServletResponse response) {
         UserApiResponse userApiResponse = securityService.logout(headerToken, cookieToken);
         response.addCookie(userApiResponse.getCookie());
         return userApiResponse;
@@ -117,7 +123,7 @@ public class YeshteryUserController {
 
     @PostMapping(value = "recover")
     public UserApiResponse recoverUser(@RequestBody UserDTOs.PasswordResetObject json) {
-        if (json.employee){
+        if (json.employee) {
             return employeeUserService.recoverUser(json);
         }
         return userService.recoverYeshteryUser(json);
@@ -137,8 +143,8 @@ public class YeshteryUserController {
 
     @PostMapping(value = "register")
     @ResponseStatus(CREATED)
-    public YeshteryUserApiResponse registerUserV2( @RequestParam(required = false) Long referral,
-                                                   @RequestBody UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
+    public YeshteryUserApiResponse registerUserV2(@RequestParam(required = false) Long referral,
+                                                  @RequestBody UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
         return this.userService.registerYeshteryUserV2(referral, userJson);
     }
 
@@ -159,19 +165,19 @@ public class YeshteryUserController {
     }
 
     @PutMapping(value = "/address", produces = APPLICATION_JSON_VALUE)
-    public AddressDTO updateUserAddress(@RequestHeader (name = "User-Token", required = false) String token,
-                                        @RequestBody AddressDTO address)  {
+    public AddressDTO updateUserAddress(@RequestHeader(name = "User-Token", required = false) String token,
+                                        @RequestBody AddressDTO address) {
         return userService.updateUserAddress(address);
     }
 
     @DeleteMapping(value = "/address")
-    public void updateUserAddress(@RequestHeader (name = "User-Token", required = false) String token,
-                                  @RequestParam Long id)  {
+    public void updateUserAddress(@RequestHeader(name = "User-Token", required = false) String token,
+                                  @RequestParam Long id) {
         userService.removeUserAddress(id);
     }
 
     @PostMapping(value = "update", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-    public UserApiResponse updateEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
+    public UserApiResponse updateEmployeeUser(@RequestHeader(name = "User-Token", required = false) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserUpdatingObject json) {
         if (json.employee) {
             return employeeUserService.updateEmployeeUser(json);
@@ -184,60 +190,68 @@ public class YeshteryUserController {
                                         @NonNull HttpServletRequest request,
                                         @Schema(example = "YYYYYYYYYY:XXXXXXXXXXXX") @RequestBody String notificationToken
     ) {
-        securityService.setCurrentUserNotificationToken(userToken, notificationToken , request.getHeader("Authorization"));
+        securityService.setCurrentUserNotificationToken(userToken, notificationToken, request.getHeader("Authorization"));
     }
 
     @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-    public UserApiResponse createEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
+    public UserApiResponse createEmployeeUser(@RequestHeader(name = "User-Token", required = false) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
         return employeeUserService.createEmployeeUser(employeeUserJson);
     }
 
     @GetMapping(value = "recover", params = "employee=true", produces = APPLICATION_JSON_VALUE)
     public void sendEmailRecoveryToEmplyee(@RequestParam String email,
-            @RequestParam(value = "org_id", required = false) Long orgId,
-            @RequestParam boolean employee) {
+                                           @RequestParam(value = "org_id", required = false) Long orgId,
+                                           @RequestParam boolean employee) {
         employeeUserService.sendEmailRecovery(email);
     }
 
     @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
     public void sendEmailRecoveryToUser(@RequestParam String email,
-            @RequestParam(value = "org_id", required = false) Long orgId,
-            @RequestParam boolean employee,
-            @RequestParam(value = "activation_method", defaultValue = "VERIFICATION_LINK") ActivationMethod activationMethod) {
+                                        @RequestParam(value = "org_id", required = false) Long orgId,
+                                        @RequestParam boolean employee,
+                                        @RequestParam(value = "activation_method", defaultValue = "VERIFICATION_LINK") ActivationMethod activationMethod) {
         userService.sendEmailRecovery(email, orgId, activationMethod);
     }
 
-    @GetMapping(value="/review", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<ProductRateRepresentationObject> getVariantsRatings(@RequestHeader (name = "User-Token", required = false) String token,
+    @GetMapping(value = "/review", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<ProductRateRepresentationObject> getVariantsRatings(@RequestHeader(name = "User-Token", required = false) String token,
                                                                     @RequestParam(value = "variant_ids") Set<Long> variantIds) {
         return reviewService.getUserProductsRatings(variantIds);
     }
 
     @PostMapping(value = "suspend", params = "is_employee=true")
     public void suspendEmployeeAccount(@RequestHeader(name = "User-Token", required = false) String token,
-            @RequestParam(value = "user_id") Long userId,
-            @RequestParam(defaultValue = "false") Boolean suspend,
-            @RequestParam(name = "is_employee", defaultValue = "false") Boolean isEmployee) {
+                                       @RequestParam(value = "user_id") Long userId,
+                                       @RequestParam(defaultValue = "false") Boolean suspend,
+                                       @RequestParam(name = "is_employee", defaultValue = "false") Boolean isEmployee) {
         employeeUserService.suspendEmployeeAccount(userId, suspend);
     }
 
     @PostMapping(value = "suspend")
     public void suspendUserAccount(@RequestHeader(name = "User-Token", required = false) String token,
-            @RequestParam(value = "user_id") Long userId,
-            @RequestParam(defaultValue = "false") Boolean suspend,
-            @RequestParam(name = "is_employee", defaultValue = "false") Boolean isEmployee) {
+                                   @RequestParam(value = "user_id") Long userId,
+                                   @RequestParam(defaultValue = "false") Boolean suspend,
+                                   @RequestParam(name = "is_employee", defaultValue = "false") Boolean isEmployee) {
         nasnavUserService.suspendUserAccount(userId, suspend);
     }
 
     @PostMapping("link_nasnav_users_to_yeshtery_users")
-    public int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity(@RequestHeader (name = "User-Token", required = false) String token) {
+    public int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity(@RequestHeader(name = "User-Token", required = false) String token) {
         return userService.linkNonYeshteryUsersToCorrespondingYeshteryUserEntity();
     }
 
     @PostMapping(value = "register/otp/activate", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity<UserApiResponse> activateUser(@Valid @RequestBody ActivateOtpDto activateOtp) throws BusinessException {
-        return ResponseEntity.ok(userService.activateUserAccount(activateOtp));
+    public ResponseEntity<JwtResponse> activateUser(@Valid @RequestBody ActivateOtpWithPasswordDto activateOtp) {
+        userService.activateUserAccount(activateOtp);
+
+        JwtLoginData loginData = new JwtLoginData(
+                activateOtp.getEmail(),
+                activateOtp.getPassword(),
+                false,
+                activateOtp.getOrgId()
+        );
+        return ResponseEntity.ok(jwtOAuthService.tokenize(loginData));
     }
 
     @PostMapping(value = "/recovery/otp-verify", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)

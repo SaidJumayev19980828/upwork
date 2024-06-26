@@ -12,6 +12,7 @@ import com.nasnav.dao.yeshtery.YeshteryUserOtpRepository;
 import com.nasnav.dao.yeshtery.YeshteryUserRepository;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
+import com.nasnav.dto.request.ActivateOtpWithPasswordDto;
 import com.nasnav.persistence.BaseUserOtpEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
@@ -309,10 +310,11 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
 		JSONObject userJson = registerWithOtpAndAssert();
 		String email = userJson.getString("email");
 		Long orgId = userJson.getLong("org_id");
+        String password = userJson.getString("password");
 		YeshteryUserEntity newUser = yeshteryUserRepository.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
 		String otp = yeshteryUserOtpRepository.findByUserAndType(newUser, OtpType.REGISTER).map(BaseUserOtpEntity::getOtp).orElse(null);
-		ActivateOtpDto activationBody = new ActivateOtpDto(email, otp, orgId);
-		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
+		ActivateOtpWithPasswordDto activationBody = new ActivateOtpWithPasswordDto(email, otp, orgId,password);
+		HttpEntity<ActivateOtpWithPasswordDto> request = new HttpEntity<ActivateOtpWithPasswordDto>(activationBody);
 		ResponseEntity<String> response = template.postForEntity(API_PATH + "/user/register/otp/activate", request, String.class);
 		Assert.assertEquals(200, response.getStatusCodeValue());
 		// otp is deleted request should fail
@@ -338,10 +340,12 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
 		JSONObject userJson = registerWithOtpAndAssert();
 		String email = userJson.getString("email");
 		Long orgId = userJson.getLong("org_id");
-		YeshteryUserEntity newUser = yeshteryUserRepository.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
+        String password = userJson.getString("password");
+
+        YeshteryUserEntity newUser = yeshteryUserRepository.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
 		String otp = yeshteryUserOtpRepository.findByUserAndType(newUser, OtpType.REGISTER).map(BaseUserOtpEntity::getOtp).orElse(null);
-		ActivateOtpDto activationBody = new ActivateOtpDto(email, "invalid otp", orgId);
-		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
+		ActivateOtpWithPasswordDto activationBody = new ActivateOtpWithPasswordDto(email, "invalid otp", orgId,password);
+		HttpEntity<ActivateOtpWithPasswordDto> request = new HttpEntity<ActivateOtpWithPasswordDto>(activationBody);
 		ResponseEntity<String> response;
 
 		for (int i = 0; i < config.otpMaxRetries; i++) {
@@ -350,8 +354,8 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
 		}
 
 		// next request will fail as otp is deleted after max retries
-		activationBody = new ActivateOtpDto("test@nasnav.com", otp, 99001L);
-		request = new HttpEntity<ActivateOtpDto>(activationBody);
+		activationBody = new ActivateOtpWithPasswordDto("test@nasnav.com", otp, 99001L,password);
+		request = new HttpEntity<ActivateOtpWithPasswordDto>(activationBody);
 		response = template.postForEntity(API_PATH + "/user/register/otp/activate", request, String.class);
 		Assert.assertEquals(400, response.getStatusCodeValue());
 	}

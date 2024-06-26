@@ -22,6 +22,7 @@ import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
+import com.nasnav.dto.request.ActivateOtpWithPasswordDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.dto.response.YeshteryUserApiResponse;
 import com.nasnav.enumerations.Roles;
@@ -904,7 +905,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     @Override
-    public UserApiResponse activateUserAccount(ActivateOtpDto activateOtp) {
+    public UserApiResponse activateUserAccount(ActivateOtpWithPasswordDto activateOtp) {
         YeshteryUserEntity user = userRepository.getByEmailIgnoreCaseAndOrganizationId(activateOtp.getEmail(), activateOtp.getOrgId());
                 if (user == null) throw new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtp.getEmail());
 		otpService.validateOtp(activateOtp.getOtp(), user, OtpType.REGISTER);

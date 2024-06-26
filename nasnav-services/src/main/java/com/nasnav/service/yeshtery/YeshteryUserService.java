@@ -4,6 +4,7 @@ import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
+import com.nasnav.dto.request.ActivateOtpWithPasswordDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.UserEntity;
@@ -33,7 +34,7 @@ public interface YeshteryUserService  extends CommonYeshteryUserServiceInterface
 
     YeshteryUserEntity createYeshteryEntity(String name, String email, UserEntity nasnavUser, int yeshteryOrgId, Long orgId);
 
-    UserApiResponse activateUserAccount(ActivateOtpDto activateOtp);
+    UserApiResponse activateUserAccount(ActivateOtpWithPasswordDto activateOtp);
 
     RecoveryUserResponse activateRecoveryOtp(ActivateOtpDto activateOtp) throws BusinessException;
 
