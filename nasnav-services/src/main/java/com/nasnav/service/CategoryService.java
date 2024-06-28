@@ -1,26 +1,10 @@
 package com.nasnav.service;
 
-import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
-import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
-import static com.nasnav.cache.Caches.ORGANIZATIONS_TAG_TREES;
-
 import java.util.List;
 
-import javax.cache.annotation.CacheRemoveAll;
-import javax.cache.annotation.CacheResult;
+import com.nasnav.dto.*;
 
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.transaction.annotation.Transactional;
 
-import com.nasnav.dto.CategoryDTO;
-import com.nasnav.dto.CategoryRepresentationObject;
-import com.nasnav.dto.TagsDTO;
-import com.nasnav.dto.TagsRepresentationObject;
-import com.nasnav.dto.TagsTreeCreationDTO;
-import com.nasnav.dto.TagsTreeNodeDTO;
-import com.nasnav.dto.UpdateProductsCategoryDTO;
-import com.nasnav.dto.UpdateTagsCategoryDTO;
 import com.nasnav.dto.response.CategoryDto;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.CategoriesEntity;
@@ -48,7 +32,9 @@ public interface CategoryService {
   //    @CacheResult(cacheName = "organizations_tags")
   List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName);
 
-  PageImpl<TagsRepresentationObject> getYeshteryOrganizationsTags(Integer start, Integer count , String categoryName, Long orgId);
+  PaginatedResponse<TagsRepresentationObject> getOrganizationTagsPageable(Long orgId, String categoryName, Integer start, Integer count);
+
+  PaginatedResponse<TagsRepresentationObject> getYeshteryOrganizationsTags(Integer start, Integer count , String categoryName, Long orgId);
 
   List<TagsTreeNodeDTO> getOrganizationTagsTree(Long orgId) throws BusinessException;
 

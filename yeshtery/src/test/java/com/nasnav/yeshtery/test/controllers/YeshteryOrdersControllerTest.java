@@ -257,16 +257,30 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
 
 
     @Test
+    public void getTagsPaginated() {
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ParameterizedTypeReference<PaginatedResponse<TagsRepresentationObject>> responseType = new ParameterizedTypeReference<>() {
+        };
+
+        ResponseEntity<PaginatedResponse<TagsRepresentationObject>> response = template.exchange(
+                "/v1/yeshtery/tags?org_id=99001&start=" + 0 + "&count=" + 1,
+                HttpMethod.GET, httpEntity, responseType);
+
+        Assert.assertEquals(Integer.valueOf(2), response.getBody().getTotalPages());
+
+    }
+
+    @Test
     public void getTags() {
 
         HttpEntity<Object> httpEntity = getHttpEntity("101112");
-        ParameterizedTypeReference<RestResponsePage<TagsRepresentationObject>> responseType = new ParameterizedTypeReference<>() {
+        ParameterizedTypeReference<PaginatedResponse<TagsRepresentationObject>> responseType = new ParameterizedTypeReference<>() {
         };
-        Integer start = 0;
-        Integer count = 10;
-        ResponseEntity<RestResponsePage<TagsRepresentationObject>> response = template.exchange("/v1/yeshtery/tags?org_id=99001&start=" + start + "&count=" + count, HttpMethod.GET, httpEntity, responseType);
 
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        ResponseEntity<PaginatedResponse<TagsRepresentationObject>> response = template.exchange("/v1/yeshtery/tags?org_id=99001",
+                HttpMethod.GET, httpEntity, responseType);
+
+        Assert.assertEquals(Integer.valueOf(1), response.getBody().getTotalPages());
 
     }
 

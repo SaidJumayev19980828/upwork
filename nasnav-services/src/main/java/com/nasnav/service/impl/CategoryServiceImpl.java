@@ -22,7 +22,7 @@ import org.jgrapht.graph.DirectedAcyclicGraph;
 import org.jgrapht.traverse.BreadthFirstIterator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -54,8 +54,6 @@ public class CategoryServiceImpl implements CategoryService {
 
 	Logger logger = LogManager.getLogger(getClass());
 
-    @Autowired
-    private BrandsRepository brandsRepository;
     @Autowired
     private CategoriesRepository categoryRepository;
     @Autowired
@@ -219,42 +217,69 @@ public class CategoryServiceImpl implements CategoryService {
 
 
 //    @CacheResult(cacheName = "organizations_tags")
-    @Override
+        @Override
 		public List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName) {
-		List<TagsEntity> tagsEntities;
-		if (isBlankOrNull(categoryName)) {
-			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdOrderByPriorityDesc(orgId);
-		} else {
-			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdOrderPriorityDesc(categoryName, orgId);
-		}
-		return toTagsDTO(tagsEntities);
+		return getOrganizationTagsPageable(orgId, categoryName, null, null).getContent();
 	}
 
 	@Override
-	public PageImpl<TagsRepresentationObject> getYeshteryOrganizationsTags(Integer start, Integer count , String categoryName, Long orgId) {
-		Pageable page = new CustomPaginationPageRequest(start, count);
+	public PaginatedResponse<TagsRepresentationObject> getOrganizationTagsPageable(Long orgId, String categoryName, Integer start, Integer count) {
+		Pageable pageable;
+		if(start != null && count != null) {
+			pageable = new CustomPaginationPageRequest(start, count);
+		} else {
+			pageable = Pageable.unpaged();
+		}
+		Page<TagsEntity> tagsEntities;
+		if (isBlankOrNull(categoryName)) {
+			tagsEntities = orgTagsRepo.findByOrganizationEntityIdOrderByPriorityDesc(orgId, pageable);
+		} else {
+			tagsEntities = orgTagsRepo.findByCategoriesEntityNameAndOrganizationEntityIdOrderPriorityDesc(categoryName, orgId, pageable);
+		}
+		return PaginatedResponse.<TagsRepresentationObject>builder()
+				.content(toTagsDTO(tagsEntities.getContent()))
+				.totalPages(tagsEntities.getTotalPages())
+				.totalRecords(tagsEntities.getTotalElements())
+				.build();
 
-		Set<Long> orgIdList = new HashSet<>();
+	}
+
+
+
+	@Override
+	public PaginatedResponse<TagsRepresentationObject> getYeshteryOrganizationsTags(Integer start, Integer count , String categoryName, Long orgId) {
+		Pageable page;
+		if(start != null && count != null) {
+			page = new CustomPaginationPageRequest(start, count);
+		} else {
+			page = Pageable.unpaged();
+		}
+
+		Set<Long> orgIdList;
     	if (orgId == null) {
 			orgIdList = orgRepo.findIdByYeshteryState(1);
 		} else {
 			orgIdList = orgRepo.findIdByYeshteryStateAndOrganizationId(1, orgId);
 		}
-		PageImpl<TagsEntity> tagsEntities;
-		if(isBlankOrNull(categoryName)) {
-			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdInOrderByPriorityDesc(orgIdList ,page);
-		} else {
-			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByPriorityDesc(categoryName, orgIdList,page);
-		}
-		return new PageImpl<>(toTagsDTO(tagsEntities.getContent()), tagsEntities.getPageable(), tagsEntities.getTotalElements());
 
+		Page<TagsEntity> tagsEntities;
+		if(isBlankOrNull(categoryName)) {
+			tagsEntities = orgTagsRepo.findByOrganizationEntityIdInOrderByPriorityDesc(orgIdList ,page);
+		} else {
+			tagsEntities = orgTagsRepo.findByCategoriesEntityNameAndOrganizationEntityIdInOrderByPriorityDesc(categoryName, orgIdList,page);
+		}
+		return PaginatedResponse.<TagsRepresentationObject>builder()
+				.content(toTagsDTO(tagsEntities.getContent()))
+				.totalPages(tagsEntities.getTotalPages())
+				.totalRecords(tagsEntities.getTotalElements())
+				.build();
 	}
 
 	private List<TagsRepresentationObject> toTagsDTO(List<TagsEntity> tagsEntities) {
-		return tagsEntities
+		return Objects.nonNull(tagsEntities) ? tagsEntities
 				.stream()
 				.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
-				.collect(toList());
+				.toList() : emptyList();
     }
     
     

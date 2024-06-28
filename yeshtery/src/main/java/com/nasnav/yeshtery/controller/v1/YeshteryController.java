@@ -36,10 +36,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
 
-import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 import static com.nasnav.constatnts.DefaultValueStrings.AS_MANY_AS_POSSIBLE;
 import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 
@@ -306,11 +304,11 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "/tags", produces = APPLICATION_JSON_VALUE)
-    public PageImpl<TagsRepresentationObject> getTags(
+    public PaginatedResponse<TagsRepresentationObject> getTags(
             @RequestParam(value = "category_name", required = false) String categoryName,
             @RequestParam(value = "org_id", required = false) Long orgId,
-            @RequestParam(required = false, defaultValue = "0") Integer start,
-            @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
+            @RequestParam(required = false) Integer start,
+            @RequestParam(required = false) Integer count
     ) {
         return categoryService.getYeshteryOrganizationsTags( start,  count ,  categoryName, orgId);
     }

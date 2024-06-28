@@ -1,11 +1,10 @@
 package com.nasnav.dao;
 
 import com.nasnav.persistence.CategoriesEntity;
-import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.service.model.IdAndNamePair;
-import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -21,22 +20,27 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
 
     List<TagsEntity> findByIdIn(List<Long> ids);
     List<TagsEntity> findByOrganizationEntity_Id(Long orgId);
-    List<TagsEntity> findByOrganizationEntity_IdOrderByPriorityDesc(Long orgId);
-    PageImpl<TagsEntity> findByOrganizationEntity_IdInOrderByPriorityDesc(Set<Long> orgIds , Pageable pageable);
+    Page<TagsEntity> findByOrganizationEntityIdOrderByPriorityDesc(Long orgId, Pageable pageable);
+    Page<TagsEntity> findByOrganizationEntityIdInOrderByPriorityDesc(Set<Long> orgIds , Pageable pageable);
     Optional<TagsEntity> findByIdAndOrganizationEntity_Id(Long id, Long orgId);
-    List<TagsEntity> findByCategoriesEntity_IdIn(List<Long> tagsIds);
-    List<TagsEntity> findByCategoriesEntity_IdInAndOrganizationEntity_Id(List<Long> tagsIds, Long orgId);
     List<TagsEntity> findByCategoriesEntity_IdAndOrganizationEntity_Id(Long tagId, Long orgId);
     List<TagsEntity> findByIdInAndOrganizationEntity_Id(List<Long> ids, Long orgId);
 
-    @Query("select t from TagsEntity t " +
+    @Query(value = "select t from TagsEntity t " +
             " left join fetch t.categoriesEntity c" +
             " left join fetch t.organizationEntity o" +
             " where c.name = :categoryName and o.id = :orgId" +
-            " order by t.priority desc")
-    List<TagsEntity> findByCategoriesEntity_NameAndOrganizationEntity_IdOrderPriorityDesc(@Param("categoryName") String categoryName,
-                                                                                          @Param("orgId") Long orgId);
-    PageImpl<TagsEntity> findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByPriorityDesc(String categoryName, Set<Long> orgIds, Pageable pageable);
+            " order by t.priority desc",
+
+            countQuery = "select count(t) from TagsEntity t " +
+            " left join t.categoriesEntity c" +
+            " left join t.organizationEntity o" +
+            " where c.name = :categoryName and o.id = :orgId")
+    Page<TagsEntity> findByCategoriesEntityNameAndOrganizationEntityIdOrderPriorityDesc(@Param("categoryName") String categoryName,
+                                                                                        @Param("orgId") Long orgId,
+                                                                                        Pageable pageable);
+
+    Page<TagsEntity> findByCategoriesEntityNameAndOrganizationEntityIdInOrderByPriorityDesc(String categoryName, Set<Long> orgIds, Pageable pageable);
 
     @Query("SELECT tag FROM TagsEntity tag " +
             " LEFT JOIN tag.organizationEntity org " +

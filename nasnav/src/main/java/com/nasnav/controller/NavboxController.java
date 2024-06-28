@@ -9,7 +9,6 @@ import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.request.LocationShopsParam;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.request.SitemapParams;
 import com.nasnav.response.DomainOrgIdResponse;
@@ -150,9 +149,12 @@ public class NavboxController {
 	}
 
 	@GetMapping(value = "/tags", produces = MediaType.APPLICATION_JSON_VALUE)
-	public List<TagsRepresentationObject> getTags(@RequestParam(name = "org_id") Long organizationId,
-									 @RequestParam(value = "category_name", required = false) String categoryName) {
-		return categoryService.getOrganizationTags(organizationId, categoryName);
+	public PaginatedResponse<TagsRepresentationObject> getTags(@RequestParam(name = "org_id") Long organizationId,
+												  @RequestParam(value = "category_name", required = false) String categoryName,
+												  @RequestParam(required = false) Integer start,
+												  @RequestParam(required = false) Integer count
+										) {
+		return categoryService.getOrganizationTagsPageable(organizationId, categoryName, start, count);
 	}
 
 	@GetMapping(value = "/tag", produces = MediaType.APPLICATION_JSON_VALUE)

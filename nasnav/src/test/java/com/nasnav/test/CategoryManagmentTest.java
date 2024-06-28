@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.controller.AdminController;
 import com.nasnav.dao.*;
+import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.dto.TagsTreeNodeDTO;
 import com.nasnav.persistence.CategoriesEntity;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Before;
 
 import org.junit.Test;
@@ -27,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -325,16 +328,30 @@ public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
         assertTrue(406 == deleteResponse.getStatusCode().value());
     }
-   
 
-    @SuppressWarnings("rawtypes")
-	@Test
+    @Test
+    public void getTagsPaginated() {
+        ParameterizedTypeReference<PaginatedResponse<TagsRepresentationObject>> responseType = new ParameterizedTypeReference<>() {
+        };
+        ResponseEntity<PaginatedResponse<TagsRepresentationObject>> response = template.exchange(
+                "/navbox/tags?org_id=99001&start=" + 0 + "&count=" + 1,
+                HttpMethod.GET, getHttpEntity(Object.class), responseType);
+
+        Assert.assertEquals(Integer.valueOf(7), response.getBody().getTotalPages());
+
+    }
+
+    @Test
     public void getTags() {
-        ResponseEntity<List> tags = template.getForEntity("/navbox/tags?org_id=99001", List.class);
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ParameterizedTypeReference<PaginatedResponse<TagsRepresentationObject>> responseType = new ParameterizedTypeReference<>() {
+        };
 
-        assertTrue(!tags.getBody().isEmpty());
-        assertEquals(7, tags.getBody().size());
-        log.debug("{}", tags.getBody());
+        ResponseEntity<PaginatedResponse<TagsRepresentationObject>> response = template.exchange("/navbox/tags?org_id=99001",
+                HttpMethod.GET, httpEntity, responseType);
+
+        Assert.assertEquals(Integer.valueOf(1), response.getBody().getTotalPages());
+
     }
 
     
