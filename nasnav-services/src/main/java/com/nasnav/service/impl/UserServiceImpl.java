@@ -2,6 +2,7 @@ package com.nasnav.service.impl;
 
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.commons.utils.PagingUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
@@ -31,6 +32,7 @@ import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -866,18 +868,21 @@ public class UserServiceImpl implements UserService {
 
 	public PaginatedResponse<UserRepresentationObject> getUserListByStatusPaging(Integer start, Integer count, Integer userStatus) {
 		Page<UserEntity> customersPage ;
-		PageRequest pageRequest = PagingUtils.getQueryPageAddIdSort(start, count);
+		Pageable pageable = Objects.nonNull(start) && Objects.nonNull(count)?
+				new CustomPaginationPageRequest(start, count)
+				:Pageable.unpaged();
+
 		if (Boolean.TRUE.equals(securityService.currentUserHasRole(NASNAV_ADMIN))) {
 			if(userStatus!=null)
-				customersPage = userRepository.findAllUsersByUserStatus(userStatus, pageRequest);
+				customersPage = userRepository.findAllUsersByUserStatus(userStatus, pageable);
 			else
-				customersPage = userRepository.findAll(pageRequest.first());
+				customersPage = userRepository.findAll(pageable.first());
 		} else {
 			Long orgID = securityService.getCurrentUserOrganizationId();
 			if(userStatus!=null)
-				customersPage = userRepository.findByOrganizationIdAndUserStatus(orgID, userStatus, pageRequest);
+				customersPage = userRepository.findByOrganizationIdAndUserStatus(orgID, userStatus, pageable);
 			else
-				customersPage = userRepository.findByOrganizationId(orgID, pageRequest);
+				customersPage = userRepository.findByOrganizationId(orgID, pageable);
 		}
 
 		return PaginatedResponse.<UserRepresentationObject>builder()

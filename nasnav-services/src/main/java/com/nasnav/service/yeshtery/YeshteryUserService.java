@@ -1,6 +1,7 @@
 package com.nasnav.service.yeshtery;
 
 import com.nasnav.dto.AddressDTO;
+import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
@@ -14,7 +15,6 @@ import com.nasnav.response.UserApiResponse;
 import com.nasnav.dto.response.YeshteryUserApiResponse;
 import org.springframework.web.servlet.view.RedirectView;
 
-import java.util.List;
 
 public interface YeshteryUserService  extends CommonYeshteryUserServiceInterface {
     YeshteryUserApiResponse registerYeshteryUserV2(Long referral, UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException;
@@ -27,7 +27,7 @@ public interface YeshteryUserService  extends CommonYeshteryUserServiceInterface
     AddressDTO updateUserAddress(AddressDTO addressDTO);
     void removeUserAddress(Long id);
     UserApiResponse updateUser(UserDTOs.EmployeeUserUpdatingObject userJson);
-    List<UserRepresentationObject> getUserList();
+    PaginatedResponse<UserRepresentationObject> getUserList(Integer userStatus, Integer page, Integer size);
 
     int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity();
     int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity(YeshteryUserEntity yeshteryUser);

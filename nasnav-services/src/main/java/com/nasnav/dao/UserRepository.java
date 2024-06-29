@@ -1,6 +1,5 @@
 package com.nasnav.dao;
 
-import com.nasnav.dto.UserFollow;
 import com.nasnav.dto.UserListFollowProjection;
 import com.nasnav.persistence.LoyaltyTierEntity;
 import com.nasnav.persistence.UserEntity;
@@ -18,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
@@ -48,11 +46,14 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	Page<UserEntity> findByOrganizationIdAndUserStatus(Long orgId,Integer userStatus, Pageable pageable);
 
-	@Query("select u from UserEntity u join YeshteryUserEntity yu on u.yeshteryUserId = yu.id where u.organizationId = :orgId")
-	Set<UserEntity> findAllLinkedToYeshteryUserByOrgId(Long orgId);
+	@Query("select u from UserEntity u join YeshteryUserEntity yu on u.yeshteryUserId = yu.id " +
+			"where u.organizationId = :orgId" +
+			" AND (:status IS NULL OR u.userStatus = :status)")
+	Page<UserEntity> findAllLinkedToYeshteryUserByOrgId(Long orgId, Integer status, Pageable pageable);
 
-	@Query("select u from UserEntity u join YeshteryUserEntity yu on u.yeshteryUserId = yu.id")
-	Set<UserEntity> findAllLinkedToYeshteryUser();
+	@Query("select u from UserEntity u join YeshteryUserEntity yu on u.yeshteryUserId = yu.id " +
+			"where (:status is null or u.userStatus = :status)")
+	Page<UserEntity> findAllLinkedToYeshteryUserByStatusPaginated(Integer status, Pageable pageable);
 
 	@Query("select count (u.id) from UserEntity u " +
 			" where u.organizationId = :orgId and u.creationTime between :minMonth and :maxMonth and u.creationTime is not null ")
@@ -99,7 +100,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	List<UserEntity> findByTier(LoyaltyTierEntity tier);
 
 
-	Page<UserEntity> findAllUsersByUserStatus(Integer userStatus, PageRequest pageRequest);
+	Page<UserEntity> findAllUsersByUserStatus(Integer userStatus, Pageable pageable);
 
 
 

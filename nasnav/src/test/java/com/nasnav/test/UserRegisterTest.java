@@ -1677,6 +1677,36 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
+	public void listAllCustomersByStatusPageableSuccess() throws IOException {
+		HttpEntity<?> req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.exchange("/user/list/customer?user_status=201",
+				GET
+				,req
+				,String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		PaginatedResponse<UserRepresentationObject> userResponse = mapper.readValue(res.getBody(),
+				new TypeReference<>(){});
+		assertFalse(userResponse.getContent().isEmpty());
+		assertEquals(Long.valueOf(4), userResponse.getTotalRecords());
+		assertEquals(Integer.valueOf(1), userResponse.getTotalPages());
+	}
+
+	@Test
+	public void listAllCustomersPageableSuccess() throws IOException {
+		HttpEntity<?> req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.exchange("/user/list/customer",
+				GET
+				,req
+				,String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		PaginatedResponse<UserRepresentationObject> userResponse = mapper.readValue(res.getBody(),
+				new TypeReference<>(){});
+		assertFalse(userResponse.getContent().isEmpty());
+		assertEquals(Long.valueOf(7), userResponse.getTotalRecords());
+		assertEquals(Integer.valueOf(1), userResponse.getTotalPages());
+	}
+
+	@Test
 	public void listCustomersByStatusPageableSuccessForNasNavAdmin() throws IOException {
 		HttpEntity<?> req = getHttpEntity("123654");
 		ResponseEntity<String> res = template.exchange("/user/list/customer?paging_start=0&paging_count=30&user_status=201",

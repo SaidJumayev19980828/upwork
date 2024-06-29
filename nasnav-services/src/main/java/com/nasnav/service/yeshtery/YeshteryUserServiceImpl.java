@@ -2,6 +2,7 @@ package com.nasnav.service.yeshtery;
 
 import com.nasnav.AppConfig;
 import com.nasnav.commons.YeshteryConstants;
+import com.nasnav.commons.utils.CustomPaginationPageRequest;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.CommonUserRepository;
@@ -15,12 +16,7 @@ import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.dao.yeshtery.CommonYeshteryUserRepository;
 import com.nasnav.dao.yeshtery.YeshteryUserRepository;
 import com.nasnav.dao.yeshtery.YeshteryUserTokenRepository;
-import com.nasnav.dto.ActivationMethod;
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.dto.UserDTOs;
-import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.ActivateOtpWithPasswordDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
@@ -58,6 +54,8 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -78,7 +76,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -869,17 +866,26 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     @Override
-    public List<UserRepresentationObject> getUserList(){
-        Set<UserEntity> customers;
-        if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
-            customers = nasNavUserRepository.findAllLinkedToYeshteryUser();
+    public PaginatedResponse<UserRepresentationObject> getUserList(Integer status, Integer page, Integer size){
+        Page<UserEntity> customers;
+        Pageable pageable = Objects.nonNull(page) && Objects.nonNull(size)?
+                new CustomPaginationPageRequest(page, size)
+                : Pageable.unpaged();
+        if (Boolean.TRUE.equals(securityService.currentUserHasRole(NASNAV_ADMIN))) {
+            customers = nasNavUserRepository.findAllLinkedToYeshteryUserByStatusPaginated(status, pageable);
         } else {
-            customers = nasNavUserRepository.findAllLinkedToYeshteryUserByOrgId(securityService.getCurrentUserOrganizationId());
+            customers = nasNavUserRepository.findAllLinkedToYeshteryUserByOrgId(securityService.getCurrentUserOrganizationId(), status, pageable);
         }
-        return customers
-                .stream()
-                .map(UserEntity::getRepresentation)
-                .toList();
+
+        return PaginatedResponse.<UserRepresentationObject>builder()
+                .content(customers.getContent()
+                        .stream()
+                        .map(UserEntity::getRepresentation)
+                        .toList())
+                .totalRecords(customers.getTotalElements())
+                .totalPages(customers.getTotalPages())
+                .build();
+
     }
 
     private void sendUserOtp(Long orgId, String email, String otp) {

@@ -10,6 +10,7 @@ import com.nasnav.dao.UserSubscriptionRepository;
 import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.dao.yeshtery.YeshteryUserOtpRepository;
 import com.nasnav.dao.yeshtery.YeshteryUserRepository;
+import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.ActivateOtpWithPasswordDto;
@@ -946,21 +947,48 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
 
     private static Stream<Arguments> generator() {
 		return Stream.of(
-				Arguments.of("101112", 1),
-				Arguments.of("nasnav-admin-token", 2));
+				Arguments.of("101112", 0, 1, 201, 1, 1),
+				Arguments.of("nasnav-admin-token", 0, 1, 201, 2, 2));
 	}
+
+    private static Stream<Arguments> generatorAll() {
+        return Stream.of(
+                Arguments.of("101112", 201, 1, 1),
+                Arguments.of("nasnav-admin-token", 201, 2, 1));
+    }
 
     @ParameterizedTest
     @MethodSource("generator")
-    public void testListYeshteryUser(String employeeToken, int expectedNumberOfUsers) {
-        HttpEntity<Object> req = getHttpEntity(employeeToken);
-        ResponseEntity<List<UserRepresentationObject>> response = template.exchange(API_PATH + "/user/list/customer", GET, req, new ParameterizedTypeReference<List<UserRepresentationObject>>() {
-            
-        });
+    public void listCustomersByStatusPageableSuccess(String employeeToken, int start, int count, int userStatus, int expectedTotalRecords, int expectedTotalPages) throws IOException {
+        HttpEntity<?> req = getHttpEntity(employeeToken);
+        ResponseEntity<PaginatedResponse<UserRepresentationObject>> res = template.exchange(API_PATH + "/user/list/customer?paging_start="+start+"&paging_count="+count+"&user_status="+userStatus,
+                GET
+                ,req
+                , new ParameterizedTypeReference<PaginatedResponse<UserRepresentationObject>>() {}
+        );
+        assertEquals(200, res.getStatusCodeValue());
 
-        assertEquals(OK, response.getStatusCode());
-        assertEquals(expectedNumberOfUsers, response.getBody().size());
+        assertFalse(res.getBody().getContent().isEmpty());
+        assertEquals(Long.valueOf(expectedTotalRecords), res.getBody().getTotalRecords());
+        assertEquals(Integer.valueOf(expectedTotalPages), res.getBody().getTotalPages());
     }
+
+    @ParameterizedTest
+    @MethodSource("generatorAll")
+    public void listAllCustomersByStatusPageableSuccess(String employeeToken, int userStatus, int expectedTotalRecords, int expectedTotalPages) throws IOException {
+        HttpEntity<?> req = getHttpEntity(employeeToken);
+        ResponseEntity<PaginatedResponse<UserRepresentationObject>> res = template.exchange(API_PATH + "/user/list/customer?user_status="+userStatus,
+                GET
+                ,req
+                , new ParameterizedTypeReference<PaginatedResponse<UserRepresentationObject>>() {}
+        );
+        assertEquals(200, res.getStatusCodeValue());
+
+        assertFalse(res.getBody().getContent().isEmpty());
+        assertEquals(Long.valueOf(expectedTotalRecords), res.getBody().getTotalRecords());
+        assertEquals(Integer.valueOf(expectedTotalPages), res.getBody().getTotalPages());
+    }
+
 
 
     @Test

@@ -1,10 +1,7 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.commons.YeshteryConstants;
-import com.nasnav.dto.ActivationMethod;
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.dto.UserDTOs;
-import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.ActivateOtpWithPasswordDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
@@ -88,8 +85,11 @@ public class YeshteryUserController {
     }
 
     @GetMapping(value = "list/customer", produces = APPLICATION_JSON_VALUE)
-    public List<UserRepresentationObject> getCustomersList(@RequestHeader(name = "User-Token", required = false) String userToken) {
-        return userService.getUserList();
+    public PaginatedResponse<UserRepresentationObject> getCustomersList(
+            @RequestParam (value = "paging_start", required = false) Integer page,
+            @RequestParam (value = "paging_count", required = false) Integer size,
+            @RequestParam (value = "user_status", required = false) Integer userStatus) {
+        return userService.getUserList(userStatus,page, size);
     }
 
     @PostMapping(value = "login")
