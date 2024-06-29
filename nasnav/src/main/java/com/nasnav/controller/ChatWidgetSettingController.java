@@ -29,8 +29,7 @@ public class ChatWidgetSettingController {
 	}
 
 	@GetMapping(value="/get-unpublished")
-	public ResponseEntity<ChatWidgetSettingResponse> getUnPublished(@RequestHeader(value = TOKEN_HEADER, required = false) String userToken,
-															 @RequestParam("org_id") Long orgId) {
+	public ResponseEntity<ChatWidgetSettingResponse> getUnPublished(@RequestParam("org_id") Long orgId) {
 		return ResponseEntity.ok(chatWidgetService.getUnPublished(orgId));
 	}
 

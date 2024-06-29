@@ -236,7 +236,6 @@ public class SecurityConfiguration {
 			patternOf("/advertisement",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 			patternOf("/chat-widget-setting/create",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 			patternOf("/chat-widget-setting/publish",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-			patternOf("/chat-widget-setting/get-unpublished",GET, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 			patternOf( "/post/save" , POST                              , getAllRoles()),
 			patternOf( "/post/unsave"       ,POST                         , getAllRoles()),
 			patternOf( "/post/saved"        ,GET                        , getAllRoles()),
@@ -310,7 +309,7 @@ public class SecurityConfiguration {
 						, patternOf("/contactUs**",POST)
 						, patternOf("/bank/deposit/bc**",POST)
 						, patternOf("/videochat/credentials",GET)
-
+						, patternOf("/chat-widget-setting/get-unpublished",GET)
 
             );
 
