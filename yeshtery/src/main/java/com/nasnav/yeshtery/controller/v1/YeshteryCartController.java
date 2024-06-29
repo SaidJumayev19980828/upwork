@@ -1,7 +1,6 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.request.cart.StoreCheckoutDto;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.CartCheckoutService;
@@ -94,11 +93,6 @@ public class YeshteryCartController {
     public CartOptimizeResponseDTO optimizeCart(@RequestHeader(name = "User-Token", required = false) String userToken,
                                                 @RequestBody CartCheckoutDTO dto) {
         return cartOptimizationService.validateAndOptimizeCart(dto, true);
-    }
-
-    @PostMapping(value = "/store-checkout/{userId}", produces= APPLICATION_JSON_VALUE)
-    public StoreCheckoutDto storeCheckout(@PathVariable Long userId) throws BusinessException {
-        return cartCheckoutService.storeCheckout(userId);
     }
 
     @PostMapping(value = "/store-checkout/initiate/{userId}", produces= APPLICATION_JSON_VALUE)

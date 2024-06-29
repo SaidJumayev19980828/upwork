@@ -86,8 +86,6 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private EmployeeUserRepository empRepo;
 
-    @Autowired
-    private StoreCheckoutsRepository storeCheckoutsRepository;
 
     @Autowired
     private PaymentsRepository paymentsRepository;
@@ -579,17 +577,6 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
         return order;
     }
 
-    private void storeCheckout(String employeeToken){
-        HttpEntity request = getHttpEntity(employeeToken);
-
-        ResponseEntity<Order> response = template.postForEntity("/v1/cart/store-checkout/88", request, Order.class);
-        assertEquals(200, response.getStatusCodeValue());
-
-        StoreCheckoutsEntity storeCheckoutsEntity = storeCheckoutsRepository.findByEmployeeId(68L).get();
-        assertEquals(Long.valueOf(501), storeCheckoutsEntity.getShopId());
-        assertEquals(Long.valueOf(99001), storeCheckoutsEntity.getOrganizationId());
-        assertEquals(Long.valueOf(88), storeCheckoutsEntity.getUserId());
-    }
 
     @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Initiate_Store_Checkout.sql"})
@@ -635,7 +622,6 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     public void completeStoreCheckout(){
         String employeeToken = "101112";
-        storeCheckout(employeeToken);
         JSONObject requestBody = createCartStoreCheckoutBodyWithPickup();
         requestBody.put("selectedStockIds", Set.of(602L, 603L));
         HttpEntity request = getHttpEntity(requestBody.toString(), employeeToken);
@@ -652,7 +638,6 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     public void completeStoreCheckoutNoSelectedStocks() {
         String employeeToken = "101112";
-        storeCheckout(employeeToken);
         String requestBody = createCartStoreCheckoutBodyWithPickup().toString();
         HttpEntity request = getHttpEntity(requestBody, employeeToken);
         ResponseEntity<ErrorResponseDTO> response = template.postForEntity("/v1/cart/store-checkout/complete", request, ErrorResponseDTO.class);
@@ -666,7 +651,6 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     public void completeStoreCheckoutEmptySelectedStocks() {
         String employeeToken = "101112";
-        storeCheckout(employeeToken);
         JSONObject requestBody = createCartStoreCheckoutBodyWithPickup();
         requestBody.put("selectedStockIds", Set.of());
         HttpEntity request = getHttpEntity(requestBody.toString(), employeeToken);
@@ -681,7 +665,6 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
     public void completeStoreCheckoutNotCompleteBecauseOfDifferentShops() {
         String employeeToken = "101112";
-        storeCheckout(employeeToken);
         JSONObject requestBody = createCartStoreCheckoutBodyWithPickup();
         requestBody.put("selectedStockIds", Set.of(602L, 604L));
         HttpEntity request = getHttpEntity(requestBody.toString(), employeeToken);

@@ -216,6 +216,9 @@ public class OrderServiceImpl implements OrderService {
 	private ReferralCodeRepo referralCodeRepo;
 
 	@Autowired
+	private CartCheckoutService cartCheckoutService;
+
+	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
 							StockRepository stockRepository , StockService stockService, RoleService roleService) {
 		this.ordersRepository = ordersRepository;
@@ -1736,10 +1739,8 @@ public class OrderServiceImpl implements OrderService {
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
 		UserEntity userEntity;
 		if(loggedInUser instanceof EmployeeUserEntity) {
-			StoreCheckoutsEntity storeCheckoutsEntity = storeCheckoutsRepository.findByEmployeeId(loggedInUser.getId())
-					.orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, STORE_CHECKOUT$001));
-			userEntity = userRepository.findById(storeCheckoutsEntity.getUserId()).orElseThrow(
-					() -> new RuntimeBusinessException(NOT_FOUND, U$0001, storeCheckoutsEntity.getUserId())
+			userEntity = userRepository.findById(dto.getCustomerId()).orElseThrow(
+					() -> new RuntimeBusinessException(NOT_FOUND, U$0001, dto.getCustomerId())
 			);
 		} else {
 			userEntity = (UserEntity) loggedInUser;
@@ -1823,6 +1824,7 @@ public class OrderServiceImpl implements OrderService {
 			UserEntity userEntity = userRepository.findById(dto.getCustomerId())
 					.orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001, dto.getCustomerId()));
 			otpService.validateOtp(dto.getOtp(), userEntity, OtpType.CHECKOUT);
+			cartCheckoutService.storeCheckout(dto.getCustomerId());
 			dto.setTwoStepVerified(true);
 		}
 		cancelAbandonedOrders();

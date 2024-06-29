@@ -70,6 +70,7 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 			checkoutLogger.error(e, e);
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR,  GEN$0003, e.getMessage());
 		}
+		storeCheckoutsRepository.deleteByEmployeeId(userEntity.getId());
 	}
 
 
