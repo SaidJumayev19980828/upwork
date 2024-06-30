@@ -70,8 +70,7 @@ public class ChatWidgetSettingTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Chat_Widget_Setting_APIs_Test_Insert.sql"})
     @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getUnPublishedChatWidgetSettingsForOrg() {
-        HttpEntity request = getHttpEntity("131415");
-        ResponseEntity<ChatWidgetSettingResponse>  result = template.exchange("/v1/chat-widget-setting/get-unpublished?org_id=99001",GET,request, ChatWidgetSettingResponse.class);
+        ResponseEntity<ChatWidgetSettingResponse>  result = template.exchange("/v1/chat-widget-setting/get-unpublished?org_id=99001",GET,null, ChatWidgetSettingResponse.class);
 
         assertEquals(200, result.getStatusCodeValue());
         assertTrue(Objects.nonNull(result.getBody()));
