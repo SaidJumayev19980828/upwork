@@ -91,7 +91,7 @@ import static com.nasnav.constatnts.EmailConstants.USERNAME_PARAMETER;
 import static com.nasnav.constatnts.EmailConstants.USER_SUBSCRIPTION_TEMPLATE;
 import static com.nasnav.constatnts.EntityConstants.AUTH_TOKEN_VALIDITY;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
-import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static com.nasnav.enumerations.Roles.MEETUSVR_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
@@ -441,7 +441,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             return getUserRepresentationWithUserRoles(currentUser);
         }
         Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
-        if (userHighestRole.equals(NASNAV_ADMIN)) {
+        if (userHighestRole.equals(MEETUSVR_ADMIN)) {
             user = commonNasnavUserRepo.findById(userId, isEmployee)
                     .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
         } else {
@@ -871,7 +871,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         Pageable pageable = Objects.nonNull(page) && Objects.nonNull(size)?
                 new CustomPaginationPageRequest(page, size)
                 : Pageable.unpaged();
-        if (Boolean.TRUE.equals(securityService.currentUserHasRole(NASNAV_ADMIN))) {
+        if (Boolean.TRUE.equals(securityService.currentUserHasRole(MEETUSVR_ADMIN))) {
             customers = nasNavUserRepository.findAllLinkedToYeshteryUserByStatusPaginated(status, pageable);
         } else {
             customers = nasNavUserRepository.findAllLinkedToYeshteryUserByOrgId(securityService.getCurrentUserOrganizationId(), status, pageable);

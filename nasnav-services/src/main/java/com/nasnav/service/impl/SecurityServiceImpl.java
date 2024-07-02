@@ -610,7 +610,7 @@ public class SecurityServiceImpl implements SecurityService {
 
     @Override
     public boolean currentEmployeeHasNasnavRoles() {
-        return roleService.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.NASNAV_EMPLOYEE);
+        return roleService.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.MEETUSVR_EMPLOYEE);
     }
 
     @Override
@@ -652,7 +652,8 @@ public class SecurityServiceImpl implements SecurityService {
     @Override
     public boolean hasPermission(String permissionName) {
         BaseUserEntity currentUser = getCurrentUser();
-        return permissionRepository.findByUserId(currentUser.getId()).stream().map(Permission::getName).anyMatch(permissionName::equals);
+        return permissionRepository.findByUserIdViaRole(currentUser.getId()).stream().map(Permission::getName).anyMatch(permissionName::equals)
+                || permissionRepository.findByOrganizationId(currentUser.getOrganizationId()).stream().map(Permission::getName).anyMatch(permissionName::equals);
     }
 
 }

@@ -21,7 +21,7 @@ VALUES (71, 'admin@nasnav.com', 63, 'abcdefg',  null);
 
 
 --inserting Roles
-insert into public.roles(id, name,  organization_id) values(30, 'NASNAV_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(30, 'MEETUSVR_ADMIN', 99001);
 insert into public.roles(id, name,  organization_id) values(40, 'ORGANIZATION_ADMIN', 99001);
 insert into public.roles(id, name,  organization_id) values(50, 'STORE_MANAGER', 99001);
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',null, null, 99001, now(), now());

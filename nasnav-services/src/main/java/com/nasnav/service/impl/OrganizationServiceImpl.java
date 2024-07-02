@@ -219,6 +219,8 @@ public class OrganizationServiceImpl implements OrganizationService {
         subscriptionInfoDTO.setSubscribed(false);
         List<SubscriptionEntity> subscriptionEntityList = subscriptionRepository.findByOrganizationAndStatusNotIn(org,
                 List.of(SubscriptionStatus.CANCELED.getValue(), SubscriptionStatus.INCOMPLETE_EXPIRED.getValue()));
+        subscriptionInfoDTO.setOrganizationId(org.getId());
+        subscriptionInfoDTO.setOrganizationName(org.getName());
         for (SubscriptionEntity subscriptionEntity : subscriptionEntityList)
         {
             if (subscriptionEntity.getExpirationDate() == null || subscriptionEntity.getExpirationDate().after(new Date())) {
@@ -231,7 +233,7 @@ public class OrganizationServiceImpl implements OrganizationService {
                 subscriptionInfoDTO.setPackageId(subscriptionEntity.getPackageEntity().getId());
             }
             else {
-                subscriptionEntity.setStatus("canceled");
+                subscriptionEntity.setStatus(SubscriptionStatus.CANCELED.getValue());
                 subscriptionRepository.save(subscriptionEntity);
             }
         }

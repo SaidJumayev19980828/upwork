@@ -3,7 +3,6 @@ package com.nasnav.service.impl;
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.CustomPaginationPageRequest;
-import com.nasnav.commons.utils.PagingUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
@@ -31,7 +30,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -598,7 +596,7 @@ public class UserServiceImpl implements UserService {
 			return getUserRepresentationWithUserRoles(currentUser);
 		}
 		Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
-		if (userHighestRole.equals(NASNAV_ADMIN)) {
+		if (userHighestRole.equals(MEETUSVR_ADMIN)) {
 			user = commonUserRepo.findById(userId, isEmployee)
 					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 		} else {
@@ -855,7 +853,7 @@ public class UserServiceImpl implements UserService {
 
 	public List<UserRepresentationObject> getUserList(){
 		List<UserEntity> customers;
-		if (Boolean.TRUE.equals(securityService.currentUserHasRole(NASNAV_ADMIN))) {
+		if (Boolean.TRUE.equals(securityService.currentUserHasRole(MEETUSVR_ADMIN))) {
 			customers = userRepository.findAll();
 		} else {
 			customers = userRepository.findByOrganizationId(securityService.getCurrentUserOrganizationId());
@@ -872,7 +870,7 @@ public class UserServiceImpl implements UserService {
 				new CustomPaginationPageRequest(start, count)
 				:Pageable.unpaged();
 
-		if (Boolean.TRUE.equals(securityService.currentUserHasRole(NASNAV_ADMIN))) {
+		if (Boolean.TRUE.equals(securityService.currentUserHasRole(MEETUSVR_ADMIN))) {
 			if(userStatus!=null)
 				customersPage = userRepository.findAllUsersByUserStatus(userStatus, pageable);
 			else

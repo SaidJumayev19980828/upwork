@@ -1,10 +1,7 @@
 package com.nasnav.service.impl.subscription;
 
-import com.nasnav.dao.PackageRepository;
 import com.nasnav.dao.SubscriptionRepository;
 import com.nasnav.dto.SubscriptionDTO;
-import com.nasnav.dto.SubscriptionInfoDTO;
-import com.nasnav.dto.request.PackageRegisteredByUserDTO;
 import com.nasnav.enumerations.SubscriptionMethod;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationEntity;
@@ -15,9 +12,7 @@ import com.nasnav.service.PackageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.subscription.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.math.BigDecimal;
@@ -32,19 +27,16 @@ public class WertSubscriptionServiceImpl extends SubscriptionServiceImpl impleme
 
     private final BankInsideTransactionService bankInsideTransactionService;
     private final PackageService packageService;
-    private final PackageRepository packageRepository;
     private final CurrencyPriceBlockChainService currencyPriceBlockChainService;
     private final SecurityService securityService;
 
     @Autowired
     public WertSubscriptionServiceImpl(BankInsideTransactionService bankInsideTransactionService,
-                                       PackageService packageService, PackageRepository packageRepository,
-                                       CurrencyPriceBlockChainService currencyPriceBlockChainService,
+                                       PackageService packageService, CurrencyPriceBlockChainService currencyPriceBlockChainService,
                                        SecurityService securityService, SubscriptionRepository subscriptionRepository) {
-        super(securityService, packageService, packageRepository, subscriptionRepository );
+        super(securityService, packageService, subscriptionRepository );
         this.bankInsideTransactionService = bankInsideTransactionService;
         this.packageService = packageService;
-        this.packageRepository = packageRepository;
         this.currencyPriceBlockChainService = currencyPriceBlockChainService;
         this.securityService = securityService;
     }
@@ -55,14 +47,10 @@ public class WertSubscriptionServiceImpl extends SubscriptionServiceImpl impleme
 
         //Get Package Registered In Org
         OrganizationEntity org = securityService.getCurrentUserOrganization();
-        Long packageId = packageService.getPackageIdRegisteredInOrg(org);
-        if(packageId == null){
+        PackageEntity packageEntity = packageService.getPackageRegisteredInOrg(org);
+        if (packageEntity == null){
             throw new RuntimeBusinessException(NOT_FOUND, ORG$SUB$0001);
         }
-
-        //Get Amount in Coins
-        PackageEntity packageEntity = packageRepository.findById(packageId).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002, packageId));
         if(packageEntity.getCountry() == null || packageEntity.getCountry().getCurrency() == null){
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ORG$SUB$0002);
         }

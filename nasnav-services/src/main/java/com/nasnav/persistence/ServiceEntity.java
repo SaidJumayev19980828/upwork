@@ -33,7 +33,7 @@ public class ServiceEntity extends DefaultBusinessEntity<Long> {
     @Column(name="enabled")
     private Boolean enabled;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

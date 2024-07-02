@@ -3,25 +3,23 @@ package com.nasnav.service.impl;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.PackageDTO;
-import com.nasnav.dto.request.PackageRegisteredByUserDTO;
-import com.nasnav.dto.request.ServiceDTO;
+import com.nasnav.dto.request.PackageRegisterDTO;
 import com.nasnav.dto.response.PackageResponse;
+import com.nasnav.dto.response.SimpleOrganizationDto;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.mappers.PackageMapper;
 import com.nasnav.persistence.*;
 import com.nasnav.service.PackageService;
 import com.nasnav.service.SecurityService;
+import io.jsonwebtoken.lang.Collections;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 @RequiredArgsConstructor
@@ -29,193 +27,165 @@ public class PackageServiceImpl implements PackageService {
     private final SecurityService securityService;
     private final PackageRepository packageRepository;
     private final PackageRegisteredRepository packageRegisteredRepository;
-    private final PackageMapper packageMapper;
     private final CountryRepository countryRepo;
     private final ServiceRepository serviceRepository;
     private final OrganizationRepository orgRepo;
 
     @Override
     public List<PackageResponse> getPackages() {
-        List<PackageEntity> packageEntities = packageRepository.findAll();
-        return packageMapper.entitiesToBeansWithoutList(packageEntities);
+        return packageRepository.findAll()
+                .stream().map(PackageResponse::fromPackageEntity).toList();
     }
 
+    @Override
+    public List<SimpleOrganizationDto> getOrganizationsByPackageId(Long packageId) {
+        return packageRegisteredRepository.findByPackageId(packageId).stream()
+                .map(PackageRegisteredEntity::getOrganization)
+                .filter(Objects::nonNull)
+                .map(org -> new SimpleOrganizationDto(org.getId(), org.getName(), org.getDescription(), org.getPname()))
+                .toList();
+    }
 
     @Override
-    public PackageResponse createPackage(PackageDTO json) {
+    public PackageResponse createPackage(PackageDTO packageDto) {
         PackageEntity newPackage = new PackageEntity();
-        newPackage.setName(json.getName());
-        newPackage.setDescription(json.getDescription());
-        newPackage.setPrice(json.getPrice());
-        newPackage.setPeriodInDays(json.getPeriodInDays());
-        if(StringUtils.isBlankOrNull(json.getStripePriceId())){
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$USR$0003);
+        newPackage.setName(packageDto.getName());
+        newPackage.setDescription(packageDto.getDescription());
+        newPackage.setPrice(packageDto.getPrice());
+        newPackage.setPeriodInDays(packageDto.getPeriodInDays());
+        if (StringUtils.isBlankOrNull(packageDto.getStripePriceId())) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, PA$USR$0003);
         }
-        newPackage.setStripePriceId(json.getStripePriceId());
-        CountriesEntity country = countryRepo.findByIsoCode(json.getCurrencyIso());
-        if(country == null){
-           throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$CUR$0002,json.getCurrencyIso());
+        newPackage.setStripePriceId(packageDto.getStripePriceId());
+        CountriesEntity country = countryRepo.findByIsoCode(packageDto.getCurrencyIso());
+        if (country == null) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, PA$CUR$0002, packageDto.getCurrencyIso());
         }
         newPackage.setCountry(country);
         Set<ServiceEntity> serviceEntitySet = new HashSet<>();
-        List<ServiceInstanceEntity> serviceInstanceEntities = new ArrayList<>();
-        if(json.getServices() != null){
-
-            List<String> serviceCodes = json.getServices()
-                    .stream()
-                    .map(ServiceDTO::getCode).collect(Collectors.toList());
-
+        if (Collections.isEmpty(packageDto.getServiceIds())) {
             List<ServiceEntity> serviceEntities =
-                    serviceRepository.findAllByCodeIn(serviceCodes).orElseThrow();
-
-            for(ServiceDTO serviceDTO : json.getServices()){
-                Optional<ServiceEntity> serviceEntity = serviceEntities.stream()
-                        .filter(s -> s.getCode().equals(serviceDTO.getCode())).findFirst();
-                        if (serviceEntity.isEmpty()){
-                            throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$SRV$0001,
-                                    serviceDTO.getCode());
-                        }else {
-                            serviceEntitySet.add(serviceEntity.get());
-                            serviceInstanceEntities.add(
-                              ServiceInstanceEntity
-                                      .builder()
-                                      .serviceId(serviceEntity.get().getId())
-                                      .name(serviceDTO.getName())
-                                      .description(serviceDTO.getDescription())
-                                      .build()
-                            );
-                        }
-            }
-
+                    serviceRepository.findByIdIn(packageDto.getServiceIds());
+            newPackage.setServices(new HashSet<>(serviceEntities));
         }
         newPackage.setServices(serviceEntitySet);
-        newPackage.setServiceInstances(serviceInstanceEntities);
-        packageRepository.save(newPackage);
-        return packageMapper.toPackageResponse(newPackage);
+        newPackage = packageRepository.save(newPackage);
+        return PackageResponse.fromPackageEntity(newPackage);
     }
 
     @Override
-    public PackageResponse updatePackage(PackageDTO dto, Long packageId) {
+    public PackageResponse updatePackage(PackageDTO packageDto, Long packageId) {
         PackageEntity entity = packageRepository.findById(packageId).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND,PA$USR$0002,packageId)
+                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002, packageId)
         );
-        entity.getServiceInstances().clear();
-        entity.setName(dto.getName());
-        entity.setDescription(dto.getDescription());
-        entity.setPrice(dto.getPrice());
-        entity.setPeriodInDays(dto.getPeriodInDays());
-        if(StringUtils.isBlankOrNull(dto.getStripePriceId())){
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$USR$0003);
+        if (StringUtils.isNotBlankOrNull(packageDto.getName())) {
+            entity.setName(packageDto.getName());
         }
-        entity.setStripePriceId(dto.getStripePriceId());
-        CountriesEntity country = countryRepo.findByIsoCode(dto.getCurrencyIso());
-        if(country == null){
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$CUR$0002,dto.getCurrencyIso());
+        if (StringUtils.isNotBlankOrNull(packageDto.getDescription())) {
+            entity.setDescription(packageDto.getDescription());
         }
-        entity.setCountry(country);
-
-        Set<ServiceEntity> serviceEntitySet = new HashSet<>();
-        List<ServiceInstanceEntity> serviceInstanceEntities = new ArrayList<>();
-        if(dto.getServices() != null){
-            List<String> serviceCodes = dto.getServices()
-                    .stream()
-                    .map(ServiceDTO::getCode).collect(Collectors.toList());
-
-            List<ServiceEntity> serviceEntities =
-                    serviceRepository.findAllByCodeIn(serviceCodes).orElseThrow();
-            for(ServiceDTO serviceDTO : dto.getServices()){
-                Optional<ServiceEntity> serviceEntity = serviceEntities.stream()
-                        .filter(s -> s.getCode().equals(serviceDTO.getCode())).findFirst();
-                if (serviceEntity.isEmpty()){
-                    throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$SRV$0001,
-                            serviceDTO.getCode());
-                }else {
-                    serviceEntitySet.add(serviceEntity.get());
-                    serviceInstanceEntities.add(
-                            ServiceInstanceEntity
-                                    .builder()
-                                    .serviceId(serviceEntity.get().getId())
-                                    .name(serviceDTO.getName())
-                                    .description(serviceDTO.getDescription())
-                                    .build()
-                    );
-                }
+        if (StringUtils.isNotBlankOrNull(packageDto.getPrice())) {
+            entity.setPrice(packageDto.getPrice());
+        }
+        if (StringUtils.isNotBlankOrNull(packageDto.getCurrencyIso())) {
+            CountriesEntity country = countryRepo.findByIsoCode(packageDto.getCurrencyIso());
+            if (country == null) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, PA$CUR$0002, packageDto.getCurrencyIso());
             }
+            entity.setCountry(country);
         }
-
-        entity.setServices(serviceEntitySet);
-        entity.getServiceInstances().addAll(serviceInstanceEntities);
+        if (StringUtils.isNotBlankOrNull(packageDto.getPeriodInDays())) {
+            entity.setPeriodInDays(packageDto.getPeriodInDays());
+        }
+        if (StringUtils.isNotBlankOrNull(packageDto.getStripePriceId())) {
+            entity.setStripePriceId(packageDto.getStripePriceId());
+        }
+        if (!Collections.isEmpty(packageDto.getServiceIds())) {
+            List<Long> serviceIds = packageDto.getServiceIds();
+            List<ServiceEntity> serviceEntities = serviceRepository.findByIdIn(serviceIds);
+            entity.setServices(new HashSet<>(serviceEntities));
+        }
         packageRepository.save(entity);
-        return packageMapper.toPackageResponse(entity);
-
+        return PackageResponse.fromPackageEntity(entity);
     }
+
     @Override
     @Transactional(rollbackFor = Throwable.class)
-    public void removePackage(Long packageId) {
+    public void deletePackage(Long packageId) {
         PackageEntity entity = packageRepository.findById(packageId).orElseThrow(
-                    () -> new RuntimeBusinessException(NOT_FOUND,PA$USR$0002,packageId)
+                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002, packageId)
         );
-        List<PackageRegisteredEntity> packagesRegistered= packageRegisteredRepository.findByPackageId(packageId);
-        if(!packagesRegistered.isEmpty()){
-            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, PA$USR$0001, packageId);
-        }
+        packageRegisteredRepository.deleteByPackageEntity_Id(packageId);
         packageRepository.delete(entity);
     }
 
     @Transactional
     @Override
-    public Long registerPackageProfile(PackageRegisteredByUserDTO packageRegisteredByUserDTO) {
-
-        OrganizationEntity org = securityService.getCurrentUserOrganization();
-
+    public String registerPackage(PackageRegisterDTO packageRegisterDTO) {
         EmployeeUserEntity employee = securityService.getCurrentUserOptional().map(EmployeeUserEntity.class::cast).orElse(null);
-        
 
-        PackageEntity packageEntity = packageRepository.findById(packageRegisteredByUserDTO.getPackageId()).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002, packageRegisteredByUserDTO.getPackageId()));
+        if (employee == null || !(securityService.currentUserHasRole(Roles.MEETUSVR_ADMIN) || securityService.currentUserHasRole(Roles.MEETUSVR_EMPLOYEE)
+                || Objects.equals(employee.getOrganizationId(), packageRegisterDTO.getOrganizationId()))) {
+            throw new RuntimeBusinessException(FORBIDDEN, UAUTH$0002);
+        }
 
-        PackageRegisteredEntity packageRegisteredEntity = packageRegisteredRepository.findByOrganization(org).orElseGet(() -> new PackageRegisteredEntity(org));
+        PackageEntity packageEntity = packageRepository.findById(packageRegisterDTO.getPackageId()).orElseThrow(
+                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002, packageRegisterDTO.getPackageId()));
+
+        OrganizationEntity organization = orgRepo.findById(packageRegisterDTO.getOrganizationId()).orElseThrow(
+                () -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, packageRegisterDTO.getOrganizationId()));
+
+        PackageRegisteredEntity packageRegisteredEntity = packageRegisteredRepository.findByOrganization(organization).orElseGet(() -> new PackageRegisteredEntity(organization));
         packageRegisteredEntity.setPackageEntity(packageEntity);
-
         packageRegisteredEntity.setCreatorEmployee(employee);
+        packageRegisteredEntity.setRegisteredDate(new Date());
+        packageRegisteredRepository.save(packageRegisteredEntity);
+        return "Package Registered Successfully";
+    }
 
-        return packageRegisteredRepository.save(packageRegisteredEntity).getId();
+    @Transactional
+    @Override
+    public String deregisterPackage(PackageRegisterDTO packageRegisterDTO) {
+        EmployeeUserEntity employee = securityService.getCurrentUserOptional().map(EmployeeUserEntity.class::cast).orElse(null);
+
+        if (employee == null || !(securityService.currentUserHasRole(Roles.MEETUSVR_ADMIN) || securityService.currentUserHasRole(Roles.MEETUSVR_EMPLOYEE)
+                || Objects.equals(employee.getOrganizationId(), packageRegisterDTO.getOrganizationId()))) {
+            throw new RuntimeBusinessException(FORBIDDEN, UAUTH$0002);
+        }
+
+        packageRegisteredRepository.deleteByOrganization_Id(packageRegisterDTO.getOrganizationId());
+        return "Package Deregistered Successfully";
     }
 
     @Transactional
     @Override
     public Long getPackageIdRegisteredInOrg(UserEntity user) {
-        Long packageId = null;
-        //Get User Organization
-        if(user == null || user.getOrganizationId() == null){
+        if (user == null || user.getOrganizationId() == null) {
             return null;
         }
         Optional<OrganizationEntity> organizationEntity = orgRepo.findById(user.getOrganizationId());
-        if(organizationEntity.isEmpty()){
+        if (organizationEntity.isEmpty()) {
             return null;
         }
-        //Get Package Registered For the organization
-        PackageRegisteredEntity packageRegisteredEntity = packageRegisteredRepository.findByOrganization(organizationEntity.get()).orElse(null);
-        if(packageRegisteredEntity != null && packageRegisteredEntity.getPackageEntity() != null){
-            packageId = packageRegisteredEntity.getPackageEntity().getId();
-        }
-        return packageId;
-    }
 
+        PackageRegisteredEntity packageRegisteredEntity = packageRegisteredRepository.findByOrganization(organizationEntity.get()).orElse(null);
+        if (packageRegisteredEntity != null && packageRegisteredEntity.getPackageEntity() != null) {
+            return packageRegisteredEntity.getPackageEntity().getId();
+        }
+        return null;
+    }
 
     @Transactional
     @Override
-    public Long getPackageIdRegisteredInOrg(OrganizationEntity organization) {
-        Long packageId = null;
-        //Get User Organization
-        if(organization == null){
+    public PackageEntity getPackageRegisteredInOrg(OrganizationEntity organization) {
+        if (organization == null) {
             return null;
         }
-        //Get Package Registered For the organization
+
         PackageRegisteredEntity packageRegisteredEntity = packageRegisteredRepository.findByOrganization(organization).orElse(null);
-        if(packageRegisteredEntity != null && packageRegisteredEntity.getPackageEntity() != null){
-            packageId = packageRegisteredEntity.getPackageEntity().getId();
+        if (packageRegisteredEntity != null && packageRegisteredEntity.getPackageEntity() != null) {
+            return packageRegisteredEntity.getPackageEntity();
         }
-        return packageId;
+        return null;
     }
 }

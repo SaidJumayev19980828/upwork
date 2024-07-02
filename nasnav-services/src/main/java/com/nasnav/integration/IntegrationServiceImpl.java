@@ -51,7 +51,7 @@ import java.util.function.BiConsumer;
 
 import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.*;
-import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static com.nasnav.enumerations.Roles.MEETUSVR_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.integration.enums.IntegrationParam.*;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
@@ -1175,7 +1175,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	private void verifyGetIntegrationDictParam(GetIntegrationDictParam param) throws BusinessException {
 		Long currentUserOrgId = securityService.getCurrentUserOrganizationId();
-		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
+		boolean isNasnavAdmin = securityService.currentUserHasRole(MEETUSVR_ADMIN);
 		Long orgId = param.getOrg_id();
 		
 		if(!isNasnavAdmin && !Objects.equals(currentUserOrgId, orgId)) {
@@ -1217,7 +1217,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	private void verifyGetIntegrationErrorsParam(GetIntegrationErrorParam param) throws BusinessException {
 		Long currentUserOrgId = securityService.getCurrentUserOrganizationId();
-		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
+		boolean isNasnavAdmin = securityService.currentUserHasRole(MEETUSVR_ADMIN);
 		Long orgId = param.getOrg_id();
 		
 		if(!isNasnavAdmin && !Objects.equals(currentUserOrgId, orgId)) {

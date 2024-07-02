@@ -66,7 +66,7 @@ INSERT INTO public.User_addresses(id, user_id, address_id, principal) values(123
 INSERT INTO public.User_addresses(id, user_id, address_id, principal) values(12300003, 89, 12300003, false);
 
 --inserting Roles
-insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(1, 'MEETUSVR_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);

@@ -128,10 +128,23 @@ public class WertSubscriptionTest extends AbstractTestWithTempBaseDir {
 
 
     private void registerPackage(String authToken, String packageId){
-        String requestRegisterPackage = json().put("package_id", packageId).toString();
+        String requestRegisterPackage = json().put("package_id", packageId).put("organization_id", 99002).toString();
         HttpEntity<?> jsonRegisterPackage = getHttpEntity(requestRegisterPackage, authToken);
-        ResponseEntity<String> responseRegisterPackage = template.postForEntity("/package/register-package-profile", jsonRegisterPackage, String.class);
+        ResponseEntity<String> responseRegisterPackage = template.postForEntity("/package/register", jsonRegisterPackage, String.class);
         assertEquals(200, responseRegisterPackage.getStatusCode().value());
+    }
 
+    @Test
+    public void getSubscriptionsByPackageTest() {
+        ResponseEntity<Object> response = template.exchange("/subscription/package/99002",GET,
+                getHttpEntity("abcdefg"), Object.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void getSubscriptionsByPackageForbidden() {
+        ResponseEntity<Object> response = template.exchange("/subscription/package/99002",GET,
+                getHttpEntity("123456"), Object.class);
+        assertEquals(403, response.getStatusCode().value());
     }
 }

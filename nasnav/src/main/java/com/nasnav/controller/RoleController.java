@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 
 import com.nasnav.dto.RoleDto;
+import com.nasnav.persistence.Role;
 import com.nasnav.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -16,12 +17,12 @@ public class RoleController {
     private final RoleService roleService;
 
     @GetMapping("/employee/{id}")
-    public List<String> getRolesOfUser(@PathVariable Long id) {
-        return roleService.getRolesNamesOfEmployeeUser(id);
+    public List<Role> getRolesOfUser(@PathVariable Long id) {
+        return roleService.getRolesOfEmployeeUser(id);
     }
 
     @GetMapping("/organization/{id}")
-    public List<String> getRolesOfOrganization(@PathVariable Long id) {
+    public List<Role> getRolesOfOrganization(@PathVariable Long id) {
         return roleService.getOrganizationRoles(id);
     }
 

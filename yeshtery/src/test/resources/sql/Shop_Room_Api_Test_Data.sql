@@ -34,7 +34,7 @@ VALUES (5, 501, 88, 5, 'good', now(), false);
 
 
 --inserting Roles
-insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99002);
+insert into roles(id, name,  organization_id) values(1, 'MEETUSVR_ADMIN', 99002);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99002);
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_MANAGER', 99002);
 insert into roles(id, name,  organization_id) values(5, 'STORE_MANAGER', 99002);

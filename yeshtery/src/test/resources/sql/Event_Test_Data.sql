@@ -41,7 +41,7 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (9, '192021', now(), 71, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (10, '177147', now(), 72, null);
 
-insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(1, 'MEETUSVR_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_MANAGER', 99001);
 insert into roles(id, name,  organization_id) values(6, 'STORE_MANAGER', 99001);

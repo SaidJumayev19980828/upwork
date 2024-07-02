@@ -8,11 +8,21 @@ import java.util.List;
 
 public interface ServiceInterface {
     ServiceResponse createService(ServiceDTO service);
+
     ServiceResponse updateService(Long serviceId, ServiceDTO service);
+
     void deleteService(Long serviceId);
+
     ServiceResponse getService(Long serviceId);
-    List<ServiceResponse> getALlServices();
-    List<OrganizationServicesDto> getOrgServices();
-    List<OrganizationServicesDto> updateOrgService(List<OrganizationServicesDto> request);
+
+    List<ServiceResponse> getAllServices();
+
+    List<ServiceResponse> getOrgServiceResponses(Long orgId);
+
+    List<OrganizationServicesDto> getOrgServices(Long orgId, Long serviceId);
+
+    void updateOrgService(OrganizationServicesDto request);
+
+    void enablePackageServicesForOrganization(Long packageId, Long orgId);
 
 }

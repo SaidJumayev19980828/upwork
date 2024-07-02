@@ -76,7 +76,7 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (108, 'sdfe47', now(), 73, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (109, '222324', now(), 158, null);
 --inserting Roles
-insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(1, 'MEETUSVR_ADMIN', 99001);
 insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
 insert into public.roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
 insert into public.roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);

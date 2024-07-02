@@ -36,7 +36,7 @@ public interface RoleService {
 
     List<String> getUserRoles(BaseUserEntity user);
 
-    List<String> getOrganizationRoles(Long orgId);
+    List<Role> getOrganizationRoles(Long orgId);
     
     String createRole(RoleDto roleDto);
 

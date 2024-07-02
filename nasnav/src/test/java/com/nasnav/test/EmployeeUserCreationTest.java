@@ -25,6 +25,9 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +42,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.util.Arrays.asList;
@@ -92,7 +96,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 				.put("name", "Ahmed")
 				.put("email", TestUserEmail)
 				.put("org_id", 99001)
-				.put("role", "NASNAV_ADMIN")
+				.put("role", "MEETUSVR_ADMIN")
 				.toString();
         HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
@@ -110,7 +114,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 				.put("name", "Ahmed")
 				.put("email", TestUserEmail)
 				.put("org_id", 99001)
-				.put("role", "NASNAV_ADMIN")
+				.put("role", "MEETUSVR_ADMIN")
 				.toString();
 
 		//this user have the role CUSTOMER in the test data, it can't create other users
@@ -129,7 +133,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 				.put("name", "Ahmed")
 				.put("email", TestUserEmail)
 				.put("org_id", 99001)
-				.put("role", "NASNAV_ADMIN")
+				.put("role", "MEETUSVR_ADMIN")
 				.toString();
 
 		//this user have the role CUSTOMER in the test data, it can't create other users
@@ -148,7 +152,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 				.put("name", "Ahmed#&*")
 				.put("email", TestUserEmail)
 				.put("org_id", 99001)
-				.put("role", "NASNAV_ADMIN")
+				.put("role", "MEETUSVR_ADMIN")
 				.toString();
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
@@ -161,7 +165,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void createEmployeeUserInvalidEmailTest() {
 		// make an invalid employee user json without a name param
-		String body = "{\"name\":\"Ahmed#&*\", \"email\":\"invalid_email\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"NASNAV_ADMIN\"}";
+		String body = "{\"name\":\"Ahmed#&*\", \"email\":\"invalid_email\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"MEETUSVR_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
 
@@ -175,7 +179,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void createEmployeeUserInvalidRoleTest() {
 		// make an invalid employee user json without a name param
-		String body = "{\"name\":\"Ahmed\", \"email\":\"" + TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"NASNAV_ADMIN, UNKNOWN_ROLE\"}";
+		String body = "{\"name\":\"Ahmed\", \"email\":\"" + TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"MEETUSVR_ADMIN, UNKNOWN_ROLE\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
 
@@ -285,7 +289,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void createEmployeeUserEmailExistsForSameOrgTest() {
 		// create employee user with an email
-		String body = "{\"name\":\"Ahmed\", \"email\":\"" + TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 502, \"role\": \"NASNAV_ADMIN\"}";
+		String body = "{\"name\":\"Ahmed\", \"email\":\"" + TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 502, \"role\": \"MEETUSVR_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
 
@@ -309,7 +313,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 				.put("email", TestUserEmail)
 				.put("org_id", 99001L)
 				.put("store_id", 502)
-				.put("role", "NASNAV_ADMIN");
+				.put("role", "MEETUSVR_ADMIN");
 		String body = bodyJson.toString();
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
@@ -340,7 +344,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 				.put("email", TestUserEmail.toUpperCase())
 				.put("org_id", 99001L)
 				.put("store_id", 502)
-				.put("role", "NASNAV_ADMIN")
+				.put("role", "MEETUSVR_ADMIN")
 				.toString();
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
@@ -425,8 +429,8 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createEmployeeUserAuthTestFail() {
-		// organization_admin role test fail (same organization but assigning NASNAV_ADMIN role without authority)
-		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 99001" + ", \"store_id\": 10, \"role\": \"NASNAV_ADMIN\"}";
+		// organization_admin role test fail (same organization but assigning MEETUSVR_ADMIN role without authority)
+		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 99001" + ", \"store_id\": 10, \"role\": \"MEETUSVR_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
 		
@@ -437,7 +441,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createEmployeeUserNoOrgIdTest() {
-		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser5@nasnav.com" + "\" , \"role\": \"NASNAV_ADMIN\"}";
+		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser5@nasnav.com" + "\" , \"role\": \"MEETUSVR_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
 
@@ -450,7 +454,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createStoreManagerByOrganizationManagerFail() {
-		// nasnav_admin role test
+		// MEETUSVR_ADMIN role test
 		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 99001" + ", \"store_id\": 502, \"role\": \"STORE_MANAGER\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
@@ -543,8 +547,8 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void updateOtherEmployeeUserAuthTestFail() {
-		// update user with id 158 fail(unauthorized assigning NASNAV_ADMIN role)
-		String body = createUserUpdateJson("NASNAV_ADMIN");
+		// update user with id 158 fail(unauthorized assigning MEETUSVR_ADMIN role)
+		String body = createUserUpdateJson("MEETUSVR_ADMIN");
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
 		ResponseEntity<BaseResponse> response = template.postForEntity("/user/update", employeeUserJson, BaseResponse.class);
 		
@@ -569,62 +573,35 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertEquals(406, response.getStatusCode().value());
 	}
 
-	//NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
+	//MEETUSVR_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
 
-	//NASNAV_ADMIN changing roles to NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
-	@Test
-	public void updateToNasnavAdminByNasnavAdminTest() {
-		String body = createUserUpdateJson("NASNAV_ADMIN");
+	//MEETUSVR_ADMIN changing roles to MEETUSVR_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
+	@ParameterizedTest
+	@MethodSource("provideTestData")
+	public void updateRoleByNasnavAdminTest(String roles, Set<String> expectedEmpRoles) {
+		String body = createUserUpdateJson(roles);
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		assertEquals(200, response.getStatusCode().value());
-		Set<String> expectedEmpRoles = new HashSet<>(asList("NASNAV_ADMIN"));
 		Set<String> newEmpRoles = new HashSet<>(roleService.getRolesNamesOfEmployeeUser(158L));
 		assertTrue(expectedEmpRoles.equals(newEmpRoles));
 	}
 
-	@Test
-	public void updateToOrganizationAdminByNasnavAdminTest() {
-		String body = createUserUpdateJson("ORGANIZATION_EMPLOYEE,STORE_MANAGER");
-		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
-
-		assertEquals(200, response.getStatusCode().value());
-		Set<String> expectedEmpRoles = new HashSet<>(asList("ORGANIZATION_EMPLOYEE", "STORE_MANAGER"));
-		Set<String> newEmpRoles = new HashSet<>(roleService.getRolesNamesOfEmployeeUser(158L));
-		assertTrue(expectedEmpRoles.equals(newEmpRoles));
+	private static Stream<Arguments> provideTestData() {
+		return Stream.of(
+				Arguments.of("MEETUSVR_ADMIN", new HashSet<>(asList("MEETUSVR_ADMIN"))),
+				Arguments.of("ORGANIZATION_EMPLOYEE,STORE_MANAGER", new HashSet<>(asList("ORGANIZATION_EMPLOYEE", "STORE_MANAGER"))),
+				Arguments.of("ORGANIZATION_EMPLOYEE", new HashSet<>(asList("ORGANIZATION_EMPLOYEE"))),
+				Arguments.of("STORE_EMPLOYEE", new HashSet<>(asList("STORE_EMPLOYEE")))
+		);
 	}
+	//finish MEETUSVR_ADMIN role test
 
-	@Test
-	public void updateToOrganizationEmployeeByNasnavAdminTest() {
-		String body = createUserUpdateJson("ORGANIZATION_EMPLOYEE");
-		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
-
-		assertEquals(200, response.getStatusCode().value());
-		Set<String> expectedEmpRoles = new HashSet<>(asList("ORGANIZATION_EMPLOYEE"));
-		Set<String> newEmpRoles = new HashSet<>(roleService.getRolesNamesOfEmployeeUser(158L));
-		assertTrue(expectedEmpRoles.equals(newEmpRoles));
-	}
-
-	@Test
-	public void updateToStoreEmployeeByNasnavAdminTest() {
-		String body = createUserUpdateJson("STORE_EMPLOYEE");
-		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
-
-		assertEquals(200, response.getStatusCode().value());
-		Set<String> expectedEmpRoles = new HashSet<>(asList("STORE_EMPLOYEE"));
-		Set<String> newEmpRoles = new HashSet<>(roleService.getRolesNamesOfEmployeeUser(158L));
-		assertTrue(expectedEmpRoles.equals(newEmpRoles));
-	}
-	//finish Nasnav_admin role test
-
-	//ORGANIZATION_ADMIN changing roles to NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
+	//ORGANIZATION_ADMIN changing roles to MEETUSVR_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
 	@Test
 	public void updateToNasnavAdminByOrganizationAdminTest() {
-		String body = createUserUpdateJson("NASNAV_ADMIN");
+		String body = createUserUpdateJson("MEETUSVR_ADMIN");
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
 		ResponseEntity<BaseResponse> response = template.postForEntity("/user/update", employeeUserJson, BaseResponse.class);
 		
@@ -687,98 +664,46 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 	}
 	//finish ORGANIZATION_ADMIN role test
 
-	//ORGANIZATION_EMPLOYEE changing roles to NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
-	@Test
-	public void updateToNasnavAdminByOrganizationEmployeeTest() {
-		String body = createUserUpdateJson("NASNAV_ADMIN");
+	//ORGANIZATION_EMPLOYEE changing roles to MEETUSVR_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
+	@ParameterizedTest
+	@MethodSource("provideTestDataForOrganizationEmployee")
+	public void updateRoleByOrganizationEmployeeTest(String roles) {
+		String body = createUserUpdateJson(roles);
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
-		
 		assertEquals(406, response.getStatusCode().value());
 	}
 
-
-
-	@Test
-	public void updateToOrganizationAdminByOrganizationEmployeeTest() {
-		String body = createUserUpdateJson("ORGANIZATION_ADMIN");
-		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
-
-		
-		assertEquals(406, response.getStatusCode().value());
-	}
-
-
-
-	@Test
-	public void updateToOrganizationEmployeeByOrganizationEmployeeTest() {
-		String body = createUserUpdateJson("ORGANIZATION_EMPLOYEE");
-		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
-
-		
-		assertEquals(406, response.getStatusCode().value());
-	}
-
-
-
-	@Test
-	public void updateToStoreEmployeeByOrganizationEmployeeTest() {
-		String body = createUserUpdateJson("STORE_EMPLOYEE");
-		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
-
-		
-		assertEquals(406, response.getStatusCode().value());
+	private static Stream<Arguments> provideTestDataForOrganizationEmployee() {
+		return Stream.of(
+				Arguments.of("MEETUSVR_ADMIN"),
+				Arguments.of("ORGANIZATION_ADMIN"),
+				Arguments.of("ORGANIZATION_EMPLOYEE"),
+				Arguments.of("STORE_EMPLOYEE")
+		);
 	}
 	//finish ORGANIZATION_EMPLOYEE role test
 
 
-	//STORE_EMPLOYEE changing roles to NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
-	@Test
-	public void updateToNasnavAdminByStoreEmployeeTest() {
-		String body = createUserUpdateJson("NASNAV_ADMIN");
+	//STORE_EMPLOYEE changing roles to MEETUSVR_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
+	@ParameterizedTest
+	@MethodSource("provideTestDataForStoreEmployee")
+	public void updateRoleByStoreEmployeeTest(String roles) {
+		String body = createUserUpdateJson(roles);
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "111444");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
-		
 		assertEquals(406, response.getStatusCode().value());
 	}
 
-
-
-	@Test
-	public void updateToOrganizationAdminByStoreEmployeeTest() {
-		String body = createUserUpdateJson("ORGANIZATION_ADMIN");
-		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "111444");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
-
-		
-		assertEquals(406, response.getStatusCode().value());
-	}
-
-
-
-	@Test
-	public void updateToOrganizationEmployeeByStoreEmployeeTest() {
-		String body = createUserUpdateJson("ORGANIZATION_EMPLOYEE");
-		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "111444");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
-		
-		assertEquals(406, response.getStatusCode().value());
-	}
-
-
-
-	@Test
-	public void updateToStoreEmployeeByStoreEmployeeTest() {
-		String body = createUserUpdateJson("STORE_EMPLOYEE");
-		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "111444");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
-
-		assertEquals(406, response.getStatusCode().value());
+	private static Stream<Arguments> provideTestDataForStoreEmployee() {
+		return Stream.of(
+				Arguments.of("MEETUSVR_ADMIN"),
+				Arguments.of("ORGANIZATION_ADMIN"),
+				Arguments.of("ORGANIZATION_EMPLOYEE"),
+				Arguments.of("STORE_EMPLOYEE")
+		);
 	}
 	
 	private String createUserUpdateJson(String roles) {
@@ -812,7 +737,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void getUserDataDifferentUsers() {
-		// logged user is NASNAV_ADMIN so he can view all other users data
+		// logged user is MEETUSVR_ADMIN so he can view all other users data
 		HttpEntity<Object> header = getHttpEntity("abcdefg");
 		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?id=88", GET,
 				header, UserRepresentationObject.class);
@@ -859,7 +784,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertEquals(expectedSize, parsedResponse.size());
 	}
 
-	// with NASNAV_ADIMN ACCOUNT
+	// with MEETUSVR_ADIMN ACCOUNT
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/EmpUsers_Test_Data_Insert_3.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
@@ -885,7 +810,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertSizeCorrect(10,response);
 
 		// role filter
-		response = template.exchange("/user/list?role=NASNAV_ADMIN", GET,header, String.class);
+		response = template.exchange("/user/list?role=MEETUSVR_ADMIN", GET,header, String.class);
 		assertSizeCorrect(2,response);
 
 
@@ -966,8 +891,8 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertEquals(response.getStatusCodeValue(), 200);
 		assertEquals(1, response.getBody().size());
 
-		// trying to filter with NASNAV_ADMIN role
-		ResponseEntity<String> res = template.exchange("/user/list?role=NASNAV_ADMIN", GET, header, String.class);
+		// trying to filter with MEETUSVR_ADMIN role
+		ResponseEntity<String> res = template.exchange("/user/list?role=MEETUSVR_ADMIN", GET, header, String.class);
 		assertEquals(res.getStatusCodeValue(), 406);
 		assertTrue(res.getBody().contains("U$EMP$0013"));
 	}
@@ -1135,7 +1060,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 
 		assertEquals(200, response.getStatusCode().value());
 		Long orgAfter = empRepository.findById(id).get().getOrganizationId();
-		assertEquals("organization parameter is used only by NASNAV_ADMIN users"
+		assertEquals("organization parameter is used only by MEETUSVR_ADMIN users"
 				, orgBefore, orgAfter);
  	}
 

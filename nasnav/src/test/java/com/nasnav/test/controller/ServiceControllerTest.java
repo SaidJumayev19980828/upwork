@@ -56,7 +56,7 @@ public class ServiceControllerTest extends AbstractTestWithTempBaseDir {
         lenient().when(serviceInterface.updateService(anyLong(), any(ServiceDTO.class))).thenReturn(new ServiceResponse());
         lenient().doNothing().when(serviceInterface).deleteService(anyLong());
         lenient().when(serviceInterface.getService(anyLong())).thenReturn(new ServiceResponse());
-        lenient().when(serviceInterface.getALlServices()).thenReturn(new ArrayList<>());
+        lenient().when(serviceInterface.getAllServices()).thenReturn(new ArrayList<>());
 
     }
 

@@ -1,9 +1,11 @@
 package com.nasnav.service;
 
 import com.nasnav.dto.request.PackageDTO;
-import com.nasnav.dto.request.PackageRegisteredByUserDTO;
+import com.nasnav.dto.request.PackageRegisterDTO;
 import com.nasnav.dto.response.PackageResponse;
+import com.nasnav.dto.response.SimpleOrganizationDto;
 import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.PackageEntity;
 import com.nasnav.persistence.UserEntity;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,11 +19,16 @@ public interface PackageService {
 
     PackageResponse updatePackage(PackageDTO packageDto, Long packageId);
 
-    void removePackage(Long packageId);
+    void deletePackage(Long packageId);
 
-    Long registerPackageProfile(PackageRegisteredByUserDTO packageRegisteredByUserDTO);
+    String registerPackage(PackageRegisterDTO packageRegisterDTO);
+
+    String deregisterPackage(PackageRegisterDTO packageRegisterDTO);
+
     Long getPackageIdRegisteredInOrg(UserEntity user);
 
     @Transactional
-    Long getPackageIdRegisteredInOrg(OrganizationEntity organization);
+    PackageEntity getPackageRegisteredInOrg(OrganizationEntity organization);
+
+    List<SimpleOrganizationDto> getOrganizationsByPackageId(Long packageId);
 }

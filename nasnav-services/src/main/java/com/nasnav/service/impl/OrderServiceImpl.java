@@ -763,7 +763,7 @@ public class OrderServiceImpl implements OrderService {
 
 		BaseUserEntity user = securityService.getCurrentUser();
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
+		boolean isNasnavAdmin = securityService.currentUserHasRole(MEETUSVR_ADMIN);
 		Optional<OrdersEntity> order = empty();
 
 		Integer finalDetailsLevel = getFinalDetailsLevel(detailsLevel);
@@ -784,7 +784,7 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public OrdersListResponse getOrdersInfoByUserEmailWithinWeek(String userEmail, Integer detailsLevel) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
+		boolean isNasnavAdmin = securityService.currentUserHasRole(MEETUSVR_ADMIN);
 		List<OrdersEntity> order = null;
 
 		Integer finalDetailsLevel = getFinalDetailsLevel(detailsLevel);
@@ -1965,7 +1965,7 @@ public class OrderServiceImpl implements OrderService {
 	public Order getYeshteryMetaOrder(Long orderId, boolean yeshteryMetaorder){
 		BaseUserEntity user = securityService.getCurrentUser();
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
+		boolean isNasnavAdmin = securityService.currentUserHasRole(MEETUSVR_ADMIN);
 
 		Optional<MetaOrderEntity> order = empty();
 
@@ -1987,7 +1987,7 @@ public class OrderServiceImpl implements OrderService {
 	public Order getMetaOrder(Long orderId, boolean yeshteryMetaorder){
 		BaseUserEntity user = securityService.getCurrentUser();
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
+		boolean isNasnavAdmin = securityService.currentUserHasRole(MEETUSVR_ADMIN);
 
 		Optional<MetaOrderEntity> order = empty();;
 

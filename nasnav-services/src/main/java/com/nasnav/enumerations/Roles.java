@@ -19,8 +19,8 @@ public enum Roles {
     CUSTOMER("CUSTOMER", 100000, false),
     ORGANIZATION_MANAGER("ORGANIZATION_MANAGER", 2, false),
     STORE_MANAGER("STORE_MANAGER", 4, true),
-    NASNAV_ADMIN("NASNAV_ADMIN", -100000, true),
-    NASNAV_EMPLOYEE("NASNAV_EMPLOYEE", -99999, false),
+    MEETUSVR_ADMIN("MEETUSVR_ADMIN", -100000, true),
+    MEETUSVR_EMPLOYEE("MEETUSVR_EMPLOYEE", -99999, false),
     ORGANIZATION_ADMIN("ORGANIZATION_ADMIN", 1, true),
     ORGANIZATION_EMPLOYEE("ORGANIZATION_EMPLOYEE", 3, false),
     STORE_EMPLOYEE("STORE_EMPLOYEE", 5, false);
@@ -36,12 +36,12 @@ public enum Roles {
 
     @Getter
     private static final Set<String> nasnavAdminPrivilege =
-            setOf(NASNAV_ADMIN.name(), NASNAV_EMPLOYEE.name(), ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(),
+            setOf(MEETUSVR_ADMIN.name(), MEETUSVR_EMPLOYEE.name(), ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(),
                     ORGANIZATION_EMPLOYEE.name(), STORE_MANAGER.name(), STORE_EMPLOYEE.name());
 
     @Getter
     private static final Set<String> nasnavEmployeePrivilege =
-            setOf(NASNAV_EMPLOYEE.name(), ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(),
+            setOf(MEETUSVR_EMPLOYEE.name(), ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(),
                     ORGANIZATION_EMPLOYEE.name(), STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
     private static final Set<String> organizationAdminPrivilege =
@@ -76,13 +76,13 @@ public enum Roles {
 
 
     public static List<Roles> getSortedEmployeeRoles() {
-        return List.of(NASNAV_ADMIN, NASNAV_EMPLOYEE, ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, ORGANIZATION_EMPLOYEE, STORE_MANAGER, STORE_EMPLOYEE);
+        return List.of(MEETUSVR_ADMIN, MEETUSVR_EMPLOYEE, ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, ORGANIZATION_EMPLOYEE, STORE_MANAGER, STORE_EMPLOYEE);
     }
 
     public static Map<String, Set<String>> getAllPrivileges() {
         Map<String, Set<String>> result = new HashMap<>();
-        result.put(NASNAV_ADMIN.name(), nasnavAdminPrivilege);
-        result.put(NASNAV_EMPLOYEE.name(), nasnavEmployeePrivilege);
+        result.put(MEETUSVR_ADMIN.name(), nasnavAdminPrivilege);
+        result.put(MEETUSVR_EMPLOYEE.name(), nasnavEmployeePrivilege);
         result.put(ORGANIZATION_ADMIN.name(), organizationAdminPrivilege);
         result.put(ORGANIZATION_MANAGER.name(), organizationManagerPrivilege);
         result.put(ORGANIZATION_EMPLOYEE.name(), organizationEmployeePrivilege);

@@ -43,7 +43,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
                                          StripeService stripeService,
                                          SecurityService securityService, StripeCustomerRepository stripeCustomerRepository,
                                          SubscriptionRepository subscriptionRepository) {
-        super(securityService, packageService, packageRepository, subscriptionRepository);
+        super(securityService, packageService, subscriptionRepository);
         this.packageService = packageService;
         this.packageRepository = packageRepository;
         this.stripeService = stripeService;
@@ -91,19 +91,17 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
 
 
     //Capture Stripe Order
-     @Override
+    @Override
     public SubscriptionDTO getPaymentInfo(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException {
         StripeSubscriptionDTO stripeSubscriptionDTO = (StripeSubscriptionDTO) subscriptionDTO;
         //Get Package Registered In Org
         OrganizationEntity org = securityService.getCurrentUserOrganization();
-        Long packageId = packageService.getPackageIdRegisteredInOrg(org);
-        if(packageId == null){
+        PackageEntity packageEntity = packageService.getPackageRegisteredInOrg(org);
+        if (packageEntity == null) {
             log.error("Failed To GetPaymentInfo : Package Id is null");
             throw new RuntimeBusinessException(NOT_FOUND, ORG$SUB$0001);
         }
-        PackageEntity packageEntity = packageRepository.findById(packageId).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND, ORG$SUB$0001));
-        stripeSubscriptionDTO.setPackageId(packageId);
+        stripeSubscriptionDTO.setPackageId(packageEntity.getId());
         stripeSubscriptionDTO.setStripePriceId(packageEntity.getStripePriceId());
         return stripeSubscriptionDTO;
     }

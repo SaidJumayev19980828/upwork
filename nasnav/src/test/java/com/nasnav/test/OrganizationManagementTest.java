@@ -181,7 +181,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
 
 
 
-    //trying to update organization with nasnav_admin user
+    //trying to update organization with MEETUSVR_ADMIN user
     @Test
     public void updateOrganizationUnauthorizedUserTest() {
         String body = "{\"org_id\":99001, \"description\":\"this company is o8895ssffld and unique\"}";

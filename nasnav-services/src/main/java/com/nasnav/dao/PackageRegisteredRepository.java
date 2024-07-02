@@ -15,4 +15,8 @@ public interface PackageRegisteredRepository extends JpaRepository<PackageRegist
     List<PackageRegisteredEntity> findByPackageId(Long package_id);
 
     Optional<PackageRegisteredEntity> findByOrganization(OrganizationEntity organization);
+
+    void deleteByPackageEntity_Id(Long packageEntityId);
+
+    void deleteByOrganization_Id(Long organizationId);
 }

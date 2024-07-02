@@ -230,7 +230,7 @@ public class PermissionServiceImplTest {
 
     @Test
     public void testGetPermissionsByUserId_Success() throws BusinessException {
-        when(permissionRepository.findByUserId(anyLong())).thenReturn(Collections.singletonList(permission));
+        when(permissionRepository.findByUserIdViaRole(anyLong())).thenReturn(Collections.singletonList(permission));
 
         List<PermissionResponse> responses = permissionService.getPermissionsByUserId(1L);
 
@@ -275,7 +275,7 @@ public class PermissionServiceImplTest {
 
     @Test
     public void testGetPermissions_UserIdProvided() throws BusinessException {
-        when(permissionRepository.findByUserId(anyLong())).thenReturn(Arrays.asList(
+        when(permissionRepository.findByUserIdViaRole(anyLong())).thenReturn(Arrays.asList(
                 new Permission(3L, "PERMISSION_3")
         ));
 

@@ -153,7 +153,7 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 	
 	
 
-	@Test // Nasnav_Admin diffterent filters test
+	@Test // MEETUSVR_ADMIN diffterent filters test
 	public void ordersListNasnavAdminDifferentFiltersTest() {
 		String token = "101112";
 		// no filters

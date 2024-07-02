@@ -18,6 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 import static com.nasnav.exceptions.ErrorCodes.STR$CAL$0004;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -46,6 +48,11 @@ public class SubscriptionController {
     @RequestMapping(value = "info", produces = APPLICATION_JSON_VALUE)
     public SubscriptionInfoDTO subscriptionInfo(@RequestHeader(name = "User-Token", required = false) String userToken){
         return wertSubscriptionService.getSubscriptionInfo();
+    }
+
+    @GetMapping(value = "/package/{packageId}", produces = APPLICATION_JSON_VALUE)
+    public List<SubscriptionInfoDTO> getSubscriptionsByPackage(@PathVariable Long packageId, @RequestHeader(name = "User-Token", required = false) String userToken){
+        return wertSubscriptionService.getSubscriptionsByPackage(packageId);
     }
 
     @PostMapping

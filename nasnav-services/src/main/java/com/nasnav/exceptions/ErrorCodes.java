@@ -240,6 +240,7 @@ public enum ErrorCodes {
 	,PA$SRV$0002("No Service Exist with ID : [%s]")
 	,PA$SRV$0003("Service Enabled Status Can`t Be Null")
 	,PA$SRV$0004("No Service Found For This Org ID: [%s]")
+	,PA$SRV$0005("No Service Found For Package: [%s]")
 
 
 	,ORG$SUB$0001("No Package Registered In Organization")

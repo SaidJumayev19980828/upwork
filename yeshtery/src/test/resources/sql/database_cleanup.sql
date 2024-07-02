@@ -179,6 +179,12 @@ DELETE FROM public.cities;
 DELETE FROM public.subscription;
 DELETE FROM public.package_service;
 DELETE FROM public.service_instance;
+DELETE FROM public.service_permissions;
+DELETE FROM public.organization_services;
+DELETE FROM public.package_registered;
+DELETE FROM public.role_permissions;
+DELETE FROM public.permission;
+DELETE FROM public.services_registered_in_package;
 DELETE FROM public.package;
 DELETE FROM public.service;
 DELETE FROM public.countries;
@@ -189,9 +195,6 @@ DELETE FROM public.organization_image_types;
 DELETE FROM public.themes where id between 5001 and 5003;
 DELETE FROM public.theme_classes where id between 990011 and 990012;
 DELETE FROM public.categories WHERE id between 200 AND 240;
-
-DELETE FROM public.services_registered_in_package;
-DELETE FROM public.package WHERE id > 99000;
 
 delete from public.loyalty_point_types where id between  31001 and 31999;
 DELETE FROM public.stripe_customer;

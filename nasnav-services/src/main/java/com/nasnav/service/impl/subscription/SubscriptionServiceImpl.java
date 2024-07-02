@@ -1,6 +1,5 @@
 package com.nasnav.service.impl.subscription;
 
-import com.nasnav.dao.PackageRepository;
 import com.nasnav.dao.SubscriptionRepository;
 import com.nasnav.dto.SubscriptionDTO;
 import com.nasnav.dto.SubscriptionInfoDTO;
@@ -10,7 +9,6 @@ import com.nasnav.persistence.*;
 import com.nasnav.service.PackageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.subscription.SubscriptionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -28,14 +26,12 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
 
     private final SecurityService securityService;
     private final PackageService packageService;
-    private final PackageRepository packageRepository;
     private final SubscriptionRepository subscriptionRepository;
 
     protected SubscriptionServiceImpl(SecurityService securityService, PackageService packageService,
-                                   PackageRepository packageRepository, SubscriptionRepository subscriptionRepository) {
+                                    SubscriptionRepository subscriptionRepository) {
         this.securityService = securityService;
         this.packageService = packageService;
-        this.packageRepository = packageRepository;
         this.subscriptionRepository = subscriptionRepository;
     }
 
@@ -56,6 +52,8 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
                                 SubscriptionStatus.INCOMPLETE_EXPIRED.getValue()
                         )
                 );
+        subscriptionInfoDTO.setOrganizationId(org.getId());
+        subscriptionInfoDTO.setOrganizationName(org.getName());
         for(SubscriptionEntity subscriptionEntity : subscriptionEntityList ){
             if(subscriptionEntity.getExpirationDate() == null ||
                     subscriptionEntity.getExpirationDate().after(new Date())){
@@ -67,7 +65,7 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
                 subscriptionInfoDTO.setSubscriptionEntityId(subscriptionEntity.getId());
                 subscriptionInfoDTO.setPackageId(subscriptionEntity.getPackageEntity().getId());
             }else{
-                subscriptionEntity.setStatus("canceled");
+                subscriptionEntity.setStatus(SubscriptionStatus.CANCELED.getValue());
                 subscriptionRepository.save(subscriptionEntity);
             }
         }
@@ -90,15 +88,10 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
 
         //Get Package Registered In Org
         OrganizationEntity org = securityService.getCurrentUserOrganization();
-        Long packageId = packageService.getPackageIdRegisteredInOrg(org);
-        if(packageId == null){
+        PackageEntity packageEntity = packageService.getPackageRegisteredInOrg(org);
+        if (packageEntity == null){
             throw new RuntimeBusinessException(NOT_FOUND, ORG$SUB$0001);
         }
-
-        //Save Organization Subscribed In Package
-        PackageEntity packageEntity = packageRepository.findById(packageId).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002, packageId));
-
         LocalDate startDate = LocalDate.now();
         LocalDate expirationDate = startDate.plusDays(packageEntity.getPeriodInDays());
 
@@ -115,4 +108,21 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
         return subscriptionDTO;
     }
 
+    @Override
+    public List<SubscriptionInfoDTO> getSubscriptionsByPackage(Long packageId) {
+        List<SubscriptionEntity> subscriptions = subscriptionRepository.findByPackageEntity_IdAndStatusNotIn(packageId, List.of(SubscriptionStatus.CANCELED.getValue(),
+                SubscriptionStatus.INCOMPLETE_EXPIRED.getValue()));
+        return subscriptions.stream().map(subscriptionEntity -> {
+            SubscriptionInfoDTO subscriptionInfoDTO = new SubscriptionInfoDTO();
+            subscriptionInfoDTO.setExpirationDate(subscriptionEntity.getExpirationDate());
+            subscriptionInfoDTO.setSubscribed(true);
+            subscriptionInfoDTO.setPackageId(subscriptionEntity.getPackageEntity().getId());
+            subscriptionInfoDTO.setSubscriptionEntityId(subscriptionEntity.getId());
+            subscriptionInfoDTO.setStatus(subscriptionEntity.getStatus());
+            subscriptionInfoDTO.setType(subscriptionEntity.getType());
+            subscriptionInfoDTO.setOrganizationId(subscriptionEntity.getOrganization().getId());
+            subscriptionInfoDTO.setOrganizationName(subscriptionEntity.getOrganization().getName());
+            return subscriptionInfoDTO;
+        }).toList();
+    }
 }

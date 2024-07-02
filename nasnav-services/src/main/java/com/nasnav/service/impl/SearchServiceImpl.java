@@ -58,7 +58,7 @@ import java.util.*;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.SpringUtils.readOptionalResource;
-import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static com.nasnav.enumerations.Roles.MEETUSVR_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.enumerations.SearchType.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -222,7 +222,7 @@ public class SearchServiceImpl implements SearchService {
 
 
     private List<OrganizationEntity> getOrgsToSync() {
-        if(securityService.currentUserHasRole(NASNAV_ADMIN)){
+        if (Boolean.TRUE.equals(securityService.currentUserHasRole(MEETUSVR_ADMIN))) {
             return orgRepo.findAllOrganizations();
         }
         else if(securityService.currentUserHasRole(ORGANIZATION_ADMIN)){

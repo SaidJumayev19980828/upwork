@@ -184,7 +184,7 @@ public class RoleServiceImplTest {
     public void testGetOrganizationRoles() {
         when(roleRepository.findByOrganizationId(anyLong())).thenReturn(Collections.singletonList(role));
 
-        List<String> roles = roleService.getOrganizationRoles(1L);
+        List<String> roles = roleService.getOrganizationRoles(1L).stream().map(Role::getName).toList();
 
         assertEquals(1, roles.size());
         assertEquals("STORE_EMPLOYEE", roles.get(0));

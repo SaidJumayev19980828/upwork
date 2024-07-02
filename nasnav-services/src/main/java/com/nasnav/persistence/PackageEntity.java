@@ -7,8 +7,6 @@ import lombok.ToString;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 @Table(name = "package")
@@ -47,9 +45,4 @@ public class PackageEntity extends DefaultBusinessEntity<Long> {
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
     private Set<ServiceEntity> services;
-
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "package_id")
-    private List<ServiceInstanceEntity> serviceInstances = new LinkedList<>();
-
 }

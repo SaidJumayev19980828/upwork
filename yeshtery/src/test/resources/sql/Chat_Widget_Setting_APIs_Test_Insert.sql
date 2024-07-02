@@ -44,7 +44,7 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (5, '222324', now(), 158, null);
 
 --inserting Roles
-insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(1, 'MEETUSVR_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
@@ -58,5 +58,15 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23
 
 --inserting chat widget setting
 INSERT INTO public.chat_widget_setting(id, org_id, value,type) VALUES (1, 99001, 'jsonValueFor Testing',2);
+
+--insert permissions
+insert into permission(id, name) values(10, 'CHAT_WIDGET_CREATE');
+insert into permission(id, name) values(20, 'CHAT_WIDGET_PUBLISH');
+
+--inserting service
+INSERT INTO public.service(id,code,name,description) values (99001,'CHAT_SERVICES','CHAT_SERVICES','CHAT_SERVICES Service');
+INSERT INTO public.service_permissions(service_id, permission_id) values (99001, 10);
+INSERT INTO public.service_permissions(service_id, permission_id) values (99001, 20);
+INSERT INTO public.organization_services(id, org_id, service_id, enabled) values (1, 99002, 99001, true);
 
 

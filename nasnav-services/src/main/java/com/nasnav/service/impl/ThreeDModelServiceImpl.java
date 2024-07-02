@@ -216,10 +216,10 @@ public class ThreeDModelServiceImpl implements ThreeDModelService {
             log.error("there isn no roles for current user");
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0005, currentUser.getId());
         }
-        if (isDelete && !userHighestRole.equals(Roles.NASNAV_ADMIN)) {
+        if (isDelete && !userHighestRole.equals(Roles.MEETUSVR_ADMIN)) {
             throw new RuntimeBusinessException(FORBIDDEN, E$USR$0006, currentUser.getId());
         }
-        if (!isDelete && !userHighestRole.equals(Roles.NASNAV_ADMIN) && !userHighestRole.equals(Roles.ORGANIZATION_ADMIN)
+        if (!isDelete && !userHighestRole.equals(Roles.MEETUSVR_ADMIN) && !userHighestRole.equals(Roles.ORGANIZATION_ADMIN)
                 && !userHighestRole.equals(Roles.ORGANIZATION_MANAGER)) {
             throw new RuntimeBusinessException(FORBIDDEN, E$USR$0006, currentUser.getId());
         }

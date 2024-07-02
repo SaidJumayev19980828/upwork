@@ -114,7 +114,7 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public List<PermissionResponse> getPermissionsByUserId(Long userId) throws BusinessException {
         Set<PermissionResponse> permissionResponses = new HashSet<>();
-        permissionRepository.findByUserId(userId).stream()
+        permissionRepository.findByUserIdViaRole(userId).stream()
                 .map(permission -> new PermissionResponse(permission.getId(), permission.getName()))
                 .forEach(permissionResponses::add);
         return new ArrayList<>(permissionResponses);
@@ -158,17 +158,15 @@ public class PermissionServiceImpl implements PermissionService {
     public String assignPermissions(PermissionListDto permissionListDto) {
         validatePermissionNames(permissionListDto.getPermissionNames());
 
-        List<String> permissionNames = permissionListDto.getPermissionNames();
-        List<Permission> permissions = new ArrayList<>();
-        for (String permissionName : permissionNames) {
-            permissions.add(createOrGetPermission(permissionName));
-        }
-        for (Permission p : permissions) {
+        List<Permission> permissions = permissionListDto.getPermissionNames().stream()
+                .map(this::createOrGetPermission)
+                .toList();
+        for (Permission permission : permissions) {
             PermissionDto permissionDto = new PermissionDto();
-            permissionDto.setName(p.getName());
+            permissionDto.setName(permission.getName());
             permissionDto.setRoleIds(permissionListDto.getRoleIds());
             permissionDto.setServiceIds(permissionListDto.getServiceIds());
-            addRoleAndServices(permissionDto, p);
+            addRoleAndServices(permissionDto, permission);
         }
         return "Permissions assigned successfully";
     }
@@ -188,11 +186,10 @@ public class PermissionServiceImpl implements PermissionService {
     public String unassignPermissions(PermissionListDto permissionListDto) {
         validatePermissionNames(permissionListDto.getPermissionNames());
 
-        List<String> permissionNames = permissionListDto.getPermissionNames();
-        List<Permission> permissions = new ArrayList<>();
-        for (String permissionName : permissionNames) {
-            permissions.add(createOrGetPermission(permissionName));
-        }
+        List<Permission> permissions = permissionListDto.getPermissionNames().stream()
+                .map(permissionRepository::findByName)
+                .filter(Objects::nonNull)
+                .toList();
         for (Permission p : permissions) {
             PermissionDto permissionDto = new PermissionDto();
             permissionDto.setName(p.getName());

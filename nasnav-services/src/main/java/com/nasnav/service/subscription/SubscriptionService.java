@@ -4,11 +4,14 @@ import com.nasnav.dto.SubscriptionDTO;
 import com.nasnav.dto.SubscriptionInfoDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 
+import java.util.List;
+
 public interface SubscriptionService {
-    public SubscriptionInfoDTO getSubscriptionInfo() throws RuntimeBusinessException;
+    SubscriptionInfoDTO getSubscriptionInfo() throws RuntimeBusinessException;
 
-    public SubscriptionDTO getPaymentInfo(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException;
+    SubscriptionDTO getPaymentInfo(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException;
 
-    public SubscriptionDTO subscribe(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException;
+    SubscriptionDTO subscribe(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException;
 
+    List<SubscriptionInfoDTO> getSubscriptionsByPackage(Long packageId);
 }

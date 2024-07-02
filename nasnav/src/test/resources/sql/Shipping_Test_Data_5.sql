@@ -62,7 +62,7 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 
 --inserting Roles
-insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(1, 'MEETUSVR_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);

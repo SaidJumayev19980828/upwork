@@ -166,11 +166,8 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public List<String> getOrganizationRoles(Long orgId) {
-        return roleRepository.findByOrganizationId(orgId)
-                .stream()
-                .map(Role::getName)
-                .toList();
+    public List<Role> getOrganizationRoles(Long orgId) {
+        return roleRepository.findByOrganizationId(orgId);
     }
 
     @Override

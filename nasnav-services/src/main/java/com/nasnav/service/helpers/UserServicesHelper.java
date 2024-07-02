@@ -29,7 +29,7 @@ import java.util.*;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_VALIDITY;
-import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static com.nasnav.enumerations.Roles.MEETUSVR_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.enumerations.UserStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -73,7 +73,7 @@ public class UserServicesHelper {
 			validateName(employeeUserJson.getName());
 			employeeUserEntity.setName(employeeUserJson.getName());
 		}
-		if (isNotBlankOrNull(employeeUserJson.getOrgId()) && currentUserRoles.contains(NASNAV_ADMIN)) {
+		if (isNotBlankOrNull(employeeUserJson.getOrgId()) && currentUserRoles.contains(MEETUSVR_ADMIN)) {
 			validateOrgId(employeeUserJson.getOrgId());
 			employeeUserEntity.setOrganizationId(employeeUserJson.getOrgId());
 		}
@@ -135,7 +135,7 @@ public class UserServicesHelper {
 	private boolean isStoreChangeApplicable(UserDTOs.EmployeeUserUpdatingObject employeeUserJson, List<Roles> currentUserRoles) {
 		return isNotBlankOrNull(employeeUserJson.getStoreId())
 				&& (currentUserRoles.contains(ORGANIZATION_ADMIN)
-				|| currentUserRoles.contains(NASNAV_ADMIN));
+				|| currentUserRoles.contains(MEETUSVR_ADMIN));
 	}
 
 
