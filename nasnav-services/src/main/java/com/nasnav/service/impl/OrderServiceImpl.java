@@ -892,7 +892,7 @@ public class OrderServiceImpl implements OrderService {
 		if (optionalUser.isPresent()) {
 			UserEntity user = optionalUser.get();
 			orderUser.setId(user.getId());
-			orderUser.setFullName(user.getFirstName()+" "+user.getLastName());
+			orderUser.setFullName(user.getFullName());
 			orderUser.setEmail(user.getEmail());
 			orderUser.setPhoneNumber(user.getPhoneNumber());
 			orderUser.setGender(user.getGender());
@@ -901,7 +901,6 @@ public class OrderServiceImpl implements OrderService {
 			orderUser.setCreationTime(user.getCreationTime());
 			obj.setOrderUser(orderUser);
 		}
-
 		CountriesEntity country = entity.getOrganizationEntity().getCountry();
 		if (country != null) {
 			obj.setCurrency(country.getCurrency());

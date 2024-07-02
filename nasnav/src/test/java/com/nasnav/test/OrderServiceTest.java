@@ -630,7 +630,7 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 		if (optionalUser.isPresent()) {
 			UserEntity user = optionalUser.get();
 			orderUser.setId(user.getId());
-			orderUser.setFullName(user.getFirstName()+" "+user.getLastName());
+			orderUser.setFullName(user.getFullName());
 			orderUser.setEmail(user.getEmail());
 			orderUser.setPhoneNumber(user.getPhoneNumber());
 			orderUser.setGender(user.getGender());

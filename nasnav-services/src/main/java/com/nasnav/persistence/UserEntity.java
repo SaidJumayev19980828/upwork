@@ -143,4 +143,16 @@ public class UserEntity extends BaseUserEntity{
 
         return obj;
     }
+
+    public String getFullName() {
+        if (this.name != null) {
+            return this.name;
+        } else {
+            if (this.firstName != null && this.lastName != null) {
+                return this.firstName + " " + this.lastName;
+            } else {
+                return null;
+            }
+        }
+    }
 }
