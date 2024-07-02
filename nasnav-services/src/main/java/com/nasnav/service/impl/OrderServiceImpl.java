@@ -11,6 +11,7 @@ import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
+import com.nasnav.dto.response.OrderUserResponse;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.enumerations.*;
 import com.nasnav.exceptions.BusinessException;
@@ -885,6 +886,21 @@ public class OrderServiceImpl implements OrderService {
 		obj.setTotal(entity.getTotal());
 		obj.setMetaOrderId(metaOrderId);
 		obj.setDiscount(entity.getDiscounts());
+		OrderUserResponse orderUser= new OrderUserResponse();
+		Optional<UserEntity> optionalUser = userRepo.findById(entity.getUserId());
+
+		if (optionalUser.isPresent()) {
+			UserEntity user = optionalUser.get();
+			orderUser.setId(user.getId());
+			orderUser.setFullName(user.getFirstName()+" "+user.getLastName());
+			orderUser.setEmail(user.getEmail());
+			orderUser.setPhoneNumber(user.getPhoneNumber());
+			orderUser.setGender(user.getGender());
+			orderUser.setUserStatus(user.getUserStatus());
+			orderUser.setImage(user.getImage());
+			orderUser.setCreationTime(user.getCreationTime());
+			obj.setOrderUser(orderUser);
+		}
 
 		CountriesEntity country = entity.getOrganizationEntity().getCountry();
 		if (country != null) {

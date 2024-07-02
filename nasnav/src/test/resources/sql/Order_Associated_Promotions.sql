@@ -25,8 +25,8 @@ VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  501);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '101112', now(), 68, null);
 
 --inserting users
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-VALUES (88, 'user1@nasnav.com','user1','123', 99001);
+INSERT INTO public.users(id, email,user_name, first_name, last_name ,phone_number, avatar ,gender,remember_created_at,user_status, authentication_token, organization_id)
+VALUES (88, 'user1@nasnav.com','user1','John','Richard','+998949711353','image_url/testimage','MALE',now(),200,'123', 99001);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '123', now(), null, 88);
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.dto.response.OrderUserResponse;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -31,7 +32,7 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     private BigDecimal total;
     private String currency;
     private String notes;
-
+    private OrderUserResponse orderUser;
     
     @JsonProperty("creation_date")
     private LocalDateTime createdAt;

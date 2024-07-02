@@ -11,15 +11,14 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.CategoryDto;
+import com.nasnav.dto.response.OrderUserResponse;
 import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.Shipment;
 import com.nasnav.dto.response.navbox.SubOrder;
-import com.nasnav.enumerations.OrderStatus;
-import com.nasnav.enumerations.ProductFeatureType;
-import com.nasnav.enumerations.ReturnRequestStatus;
+import com.nasnav.enumerations.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -327,7 +326,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void ordersListNasnavAdminDifferentFiltersTest() {
 
-       String token = "101112";
+        String token = "101112";
 
         // no filters
         ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("details_level=3", token);
@@ -504,7 +503,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getOrderListLevelTwoTest() throws IOException {
 
-        ResponseEntity<OrdersListResponse> response =  sendOrdersListRequestWithParamsAndToken("details_level=2&count=1", "101112");
+        ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("details_level=2&count=1", "101112");
         List<DetailedOrderRepObject> orders = response.getBody().getOrders();
         DetailedOrderRepObject firstOrder = orders.get(0);
 
@@ -617,6 +616,21 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         order.setDiscount(ZERO);
         order.setPoints(new ArrayList<>());
         order.setPaymentOperator("S.C.A.M");
+        OrderUserResponse orderUser = new OrderUserResponse();
+        Optional<UserEntity> optionalUser = userRepository.findById(entity.getUserId());
+
+        if (optionalUser.isPresent()) {
+            UserEntity user = optionalUser.get();
+            orderUser.setId(user.getId());
+            orderUser.setFullName(user.getFirstName() + " " + user.getLastName());
+            orderUser.setEmail(user.getEmail());
+            orderUser.setPhoneNumber(user.getPhoneNumber());
+            orderUser.setGender(user.getGender());
+            orderUser.setUserStatus(user.getUserStatus());
+            orderUser.setImage(user.getImage());
+            orderUser.setCreationTime(user.getCreationTime());
+            order.setOrderUser(orderUser);
+        }
         return order;
     }
 
@@ -651,7 +665,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         checkOrdersHaveExpectedShippingService(ordersList);
     }
 
-    private void checkOrdersHaveExpectedShippingService(List<DetailedOrderRepObject> resultOrdersList){
+    private void checkOrdersHaveExpectedShippingService(List<DetailedOrderRepObject> resultOrdersList) {
         List<Long> expectedOrdersIds = asList(330033L, 330037L, 330041L);
 
         resultOrdersList.forEach(ord -> assertTrue(expectedOrdersIds.contains(ord.getOrderId())));
@@ -671,7 +685,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         checkOrdersHaveExpectedPaymentOperator(ordersList);
     }
 
-    private void checkOrdersHaveExpectedPaymentOperator(List<DetailedOrderRepObject> resultOrdersList){
+    private void checkOrdersHaveExpectedPaymentOperator(List<DetailedOrderRepObject> resultOrdersList) {
         List<Long> expectedOrdersIds = asList(330033L, 330037L, 330042L, 330045L);
 
         resultOrdersList.forEach(ord -> assertTrue(expectedOrdersIds.contains(ord.getOrderId())));
@@ -690,7 +704,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         checkOrdersHaveExpectedPaymentAndShipping(ordersList);
     }
 
-    private void checkOrdersHaveExpectedPaymentAndShipping(List<DetailedOrderRepObject> resultOrdersList){
+    private void checkOrdersHaveExpectedPaymentAndShipping(List<DetailedOrderRepObject> resultOrdersList) {
         List<Long> expectedOrdersIds = asList(330033L, 330037L);
 
         resultOrdersList.forEach(ord -> assertTrue(expectedOrdersIds.contains(ord.getOrderId())));
@@ -700,7 +714,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_2.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-    public void getOrderListTotalTest(){
+    public void getOrderListTotalTest() {
         ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("start=0&count=2", "252627");
         Long totalOrders = response.getBody().getTotal();
 
@@ -710,7 +724,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_2.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-    public void getOrderListWithMinAndMaxFiltersTest(){
+    public void getOrderListWithMinAndMaxFiltersTest() {
         ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("min_total=100&max_total=1000", "252627");
         Long totalOrders = response.getBody().getTotal();
 
@@ -720,7 +734,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_2.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-    public void getOrderListSortingByTotalTest(){
+    public void getOrderListSortingByTotalTest() {
         ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("orders_sorting_option=TOTAL", "252627");
         DetailedOrderRepObject higherTotalOrder = response.getBody().getOrders().get(0);
 
@@ -730,7 +744,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_2.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-    public void getOrderListSortingByIdTest(){
+    public void getOrderListSortingByIdTest() {
         ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("orders_sorting_option=ID", "252627");
         DetailedOrderRepObject largestIdOrder = response.getBody().getOrders().get(0);
 
@@ -740,7 +754,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_2.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-    public void getOrderListSortingByCreationDateTest(){
+    public void getOrderListSortingByCreationDateTest() {
         ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("orders_sorting_option=CREATION_DATE", "252627");
         DetailedOrderRepObject newestOrder = response.getBody().getOrders().get(0);
 
@@ -750,13 +764,13 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_2.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-    public void getOrderListFilterByCreationDateTest(){
+    public void getOrderListFilterByCreationDateTest() {
         ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("created_after=2022-05-01:12:10:10&created_before=2022-05-30:12:10:10", "252627");
 
         assertEquals(3, countOrdersFromResponse(response));
     }
 
-    private ResponseEntity<OrdersListResponse> sendOrdersListRequestWithParamsAndToken(String params, String token){
+    private ResponseEntity<OrdersListResponse> sendOrdersListRequestWithParamsAndToken(String params, String token) {
         HttpEntity<?> httpEntity = getHttpEntity(token);
 
         return template.exchange(YESHTERY_ORDER_LIST_API_PATH + "?" + params,
@@ -765,7 +779,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
                 OrdersListResponse.class);
     }
 
-    private int countOrdersFromResponse(ResponseEntity<OrdersListResponse> response){
+    private int countOrdersFromResponse(ResponseEntity<OrdersListResponse> response) {
         return response.getBody().getOrders().size();
     }
 
@@ -782,6 +796,77 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
                 getHttpEntity("101112"), DetailedOrderRepObject.class);
         Assert.assertEquals(200, response.getStatusCodeValue());
         assertTrue(response.getBody() != null);
+    }
+
+    @Test
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void testUserDTOForOderResponse() {
+        ResponseEntity<DetailedOrderRepObject> response = template.exchange(YESHTERY_ORDER_INFO_API_PATH + "?order_id=330048", GET,
+                getHttpEntity("101112"), DetailedOrderRepObject.class);
+        assertEquals(200, response.getStatusCodeValue());
+        DetailedOrderRepObject responseBody = response.getBody();
+        assertNotNull(responseBody);
+        OrderUserResponse finalOrderUser = responseBody.getOrderUser();
+
+        Assertions.assertAll("Should pass for userDto in each order",
+                () -> assertNotNull(finalOrderUser),
+                () -> assertEquals(finalOrderUser.getId(), responseBody.getUserId()),
+                () -> assertEquals(Gender.MALE, finalOrderUser.getGender()),
+                () -> assertEquals((int) UserStatus.ACTIVATED.getValue(), finalOrderUser.getUserStatus()),
+                () -> assertNotNull(finalOrderUser.getFullName()),
+                () -> assertNotNull(finalOrderUser.getImage()),
+                () -> assertNotNull(finalOrderUser.getEmail()),
+                () -> assertNotNull(finalOrderUser.getCreationTime())
+        );
+
+        response = template.exchange(YESHTERY_ORDER_INFO_API_PATH + "?order_id=330038", GET,
+                getHttpEntity("101112"), DetailedOrderRepObject.class);
+        assertEquals(200, response.getStatusCodeValue());
+        DetailedOrderRepObject nextResponseBody = response.getBody();
+        assertNotNull(nextResponseBody);
+        OrderUserResponse finalOrderUser2 = nextResponseBody.getOrderUser();
+
+        Assertions.assertAll("Should pass for userDto in each order",
+                () -> assertNotNull(finalOrderUser2),
+                () -> assertEquals(finalOrderUser2.getId(), nextResponseBody.getUserId()),
+                () -> assertEquals(Gender.MALE, finalOrderUser2.getGender()),
+                () -> assertEquals((int) UserStatus.ACCOUNT_SUSPENDED.getValue(), finalOrderUser2.getUserStatus()),
+                () -> assertNotNull(finalOrderUser2.getFullName()),
+                () -> assertNotNull(finalOrderUser2.getImage()),
+                () -> assertNotNull(finalOrderUser2.getEmail()),
+                () -> assertNotNull(finalOrderUser2.getCreationTime())
+        );
+    }
+
+    @Test
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void failTestUserDTOForOderResponse() {
+        ResponseEntity<DetailedOrderRepObject> response = template.exchange(YESHTERY_ORDER_INFO_API_PATH + "?order_id=330048", GET,
+                getHttpEntity("101112"), DetailedOrderRepObject.class);
+        assertEquals(200, response.getStatusCodeValue());
+        DetailedOrderRepObject responseBody = response.getBody();
+        assertNotNull(responseBody);
+        OrderUserResponse finalOrderUser = responseBody.getOrderUser();
+
+        Assertions.assertAll("Should pass for userDto in each order",
+                () -> assertNotEquals(Gender.FEMALE, finalOrderUser.getGender()),
+                () -> assertNotEquals((int) UserStatus.NOT_ACTIVATED.getValue(), finalOrderUser.getUserStatus())
+        );
+
+        response = template.exchange(YESHTERY_ORDER_INFO_API_PATH + "?order_id=330038", GET,
+                getHttpEntity("101112"), DetailedOrderRepObject.class);
+        assertEquals(200, response.getStatusCodeValue());
+        DetailedOrderRepObject nextResponseBody = response.getBody();
+        assertNotNull(nextResponseBody);
+        OrderUserResponse finalOrderUser2 = nextResponseBody.getOrderUser();
+
+        Assertions.assertAll("Should pass for userDto in each order",
+                () -> assertNotEquals(finalOrderUser2.getId(), responseBody.getUserId()),
+                () -> assertNotEquals( Gender.FEMALE,finalOrderUser2.getGender()),
+                () -> assertNotEquals(finalOrderUser2.getUserStatus(), (int) UserStatus.ACTIVATED.getValue())
+        );
     }
 
     @Test
@@ -1655,7 +1740,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
 
         String requestBodyJson = getOrderRejectJson(subOrderId_1).toString();
         HttpEntity<?> request = getHttpEntity(requestBodyJson, "sdrf8s");
-        ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_REJECT_API_PATH , request, String.class);
+        ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_REJECT_API_PATH, request, String.class);
         assertEquals(OK, res.getStatusCode());
         assertOrderHasStatus(subOrderId_1, STORE_CANCELLED);
         assertMetaOrderHasStatus(subOrderId_1, FINALIZED);
@@ -1663,7 +1748,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
 
         requestBodyJson = getOrderRejectJson(subOrderId_2).toString();
         request = getHttpEntity(requestBodyJson, "sdfe47");
-        res = template.postForEntity(YESHTERY_ORDER_REJECT_API_PATH , request, String.class);
+        res = template.postForEntity(YESHTERY_ORDER_REJECT_API_PATH, request, String.class);
         assertEquals(OK, res.getStatusCode());
         assertOrderHasStatus(subOrderId_2, STORE_CANCELLED);
         assertMetaOrderHasStatus(subOrderId_2, STORE_CANCELLED);
@@ -1672,7 +1757,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
 
         requestBodyJson = getOrderRejectJson(subOrderId_3).toString();
         request = getHttpEntity(requestBodyJson, "161718");
-        res = template.postForEntity(YESHTERY_ORDER_REJECT_API_PATH , request, String.class);
+        res = template.postForEntity(YESHTERY_ORDER_REJECT_API_PATH, request, String.class);
         assertEquals(OK, res.getStatusCode());
         assertOrderHasStatus(subOrderId_3, STORE_CANCELLED);
         assertMetaOrderHasStatus(subOrderId_3, STORE_CANCELLED);
@@ -1693,12 +1778,12 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         assertEquals(expectedOrderStatus.ordinal(), metaOrder.getStatus().intValue());
     }
 
-    private void assertOrderHasStatus(Long orderId, OrderStatus expectedOrderStatus){
+    private void assertOrderHasStatus(Long orderId, OrderStatus expectedOrderStatus) {
         OrdersEntity order = orderRepository.findById(orderId).get();
         assertEquals(expectedOrderStatus.ordinal(), order.getStatus().intValue());
     }
 
-    private JSONObject getOrderRejectJson(Long subOrderId){
+    private JSONObject getOrderRejectJson(Long subOrderId) {
         JSONObject requestBody =
                 json()
                         .put("sub_order_id", subOrderId)
@@ -1706,6 +1791,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
 
         return requestBody;
     }
+
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_4.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -1806,19 +1892,19 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         loyaltyPointTransactionRepo.findByOrganization_IdIn(List.of(99001L, 99002L, 99003L))
                 .stream()
                 .map(LoyaltyPointTransactionEntity::getId)
-                .forEach(id -> params.append(id+","));
+                .forEach(id -> params.append(id + ","));
         params.deleteCharAt(params.lastIndexOf(","));
 
         HttpEntity<?> request = getHttpEntity("789");
         ResponseEntity<Cart> response =
-                template.exchange("/v1/cart" + "?points="+params, GET, request, Cart.class);
+                template.exchange("/v1/cart" + "?points=" + params, GET, request, Cart.class);
         assertEquals(new BigDecimal("80.00"), response.getBody().getDiscount());
         assertEquals(4, response.getBody().getPoints().getAppliedPoints().size());
     }
 
     @Test
-    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Loyalty_Point_Test_Data_2.sql"})
-    @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_Point_Test_Data_2.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void userGetPointsThroughReferral() {
         registerNewUser();
 
@@ -1839,18 +1925,19 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         Order resBody = response2.getBody();
 
         // finalize payment
-        ResponseEntity res = template.postForEntity("/v1/payment/cod/execute?order_id="+ resBody.getOrderId(), null, String.class);
+        ResponseEntity res = template.postForEntity("/v1/payment/cod/execute?order_id=" + resBody.getOrderId(), null, String.class);
         assertEquals(200, res.getStatusCodeValue());
 
         // confirm order
-        request = getHttpEntity( "abcdefg");
+        request = getHttpEntity("abcdefg");
         ResponseEntity response3 =
-                template.postForEntity("/v1/order/confirm?order_id="+resBody.getSubOrders().get(0).getSubOrderId(), request, String.class);
+                template.postForEntity("/v1/order/confirm?order_id=" + resBody.getSubOrders().get(0).getSubOrderId(), request, String.class);
         assertEquals(200, response3.getStatusCodeValue());
 
         return resBody.getOrderId();
 
     }
+
     private void registerNewUser() {
         Long userId = 88L;
         String requestBody = json()
@@ -1865,11 +1952,11 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         HttpEntity request = getHttpEntity(requestBody, null);
         ResponseEntity<UserApiResponse> response = template.postForEntity("/v1/user/register?referral=88", request, UserApiResponse.class);
         Assertions.assertEquals(201, response.getStatusCodeValue());
-        }
+    }
 
     @Test
-    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Loyalty_Point_Test_Data_2.sql"})
-    @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_Point_Test_Data_2.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void userGetPointsThroughShopPickup() {
         Long orderId = metaOrderRepo.findYeshteryMetaorderByMetaOrderId(createAndConfirmOrder(88L, "123"))
                 .map(MetaOrderEntity::getSubMetaOrders)
@@ -1887,7 +1974,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         String code = response.getBody();
 
         request = getHttpEntity("123");
-        response = template.postForEntity("/v1/loyalty/points/code/redeem?order_id=" + orderId + "&code="+ code, request, String.class);
+        response = template.postForEntity("/v1/loyalty/points/code/redeem?order_id=" + orderId + "&code=" + code, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
 
     }
@@ -1928,11 +2015,12 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         orderId = orderIds.get(1);
         res = template.postForEntity(YESHTERY_ORDER_CONFIRM_API_PATH + "?order_id=" + orderId, request, String.class);
         assertEquals(200, res.getStatusCodeValue());
-       }
+    }
 
     private void addCartItems(Long userId, Long stockId, Integer quantity, Long orgId) {
         addCartItems(userId, stockId, quantity, orgId, null);
     }
+
     private void addCartItems(Long userId, Long stockId, Integer quantity, Long orgId, String t) {
         String token = ofNullable(t).orElse("789");
         var itemsCountBefore = cartItemRepo.countByUser_Id(userId);
@@ -2012,6 +2100,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
                 .map(SubOrder::getTotal)
                 .reduce(ZERO, BigDecimal::add);
     }
+
     private BigDecimal getSubOrderShippingSum(Order order) {
         return order
                 .getSubOrders()
@@ -2034,6 +2123,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         Set<BasketItem> savedItemsData = parseItemsDataJson(order);
         Assert.assertEquals(savedItemsData, returnedItems);
     }
+
     private Set<BasketItem> parseItemsDataJson(Order order) {
         return order
                 .getSubOrders()

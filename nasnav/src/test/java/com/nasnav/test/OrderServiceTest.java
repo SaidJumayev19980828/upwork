@@ -8,11 +8,10 @@ import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
+import com.nasnav.dto.response.OrderUserResponse;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.SubOrder;
-import com.nasnav.enumerations.OrderStatus;
-import com.nasnav.enumerations.PaymentStatus;
-import com.nasnav.enumerations.ReferralType;
+import com.nasnav.enumerations.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrdersListResponse;
@@ -28,6 +27,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -624,6 +624,22 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 			order.setIsReferralCodeApplied(true);
 			order.setAppliedReferralCode("abcdfg");
 		}
+
+		OrderUserResponse orderUser= new OrderUserResponse();
+		Optional<UserEntity> optionalUser = userRepository.findById(entity.getUserId());
+		if (optionalUser.isPresent()) {
+			UserEntity user = optionalUser.get();
+			orderUser.setId(user.getId());
+			orderUser.setFullName(user.getFirstName()+" "+user.getLastName());
+			orderUser.setEmail(user.getEmail());
+			orderUser.setPhoneNumber(user.getPhoneNumber());
+			orderUser.setGender(user.getGender());
+			orderUser.setUserStatus(user.getUserStatus());
+			orderUser.setImage(user.getImage());
+			orderUser.setCreationTime(user.getCreationTime());
+			order.setOrderUser(orderUser);
+		}
+
 		order.setIsUsedReferralBalance(withdrawAmount.compareTo(ZERO) > 0);
 		order.setSubtotal( price );
 		order.setTotal( price);		
@@ -1099,6 +1115,72 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 			, Mockito.anyMap());
 
 			Mockito.verifyNoMoreInteractions(mailService);
+	}
+
+	@Test
+	public void testUserDTOForOderResponse(){
+		ResponseEntity<DetailedOrderRepObject> response = template.exchange("/order/info?order_id=330048", GET,
+				getHttpEntity("101112"), DetailedOrderRepObject.class);
+		assertEquals(200, response.getStatusCodeValue());
+		DetailedOrderRepObject responseBody = response.getBody();
+		assertNotNull(responseBody);
+		OrderUserResponse finalOrderUser = responseBody.getOrderUser();
+		Assertions.assertAll("Should pass for userDto in each order",
+				() -> assertNotNull(finalOrderUser),
+				() -> assertEquals(finalOrderUser.getId(),responseBody.getUserId()),
+				() -> assertEquals(Gender.MALE, finalOrderUser.getGender()),
+				() -> assertEquals((int)UserStatus.ACTIVATED.getValue(),finalOrderUser.getUserStatus()),
+				() -> assertNotNull(finalOrderUser.getFullName()),
+				() -> assertNotNull(finalOrderUser.getImage()),
+				() -> assertNotNull(finalOrderUser.getEmail()),
+				() -> assertNotNull(finalOrderUser.getCreationTime())
+		);
+
+		response = template.exchange("/order/info?order_id=330038", GET,
+				getHttpEntity("101112"), DetailedOrderRepObject.class);
+		assertEquals(200, response.getStatusCodeValue());
+		DetailedOrderRepObject nextResponseBody = response.getBody();
+		assertNotNull(nextResponseBody);
+		OrderUserResponse finalOrderUser2 = nextResponseBody.getOrderUser();
+
+		Assertions.assertAll("Should pass for userDto in each order",
+				() -> assertNotNull(finalOrderUser2),
+				() -> assertEquals(finalOrderUser2.getId(),nextResponseBody.getUserId()),
+				() -> assertEquals(Gender.MALE,finalOrderUser2.getGender()),
+				() -> assertEquals((int)UserStatus.ACCOUNT_SUSPENDED.getValue(),finalOrderUser2.getUserStatus()),
+				() -> assertNotNull(finalOrderUser2.getFullName()),
+				() -> assertNotNull(finalOrderUser2.getImage()),
+				() -> assertNotNull(finalOrderUser2.getEmail()),
+				() -> assertNotNull(finalOrderUser2.getCreationTime())
+		);
+	}
+
+	@Test
+	public void failTestUserDTOForOderResponse(){
+		ResponseEntity<DetailedOrderRepObject> response = template.exchange("/order/info?order_id=330048", GET,
+				getHttpEntity("101112"), DetailedOrderRepObject.class);
+		assertEquals(200, response.getStatusCodeValue());
+		DetailedOrderRepObject responseBody = response.getBody();
+		assertNotNull(responseBody);
+		OrderUserResponse finalOrderUser = responseBody.getOrderUser();
+
+		Assertions.assertAll("Should pass for userDto in each order",
+				() -> assertNotEquals(Gender.FEMALE,finalOrderUser.getGender()),
+				() -> assertNotEquals((int)UserStatus.NOT_ACTIVATED.getValue(),finalOrderUser.getUserStatus())
+		);
+
+		response = template.exchange("/order/info?order_id=330038", GET,
+				getHttpEntity("101112"), DetailedOrderRepObject.class);
+		assertEquals(200, response.getStatusCodeValue());
+		DetailedOrderRepObject nextResponseBody = response.getBody();
+		assertNotNull(nextResponseBody);
+		OrderUserResponse finalOrderUser2 = nextResponseBody.getOrderUser();
+
+		Assertions.assertAll("Should pass for userDto in each order",
+				() -> assertNotEquals(finalOrderUser2.getId(),responseBody.getUserId()),
+				() -> assertNotEquals(Gender.FEMALE,finalOrderUser2.getGender()),
+				() -> assertNotEquals((int)UserStatus.ACTIVATED.getValue(),finalOrderUser2.getUserStatus())
+		);
 	}
 
 
