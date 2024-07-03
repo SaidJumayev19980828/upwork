@@ -21,7 +21,7 @@ VALUES (71, 'admin@nasnav.com', 63, 'abcdefg',  null);
 
 
 --inserting Roles
-insert into public.roles(id, name,  organization_id) values(30, 'MEETUSVR_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(30, 'NASNAV_ADMIN', 99001);
 insert into public.roles(id, name,  organization_id) values(40, 'ORGANIZATION_ADMIN', 99001);
 insert into public.roles(id, name,  organization_id) values(41, 'ORGANIZATION_ADMIN', 99003);
 insert into public.roles(id, name,  organization_id) values(50, 'STORE_MANAGER', 99001);

@@ -124,7 +124,7 @@ public class PackageServiceImpl implements PackageService {
     public String registerPackage(PackageRegisterDTO packageRegisterDTO) {
         EmployeeUserEntity employee = securityService.getCurrentUserOptional().map(EmployeeUserEntity.class::cast).orElse(null);
 
-        if (employee == null || !(securityService.currentUserHasRole(Roles.MEETUSVR_ADMIN) || securityService.currentUserHasRole(Roles.MEETUSVR_EMPLOYEE)
+        if (employee == null || !(securityService.currentUserHasRole(Roles.NASNAV_ADMIN) || securityService.currentUserHasRole(Roles.NASNAV_EMPLOYEE)
                 || Objects.equals(employee.getOrganizationId(), packageRegisterDTO.getOrganizationId()))) {
             throw new RuntimeBusinessException(FORBIDDEN, UAUTH$0002);
         }
@@ -148,7 +148,7 @@ public class PackageServiceImpl implements PackageService {
     public String deregisterPackage(PackageRegisterDTO packageRegisterDTO) {
         EmployeeUserEntity employee = securityService.getCurrentUserOptional().map(EmployeeUserEntity.class::cast).orElse(null);
 
-        if (employee == null || !(securityService.currentUserHasRole(Roles.MEETUSVR_ADMIN) || securityService.currentUserHasRole(Roles.MEETUSVR_EMPLOYEE)
+        if (employee == null || !(securityService.currentUserHasRole(Roles.NASNAV_ADMIN) || securityService.currentUserHasRole(Roles.NASNAV_EMPLOYEE)
                 || Objects.equals(employee.getOrganizationId(), packageRegisterDTO.getOrganizationId()))) {
             throw new RuntimeBusinessException(FORBIDDEN, UAUTH$0002);
         }

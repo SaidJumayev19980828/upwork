@@ -220,7 +220,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0009);
 		}
 
-		if (!Boolean.TRUE.equals(securityService.currentUserHasRole(MEETUSVR_ADMIN)) && !currentUser.getOrganizationId().equals(otherEmpOrgId)) {
+		if (!Boolean.TRUE.equals(securityService.currentUserHasRole(NASNAV_ADMIN)) && !currentUser.getOrganizationId().equals(otherEmpOrgId)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0010 );
 		}
 
@@ -367,7 +367,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			}
 			roles = Set.of(role);
 		} else {
-			if (!userHighestRole.equals(MEETUSVR_ADMIN))
+			if (!userHighestRole.equals(NASNAV_ADMIN))
 				roles = Roles.getAllPrivileges().get(userHighestRole.name());
 		}
 		orgId = getUserOrgId(orgId, user, userHighestRole);
@@ -436,7 +436,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	private EmployeeUserEntity getEmployeeToSuspend(Long id) {
 		Optional<EmployeeUserEntity> optionalEmployeeUser;
-		if (Boolean.TRUE.equals(securityService.currentUserHasRole(MEETUSVR_ADMIN))) {
+		if (Boolean.TRUE.equals(securityService.currentUserHasRole(NASNAV_ADMIN))) {
 			optionalEmployeeUser = employeeUserRepository.findById(id);
 		} else {
 			Long orgId = securityService.getCurrentUserOrganizationId();

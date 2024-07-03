@@ -119,21 +119,21 @@ public class SecurityConfiguration {
             patternOf("/v1/product/**", DELETE, setOf(ORGANIZATION_ADMIN)),
             patternOf("/v1/product/images", GET, setOf(ORGANIZATION_ADMIN)),
             patternOf("/v1/product/image/bulk/template", setOf(ORGANIZATION_ADMIN)),
-            patternOf("/v1/product/empty_collections", GET, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, MEETUSVR_ADMIN)),
-            patternOf("/v1/admin/organization/domain", GET, setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN)),
-            patternOf("/v1/admin/organization/domains", GET, setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN)),
-            patternOf("/v1/admin/**", setOf(MEETUSVR_ADMIN)),
-            patternOf("/v1/files/**", DELETE, setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf("/v1/product/empty_collections", GET, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, NASNAV_ADMIN)),
+            patternOf("/v1/admin/organization/domain", GET, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf("/v1/admin/organization/domains", GET, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf("/v1/admin/**", setOf(NASNAV_ADMIN)),
+            patternOf("/v1/files/**", DELETE, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
             patternOf("/v1/files/**"),
-            patternOf( "/v1/permission/**"					,setOf(MEETUSVR_ADMIN)),
-            patternOf( "/v1/roles/**"							,setOf(MEETUSVR_ADMIN)),
-            patternOf( "/v1/package/organizations/**"					, GET, setOf(MEETUSVR_ADMIN)),
-            patternOf("/v1/package", POST, setOf(MEETUSVR_ADMIN)),
-            patternOf("/v1/package/{packageId:\\d+}", PUT, setOf(MEETUSVR_ADMIN)),
-            patternOf("/v1/package/{packageId:\\d+}", DELETE, setOf(MEETUSVR_ADMIN)),
-            patternOf("/v1/package/register", POST, setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-            patternOf("/v1/package/deregister", POST, setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-            patternOf( "/v1/service/**", setOf(MEETUSVR_ADMIN)),
+            patternOf( "/v1/permission/**"					,setOf(NASNAV_ADMIN)),
+            patternOf( "/v1/roles/**"							,setOf(NASNAV_ADMIN)),
+            patternOf( "/v1/package/organizations/**"					, GET, setOf(NASNAV_ADMIN)),
+            patternOf("/v1/package", POST, setOf(NASNAV_ADMIN)),
+            patternOf("/v1/package/{packageId:\\d+}", PUT, setOf(NASNAV_ADMIN)),
+            patternOf("/v1/package/{packageId:\\d+}", DELETE, setOf(NASNAV_ADMIN)),
+            patternOf("/v1/package/register", POST, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/package/deregister", POST, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/service/**", setOf(NASNAV_ADMIN)),
             patternOf("/v1/organization/info", setOf(ORGANIZATION_ADMIN)),
             patternOf("/v1/organization/brand", setOf(ORGANIZATION_ADMIN)),
             patternOf("/v1/organization/image", POST, setOf(ORGANIZATION_ADMIN)),
@@ -145,18 +145,18 @@ public class SecurityConfiguration {
             patternOf("/v1/organization/shipping/**", setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/organization/promotions/**", setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/organization/promotion/**", setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-            patternOf("/v1/organization/themes/class", setOf(MEETUSVR_ADMIN)),
+            patternOf("/v1/organization/themes/class", setOf(NASNAV_ADMIN)),
             patternOf("/v1/organization/themes", setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/organization/extra_attribute", setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/organization/shops", setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/organization/settings/**", setOf(ORGANIZATION_ADMIN)),
             patternOf("/v1/organization/subscribed_users", setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-            patternOf("/v1/organization/images_info", setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN)),
-            patternOf("/v1/organization/search/**", setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf("/v1/organization/images_info", setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf("/v1/organization/search/**", setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
             patternOf("/v1/organization/seo", setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/organization/sub_areas", setOf(ORGANIZATION_ADMIN)),
             patternOf("/v1/subscription/info", HttpMethod.GET, getNonCustomersRoles()),
-            patternOf("/v1/subscription/package/**"						, HttpMethod.GET ,setOf(MEETUSVR_ADMIN)),
+            patternOf("/v1/subscription/package/**"						, HttpMethod.GET ,setOf(NASNAV_ADMIN)),
             patternOf("/v1/subscription/wert/create", HttpMethod.POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/subscription/stripe/create", HttpMethod.POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/subscription/stripe/changePaymentMethod", HttpMethod.POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
@@ -169,25 +169,25 @@ public class SecurityConfiguration {
             patternOf("/v1/integration/import/shops", setOf(ORGANIZATION_MANAGER)),
             patternOf("/v1/integration/import/products", setOf(ORGANIZATION_MANAGER)),
             patternOf("/v1/integration/import/product_images", setOf(ORGANIZATION_MANAGER)),
-            patternOf("/v1/integration/module/disable", setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN)),
-            patternOf("/v1/integration/module/enable", setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN)),
-            patternOf("/v1/integration/module/**", setOf(MEETUSVR_ADMIN)),
-            patternOf("/v1/integration/param/**", setOf(MEETUSVR_ADMIN)),
-            patternOf("/v1/integration/dictionary", setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN)),
-            patternOf("/v1/integration/errors", setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN)),
-            patternOf("/v1/integration/**", setOf(MEETUSVR_ADMIN))
+            patternOf("/v1/integration/module/disable", setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf("/v1/integration/module/enable", setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf("/v1/integration/module/**", setOf(NASNAV_ADMIN)),
+            patternOf("/v1/integration/param/**", setOf(NASNAV_ADMIN)),
+            patternOf("/v1/integration/dictionary", setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf("/v1/integration/errors", setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf("/v1/integration/**", setOf(NASNAV_ADMIN))
             , patternOf("/v1/user/list", GET, getNonCustomersRoles())
             , patternOf("/v1/user/list/customer", GET, getNonCustomersRoles())
             , patternOf("/v1/user/address", PUT, setOf(CUSTOMER))
             , patternOf("/v1/user/address", DELETE, setOf(CUSTOMER))
             , patternOf("/v1/user/info")
-            , patternOf("/v1/user/create", setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN, STORE_MANAGER))
+            , patternOf("/v1/user/create", setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, STORE_MANAGER))
             , patternOf("/v1/user/update", getAllRoles())
             , patternOf("/v1/user/notification-token", POST, getAllRoles())
             , patternOf("/v1/user/change/password", getAllRoles())
             , patternOf("/v1/user/logout", getAllRoles())
             , patternOf("/v1/user/logout_all", getAllRoles())
-            , patternOf("/v1/user/suspend", setOf(MEETUSVR_ADMIN, ORGANIZATION_ADMIN))
+            , patternOf("/v1/user/suspend", setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN))
             , patternOf("/v1/cart/store-checkout/**", POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_EMPLOYEE, STORE_MANAGER))
             , patternOf("/v1/cart/store-checkout", POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_EMPLOYEE, STORE_MANAGER))
 
@@ -202,7 +202,7 @@ public class SecurityConfiguration {
             , patternOf("/v1/yeshtery/review", POST, setOf(CUSTOMER))
             , patternOf("/yeshtery/get-token", GET, setOf(CUSTOMER))
             , patternOf("/v1/user/review", GET, setOf(CUSTOMER))
-            , patternOf("/v1/user/link_nasnav_users_to_yeshtery_users", POST, setOf(MEETUSVR_ADMIN)),
+            , patternOf("/v1/user/link_nasnav_users_to_yeshtery_users", POST, setOf(NASNAV_ADMIN)),
             patternOf("/v1/videochat/**", POST, getAllRoles()),
             patternOf("/v1/videochat/**", GET, getNonCustomersRoles()),
             patternOf("/v1/chat/visitor", POST, setOf(CUSTOMER)),
@@ -238,7 +238,7 @@ public class SecurityConfiguration {
 
 
             patternOf("/v1/influencer/host/**", getAllRoles()),
-            //TODO change roles so that the testing process continues the old one is setOf(MEETUSVR_ADMIN) only
+            //TODO change roles so that the testing process continues the old one is setOf(NASNAV_ADMIN) only
             patternOf("/v1/influencer/response", POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/influencer/hostingRequests", GET, getNonCustomersRoles()),
             patternOf("/v1/loyalty/points/update", setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),

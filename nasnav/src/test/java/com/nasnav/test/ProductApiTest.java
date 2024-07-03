@@ -831,7 +831,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void deleteProductInvalidUserRoleTest() {
-		BaseUserEntity user = empUserRepo.getUserById(68L); //this user has MEETUSVR_ADMIN Role
+		BaseUserEntity user = empUserRepo.getUserById(68L); //this user has NASNAV_ADMIN Role
 
 		Long productId = 1006L;
 

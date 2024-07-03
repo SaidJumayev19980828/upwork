@@ -26,7 +26,7 @@ import java.util.Optional;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_DOMAINS;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.enumerations.Roles.MEETUSVR_ADMIN;
+import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
@@ -93,7 +93,7 @@ public class DomainServiceImpl implements DomainService{
 	}
 
 	private Long validateAndReturnAdminOrgId(Long orgId) {
-		if (!Boolean.TRUE.equals(securityService.userHasRole(MEETUSVR_ADMIN))) {
+		if (!Boolean.TRUE.equals(securityService.userHasRole(NASNAV_ADMIN))) {
 			return securityService.getCurrentUserOrganizationId();
 		}
 		return orgId;

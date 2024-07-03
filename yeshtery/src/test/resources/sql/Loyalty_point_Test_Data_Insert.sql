@@ -41,12 +41,12 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700007, 'abc', now(), 67, null);
 
 --inserting Roles
-insert into roles(id, name,  organization_id) values(1, 'MEETUSVR_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(6, 'CUSTOMER', 99001);
-insert into roles(id, name,  organization_id) values(7, 'MEETUSVR_ADMIN', 99002);
+insert into roles(id, name,  organization_id) values(7, 'NASNAV_ADMIN', 99002);
 insert into roles(id, name,  organization_id) values(8, 'ORGANIZATION_ADMIN', 99002);
 insert into roles(id, name,  organization_id) values(9, 'ORGANIZATION_EMPLOYEE', 99002);
 insert into roles(id, name,  organization_id) values(10, 'STORE_EMPLOYEE', 99002);

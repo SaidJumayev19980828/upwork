@@ -596,7 +596,7 @@ public class UserServiceImpl implements UserService {
 			return getUserRepresentationWithUserRoles(currentUser);
 		}
 		Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
-		if (userHighestRole.equals(MEETUSVR_ADMIN)) {
+		if (userHighestRole.equals(NASNAV_ADMIN)) {
 			user = commonUserRepo.findById(userId, isEmployee)
 					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 		} else {
@@ -853,7 +853,7 @@ public class UserServiceImpl implements UserService {
 
 	public List<UserRepresentationObject> getUserList(){
 		List<UserEntity> customers;
-		if (Boolean.TRUE.equals(securityService.currentUserHasRole(MEETUSVR_ADMIN))) {
+		if (Boolean.TRUE.equals(securityService.currentUserHasRole(NASNAV_ADMIN))) {
 			customers = userRepository.findAll();
 		} else {
 			customers = userRepository.findByOrganizationId(securityService.getCurrentUserOrganizationId());
@@ -870,7 +870,7 @@ public class UserServiceImpl implements UserService {
 				new CustomPaginationPageRequest(start, count)
 				:Pageable.unpaged();
 
-		if (Boolean.TRUE.equals(securityService.currentUserHasRole(MEETUSVR_ADMIN))) {
+		if (Boolean.TRUE.equals(securityService.currentUserHasRole(NASNAV_ADMIN))) {
 			if(userStatus!=null)
 				customersPage = userRepository.findAllUsersByUserStatus(userStatus, pageable);
 			else

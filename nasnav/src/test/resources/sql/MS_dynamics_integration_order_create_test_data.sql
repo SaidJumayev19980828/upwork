@@ -66,7 +66,7 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (3, '123eerd', now(), null, 88);
 
 --inserting Roles
-insert into roles(id, name,  organization_id) values(1, 'MEETUSVR_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(3, 'ORGANIZATION_MANAGER', 99001);
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);

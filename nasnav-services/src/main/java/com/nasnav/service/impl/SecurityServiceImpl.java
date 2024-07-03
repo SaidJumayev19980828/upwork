@@ -610,7 +610,7 @@ public class SecurityServiceImpl implements SecurityService {
 
     @Override
     public boolean currentEmployeeHasNasnavRoles() {
-        return roleService.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.MEETUSVR_EMPLOYEE);
+        return roleService.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.NASNAV_EMPLOYEE);
     }
 
     @Override

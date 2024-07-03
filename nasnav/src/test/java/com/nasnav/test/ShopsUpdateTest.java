@@ -70,7 +70,7 @@ public class ShopsUpdateTest extends AbstractTestWithTempBaseDir {
 
         assertEquals(403, response.getStatusCode().value());
 
-        // create shop using MEETUSVR_ADMIN role (test fail)
+        // create shop using NASNAV_ADMIN role (test fail)
         json = getHttpEntity(body,"101112");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());

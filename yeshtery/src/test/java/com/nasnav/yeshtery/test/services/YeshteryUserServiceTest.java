@@ -180,14 +180,14 @@ class YeshteryUserServiceTest {
 	private void mockUserRepresentation(UserEntity user) {
 		UserRepresentationObject userRep = user.getRepresentation();
 		List<UserAddressEntity> addresses = new ArrayList<>();
-		List<String> roles = List.of(Roles.MEETUSVR_ADMIN.name());
+		List<String> roles = List.of(Roles.NASNAV_ADMIN.name());
 
 		when(userAddressRepo.findByUser_Id(userRep.getId())).thenReturn(addresses);
 		when(roleService.getUserRoles(user)).thenReturn(roles);
 		when(securityService.getLastLoginForUser(user)).thenReturn(LocalDateTime.now());
 
 		userRep.setAddresses(new ArrayList<>());
-		userRep.setRoles(Set.of(Roles.MEETUSVR_ADMIN.name()));
+		userRep.setRoles(Set.of(Roles.NASNAV_ADMIN.name()));
 		userRep.setIsInfluencer(false);
 		userRep.setLastLogin(LocalDateTime.now());
 		userRep.setDateOfBirth(LocalDateTime.now());

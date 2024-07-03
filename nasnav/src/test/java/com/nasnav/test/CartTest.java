@@ -1753,6 +1753,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		assertEquals(200, res.getStatusCodeValue());
 	}
 
+	@Ignore("this test make calls to bcEndpoint at https://mvr-api.dev.meetusvr.com")
 	@Test
 	public void timeEstimateTest(){
 		JSONObject requestBody =new JSONObject();
