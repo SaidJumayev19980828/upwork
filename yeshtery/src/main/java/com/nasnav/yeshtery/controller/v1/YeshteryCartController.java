@@ -102,6 +102,9 @@ public class YeshteryCartController {
 
     @PostMapping(value = "/store-checkout/complete", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
     public Order checkoutComplete(@RequestBody CartCheckoutDTO dto) throws BusinessException {
-        return cartCheckoutService.completeYeshteryCheckout(dto);
+        return cartCheckoutService.completeYeshteryCheckout(dto);  //// this i need modify
     }
 }
+
+//1. store-checkout/complete must accept MVR coins   using blockchain method payment with MVR
+//2.change user balance according this

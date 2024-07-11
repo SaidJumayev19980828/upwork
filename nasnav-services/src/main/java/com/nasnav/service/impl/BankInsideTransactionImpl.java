@@ -54,7 +54,7 @@ public class BankInsideTransactionImpl implements BankInsideTransactionService {
         entity.setSender(sender);
         entity.setReceiver(receiver);
         entity.setActivityDate(LocalDateTime.now());
-        entity.setAmount(amount);
+        entity.setAmount(amount);   ///what is this amount  1MVR --> EGP
 
         bankInsideTransactionRepository.save(entity);
         //insert two records into account activity

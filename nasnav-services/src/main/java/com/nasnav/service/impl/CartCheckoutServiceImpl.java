@@ -122,7 +122,7 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 		storeCashPaymentService.finalize(
 				storeCashPaymentService.createPaymentForOrder(checkoutedOutOrder.getOrderId(),
 				orderService.getMetaOrderTotalValue(checkoutedOutOrder.getOrderId()),
-				checkoutedOutOrder.getUserId()), true);
+				checkoutedOutOrder.getUserId()), true);  /// only workin for cash payment we need for MVR
 		return orderService.getMetaOrder(checkoutedOutOrder.getOrderId(), false);
 	}
 

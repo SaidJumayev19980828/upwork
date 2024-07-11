@@ -915,7 +915,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public EstimateTokensUsdResponse estimateTokensToUsd(TokenValueRequest request) {
-        return bCInquiringForEstimation(request);
+        return bCInquiringForEstimation(request);    /// use this one to converting usd to MVR
     }
 
     private EstimateTokensUsdResponse bCInquiringForEstimation(TokenValueRequest request){
