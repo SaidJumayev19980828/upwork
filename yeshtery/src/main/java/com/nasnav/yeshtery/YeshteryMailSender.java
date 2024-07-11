@@ -50,12 +50,12 @@ public class YeshteryMailSender extends JavaMailSenderImpl {
 //            props.put("mail.smtp.ssl.trust", "true");
 //            props.put("mail.debug", "true");
             setJavaMailProperties(props);
-            
+
             setUsername(config.mailUsername);
             setPassword(config.mailPassword);
         }
-        
-        
+
+
         this.senderAddress = config.mailSenderAddress;
     }
 }

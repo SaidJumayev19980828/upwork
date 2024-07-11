@@ -20,7 +20,7 @@ CREATE SEQUENCE IF NOT EXISTS public.employee_user_otp_seq
     MAXVALUE 9223372036854775807
     CACHE 1;
 
-ALTER TABLE public.employee_user_otp_seq OWNER TO nasnav;
+ALTER TABLE public.employee_user_otp_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.employee_user_otp_seq
     OWNED BY public.employee_user_otp.id;

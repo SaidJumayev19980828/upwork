@@ -39,7 +39,7 @@ public class BankAccountActivityServiceImpl implements BankAccountActivityServic
         float totalBalance = this.getTotalBalance(bankAccountEntity.getId());
         float reservedBalance = this.getReservedBalance(bankAccountEntity.getId());
 
-        return totalBalance + bankAccountEntity.getOpeningBalance() - reservedBalance;
+        return totalBalance + bankAccountEntity.getOpeningBalance() - reservedBalance;   ///0+2200-0
     }
 
     @Override
